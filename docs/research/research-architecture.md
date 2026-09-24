@@ -101,6 +101,8 @@ protocol are summarised here so that nothing depends on reading it).
 | The growth is in CMS's **second** pause (end of marking); the first stays near 1 ms. With the same 5.6 M objects marked but no sustained load, the second pause was 0.1–0.4 ms | the same section |
 | A second resident process on the host inflated the same binary's pause p99 from ~1.2 ms to 2–4.9 ms; CPU per request was unaffected | the same study, protocol finding |
 | The runtime does not read its cgroup memory limit; `GC.targetHeapBytes` is a trigger threshold, not a ceiling, and `GC.autotune` rewrites it. `GC.maxHeapBytes` is the ceiling | `youndie/kore!/kore-core/src/commonMain/kotlin/io/github/youndie/kore/runtime/MemoryBudget.kt`, `youndie/kore!/kore-core/src/nativeMain/kotlin/io/github/youndie/kore/runtime/HeapCeiling.native.kt` |
+| **The second CMS pause is the allocator's page bookkeeping**: with the world stopped after marking, every size class's `PageStore::PrepareForGC` walks the `used_` page list to its tail and frees every page the last sweep emptied — both linear in the number of pages | `JetBrains/kotlin@v2.4.20!/kotlin-native/runtime/src/gc/common/cpp/MainGCThread.hpp` lines 56–69; `JetBrains/kotlin@v2.4.20!/kotlin-native/runtime/src/alloc/custom/cpp/PageStore.hpp` line 24; `JetBrains/kotlin@v2.4.20!/kotlin-native/runtime/src/alloc/custom/cpp/AtomicStack.hpp` lines 79–81 |
+| Measured (B-19, a quarter of the reference dataset, same heap, interleaved): 16 KiB allocator pages paused 8–10 ms median and 84–139 ms p99; 256 KiB pages 0.8 ms and 8–18 ms, for 1 % more resident memory | `bench/reports/b-19/README.md` |
 | Resident memory of a Kotlin/Native service follows its **thread** count (a 256 KiB page per size class per thread); `-Xbinary=fixedBlockPageSize=16` removes most of it | `youndie/katcher` issue #58; the mechanism is [KT-89365](https://youtrack.jetbrains.com/issue/KT-89365) |
 
 **Consequence 1 — §5a is outside everything measured, by more than an order of magnitude.** The
@@ -126,6 +128,13 @@ encodings inside Kotlin objects ("small collections packed into byte arrays, as 
 listpack"). Consequence 1 says that is not an optimisation but probably the thing that decides
 whether D-3 holds: a hash of 12 fields packed into one `ByteArray` is one object instead of 25.
 B-19 measures both shapes.
+
+**Correction found in B-19: the lever is the allocator's page count, not the object count.** The
+naive encoding marked 4.7 times the objects of the packed one at the same scale and paused the same;
+the pause is the page bookkeeping in the second stop-the-world phase (the facts above), and 256 KiB
+pages cut it tenfold where the object count changed nothing. Packing stays — for memory: naive held
+twice the live heap of packed, ~35 GB of resident memory at full scale. The mark itself is
+concurrent and was never the pause.
 
 **Consequence 4 — `maxmemory` is not enforced by the runtime, and the container limit is not seen
 by it.** kesh's own accounting (D-10) is the only thing between a write and an OOM kill.
@@ -330,7 +339,8 @@ cannot serve the reference dataset" means in numbers. A threshold chosen after t
 is chosen to fit them.
 
 The compact-encoding clause of D-3 is where the design effort goes (§1.2, consequence 3): packed
-small hashes, sets and lists are expected to decide the verdict, not polish it.
+small hashes, sets and lists are expected to decide the verdict, not polish it. *(B-19: they decide
+the memory, not the pause — §1.2, correction.)*
 
 **The threshold, set by the owner on 2026-09-24, before B-19 measured anything (B-20):** the managed
 heap serves the reference dataset if the collector's **stop-the-world pause p99 is at most 10 ms**.
@@ -358,6 +368,15 @@ kesh, and the condition moves from a number to an explanation: B-19 has to show 
 made of and what it grows with, with a control that could have refuted it. The full-scale figure is
 still taken, on the reference host at the last stage (B-17, B-22), and reported per D-9 rather than
 gated.
+
+**B-19's verdict, 2026-09-25: D-3 stands** — plain Kotlin objects, the packed encoding, 256 KiB
+allocator pages (D-19). The known limitation, explained: the collector's stop-the-world pause is its
+page bookkeeping at the end of marking and follows the number of allocator pages. On a quarter of the
+dataset with 256 KiB pages it was 1.3–1.5 ms in steady state and 7–18 ms in the first two collections
+after a load; the full dataset has about four times the pages (~5–6 ms and ~30–70 ms by the mechanism,
+to be measured). Two hypotheses were refuted on the way, each by a control that could have confirmed
+it: the objects marked, and the garbage made during marking. `bench/reports/b-19/README.md` has the
+runs, the code and the reasoning.
 
 ### D-4. One process holds the whole working set — *decision; the size is a choice, not a need*
 
@@ -496,6 +515,20 @@ invalidate the architecture; everything else in the backlog can only tune it.
 What it does not do: replace B-17. B-19 is a heap under synthetic churn; B-17 is the product under
 the reference load.
 
+### D-19. kesh is built with 256 KiB allocator pages, not sborka's 16 — *new, B-19*
+
+sborka's `native-service` convention sets `fixedBlockPageSize=16` for every native service: a thread
+holds one page per size class for as long as it lives, and in services with many threads and small
+heaps 16 KiB pages cut resident memory severalfold. kesh is the opposite — a few threads and a heap
+of gigabytes — and the collector's second pause walks and frees the allocator's pages, so it follows
+their count (§1.2). Measured on a quarter of the dataset: pause tenfold shorter with 256 KiB pages,
+resident memory 1 % higher. `server/build.gradle.kts` sets `allocatorPageSize = 256`.
+Rejected: keeping the portfolio's setting for uniformity — it would cost kesh an order of magnitude in
+pause for a memory saving it cannot use.
+Watch: the per-thread cost comes back with threads. kesh's connections run on `Dispatchers.IO`
+(up to 64 threads); at 256 KiB per size class touched, that is on the order of 100 MB at worst —
+small beside the heap, and to be checked in B-17's resident-memory figures.
+
 ### D-18. `HELLO` answers `server: kesh`, `version: 7.2.0` — *new, B-02*
 
 The brief does not say what `HELLO 2` reports. Redis sends `server: redis` and its own version.
@@ -510,7 +543,8 @@ version (a Redis client would read it as a Redis older than RESP2 handshakes).
 ## 3. Risks and open questions
 
 **R-1. The collector's pause at §5a scale is unusable.** *Accepted as a known limitation on
-2026-09-24 (D-3, amended); what remains open is its explanation (B-19) and its full-scale figure (B-17).* Mechanism: CMS's end-of-mark pause grew
+2026-09-24 (D-3, amended); explained by B-19 on 2026-09-25 — page bookkeeping, cut tenfold by 256 KiB
+pages (D-19). What remains open is its full-scale figure (B-17).* Mechanism: CMS's end-of-mark pause grew
 from ~5 ms at 128 MB to 20–35 ms at 1 GB (§1.2); §5a is several times that in bytes and ~20× in
 objects. Mitigation: B-19 before B-05 (D-17); packed encodings as the first design lever (D-3); a
 threshold set in advance (B-20). Open: if B-19 fails, D-3 or D-4 changes — that is the owner's

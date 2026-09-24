@@ -1,7 +1,7 @@
 ---
 id: B-19
 title: "Heap probe: can plain Kotlin objects hold the reference dataset?"
-status: wip
+status: done
 priority: P0
 size: S/M
 stage: stage-1-protocol
@@ -57,6 +57,25 @@ scale. That is the owner's to weigh now, before B-05 builds the store on D-3 —
 Next, when the build machine is quiet: packed at 1/8 and 1/4 three times each, naive at 1/8, to have
 a curve rather than one point.
 
+### Iteration 2 — 2026-09-25, done: the mechanism, and D-3 stands
+
+The owner relaxed the 10 ms threshold into a known limitation on the condition that its mechanism be
+understood (research D-3). Found and shown, with the full account in `bench/reports/b-19/README.md`:
+
+- **The pause is the allocator's page bookkeeping** in the second stop-the-world phase
+  (`PageStore::PrepareForGC` walks the used-page list and frees the emptied pages, one step per
+  page). Decisive run, same heap, interleaved: 16 KiB pages 8–10 ms median / 84–139 ms p99, 256 KiB
+  pages 0.8 ms / 8–18 ms, resident memory +1 %.
+- **Two hypotheses refuted by controls that could have confirmed them**: the objects marked (naive,
+  4.7× the objects, paused the same) and the garbage made during marking (a 10× lower churn rate
+  left the pause where it was).
+- **kesh now builds with 256 KiB pages** (research D-19, `server/build.gradle.kts`); the server's
+  39 tests and the 78 conformance comparisons are green on the new binary (md5 `31a8b23e…`).
+- `pmcs` pauses 600–890 ms; `gcMarkSingleThreaded=true` did not change the binary on 2.4.20.
+- AC status: the table per scale and encoding — `raw.tgz` and the report, 1/100, 1/8, 1/4, 1/2 on
+  the build machine; the verdict in research D-3; B-05 is unblocked. Full scale needs a host over
+  16 GB and is measured at the last stage (B-17, B-22), as the owner decided.
+
 ## Code anchors
 
 | Module | Path |
@@ -64,6 +83,8 @@ a curve rather than one point.
 | bench | `bench/src/commonMain/kotlin/io/github/youndie/kesh/bench/heap/HeapProbe.kt` |
 | bench | `bench/heap-probe/pauses.py` |
 | bench | `bench/reports/b-19-preliminary/README.md` |
+| bench | `bench/reports/b-19/README.md` |
+| server | `server/build.gradle.kts` |
 | docs | `docs/research/research-architecture.md` |
 
 Research: [research-architecture](../research/research-architecture.md).
