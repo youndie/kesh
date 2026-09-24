@@ -40,6 +40,15 @@ class HarnessTest {
     }
 
     @Test
+    fun `pairs compares field and value together and not apart`() {
+        val ab = "*4\r\n$1\r\na\r\n$1\r\n1\r\n$1\r\nb\r\n$1\r\n2\r\n"
+        assertTrue(Normaliser.PAIRS.agree(frame(ab), frame("*4\r\n$1\r\nb\r\n$1\r\n2\r\n$1\r\na\r\n$1\r\n1\r\n")))
+        val swapped = "*4\r\n$1\r\na\r\n$1\r\n2\r\n$1\r\nb\r\n$1\r\n1\r\n"
+        assertTrue(Normaliser.UNORDERED.agree(frame(ab), frame(swapped)), "the weaker normaliser takes it")
+        assertFalse(Normaliser.PAIRS.agree(frame(ab), frame(swapped)))
+    }
+
+    @Test
     fun `shape ignores content and keeps types, lengths and nulls`() {
         assertTrue(Normaliser.SHAPE.agree(frame("*2\r\n$4\r\nkesh\r\n:1\r\n"), frame("*2\r\n$5\r\nredis\r\n:9\r\n")))
         assertFalse(Normaliser.SHAPE.agree(frame("*2\r\n$4\r\nkesh\r\n:1\r\n"), frame("*2\r\n$4\r\nkesh\r\n+1\r\n")))

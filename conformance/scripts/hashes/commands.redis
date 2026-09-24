@@ -1,0 +1,90 @@
+# The hash commands the brief lists, their refusals and the wrong type — endpoint-hashes, without HSCAN.
+# Every hash here is small, so both servers keep it packed and answer in insertion order: exact.
+FLUSHALL
+HSET user:1001 name Ada plan pro visits 0
+HINCRBY user:1001 visits 1
+HGETALL user:1001
+HKEYS user:1001
+HVALS user:1001
+HLEN user:1001
+HGET user:1001 name
+HGET user:1001 nofield
+HGET nokey name
+HMGET user:1001 name nofield plan
+HMGET nokey a b
+HEXISTS user:1001 plan
+HEXISTS user:1001 nofield
+HEXISTS nokey plan
+HSET user:1001 plan free extra 1
+HGETALL user:1001
+TYPE user:1001
+HSET user:1001 a
+HSET user:1001 a 1 b
+HSET user:1001
+HGET user:1001
+HDEL user:1001
+HLEN nokey
+HGETALL nokey
+HKEYS nokey
+HVALS nokey
+HDEL nokey a
+HDEL user:1001 nofield
+HDEL user:1001 extra extra plan
+HGETALL user:1001
+HDEL user:1001 name visits
+EXISTS user:1001
+HGETALL user:1001
+HINCRBY c n 5
+HINCRBY c n -7
+HINCRBY c n x
+HINCRBY c n 9223372036854775807
+HINCRBY c n -9223372036854775808
+HSET c big 9223372036854775807 small -9223372036854775808 text abc lead 007 neg0 -0 space " 1"
+HINCRBY c big 1
+HINCRBY c big 0
+HINCRBY c small -1
+HINCRBY c text 1
+HINCRBY c lead 1
+HINCRBY c neg0 1
+HINCRBY c space 1
+HINCRBYFLOAT f x 10.5
+HINCRBYFLOAT f x 0.1
+HINCRBYFLOAT f x -10.6
+HINCRBYFLOAT f x 5.0e3
+HINCRBYFLOAT f x abc
+HINCRBYFLOAT f x inf
+HINCRBYFLOAT f x -inf
+HINCRBYFLOAT f x nan
+HINCRBYFLOAT f x ""
+HSET f text abc inf inf
+HINCRBYFLOAT f text 1
+HINCRBYFLOAT f inf 1
+HINCRBYFLOAT f n 1
+HGETALL f
+SET s x
+HSET s f v
+HGET s f
+HMGET s f
+HDEL s f
+HLEN s
+HEXISTS s f
+HINCRBY s f 1
+HINCRBY s f x
+HINCRBYFLOAT s f 1
+HINCRBYFLOAT s f x
+HGETALL s
+HKEYS s
+HVALS s
+GET user:1002
+HSET h f v
+GET h
+APPEND h x
+INCR h
+MGET h s
+EXPIRE h 100
+[shape] TTL h
+RENAME h h2
+HGETALL h2
+TYPE h2
+DEL h2
+EXISTS h2

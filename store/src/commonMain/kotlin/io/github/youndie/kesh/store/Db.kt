@@ -13,7 +13,7 @@ import io.github.youndie.kesh.store.keyspace.Keyspace
  * "Expired" is `now > expireAt`, strictly, as in `keyIsExpired`.
  */
 class Db(
-    seed: Int = 0,
+    val seed: Int = 0,
 ) {
     val keyspace = Keyspace(seed)
 

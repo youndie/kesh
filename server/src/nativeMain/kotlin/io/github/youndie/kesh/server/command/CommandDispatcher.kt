@@ -5,6 +5,7 @@ import io.github.youndie.kesh.resp.parseRedisLong
 import io.github.youndie.kesh.server.client.ClientState
 import io.github.youndie.kesh.server.client.Clients
 import io.github.youndie.kesh.store.Db
+import io.github.youndie.kesh.store.commands.HashCommands
 import io.github.youndie.kesh.store.commands.KeyCommands
 import io.github.youndie.kesh.store.commands.StringCommands
 
@@ -62,7 +63,7 @@ class CommandDispatcher(
                 handler = { _, _ -> commandInfo(null) },
             ),
         ).plus(
-            (StringCommands.all + KeyCommands.all).map { command ->
+            (StringCommands.all + KeyCommands.all + HashCommands.all).map { command ->
                 CommandSpec(command.name, command.arity) { _, args ->
                     db.now = clock()
                     command.handler(db, args)
