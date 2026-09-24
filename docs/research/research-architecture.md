@@ -551,6 +551,23 @@ Watch: the per-thread cost comes back with threads. kesh's connections run on `D
 (up to 64 threads); at 256 KiB per size class touched, that is on the order of 100 MB at worst —
 small beside the heap, and to be checked in B-17's resident-memory figures.
 
+### D-20. Hashes pack under Redis 7.2's listpack limits: 512 fields, 64-byte fields and values — *new, B-06*
+
+B-06 was to take its threshold from B-19's measurement. B-19 gave none: it packed every hash and
+found that the pause does not follow the object count (§1.2, correction found in B-19), so packing
+is kept for memory, and memory alone does not say where to stop. What does: **reply order.** A packed
+hash answers `HGETALL`, `HKEYS` and `HVALS` in insertion order, in Redis and in kesh; a table answers
+in its own order in both. With Redis's rule and Redis's defaults (`hashTypeTryConversion`,
+`hashTypeSet`; `hash-max-listpack-entries 512` and `hash-max-listpack-value 64` in
+`redis/redis@7.2.5!/src/config.c`), a hash is packed in kesh
+exactly when it is packed in Redis, so the oracle compares every small hash byte for byte and the
+encoding stays invisible, as the brief's §6 wants. The conversion is one-way, as in 7.2.
+Large hashes live in the keyspace's own table (D-12), so `HSCAN` (B-10) gets `SCAN`'s guarantee.
+Rejected: a threshold of kesh's own (say, by bytes) — every hash between the two thresholds would
+answer in a different order from the oracle's, and each comparison would need a normaliser.
+Watch: a lookup scans the packed bytes, up to 512 pairs, as Redis's `lpFind` does; whether that costs
+more in Kotlin/Native than in C is B-17's to see.
+
 ### D-18. `HELLO` answers `server: kesh`, `version: 7.2.0` — *new, B-02*
 
 The brief does not say what `HELLO 2` reports. Redis sends `server: redis` and its own version.

@@ -42,7 +42,7 @@ and 3 M rate counters are strings (research appendix A).
 
 ## 5. Scenarios
 
-Built in B-05; *Wrong type* is *target* until a second value kind exists (B-06). Beside these, the
+Built in B-05; *Wrong type* since B-06 brought a second value kind. Beside these, the
 three string scripts compare 150 replies with Redis 7.2 byte for byte, all agreeing.
 
 ### Scenario: Set and get
@@ -73,6 +73,7 @@ three string scripts compare 150 replies with Redis 7.2 byte for byte, all agree
 * **Given:** a hash at `h`
 * **When:** `GET h`
 * **Then:** the reply is `-WRONGTYPE Operation against a key holding the wrong kind of value`
+* **Automated:** `store/src/commonTest/kotlin/io/github/youndie/kesh/store/HashCommandsTest.kt::a string command on a hash answers WRONGTYPE`; against Redis in `conformance/scripts/hashes/commands.redis`
 
 ## 6. Out of scope
 

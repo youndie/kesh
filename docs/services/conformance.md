@@ -26,7 +26,7 @@ compare bytes), record golden files from Redis once (the oracle is run, every ti
 ## 2. API contracts
 
 * **Scripts** under `conformance/scripts/<group>/*.redis`, one command per line in `redis-cli`'s own
-  quoting, optionally prefixed: `[unordered]`, `[shape]` (normalisers, named on the line they apply
+  quoting, optionally prefixed: `[unordered]`, `[pairs]`, `[shape]` (normalisers, named on the line they apply
   to), `[closes]` (both servers must close after the reply), `[raw]` (bytes as written, `\r\n` and
   `\xHH` escapes; everything until the server closes or goes quiet is the reply). A header
   `# requires: password` runs the script against the password-protected pair, unauthenticated.
@@ -43,7 +43,7 @@ compare bytes), record golden files from Redis once (the oracle is run, every ti
 |---|---|
 | `conformance/src/jvmMain/kotlin/io/github/youndie/kesh/conformance/Runner.kt` | sending each step to both servers, reading, comparing, reconnecting, the diff |
 | `conformance/src/jvmMain/kotlin/io/github/youndie/kesh/conformance/RespFrame.kt` | one reply's exact bytes, with enough structure to normalise |
-| `conformance/src/jvmMain/kotlin/io/github/youndie/kesh/conformance/Normaliser.kt` | `EXACT`, `UNORDERED`, `SHAPE` |
+| `conformance/src/jvmMain/kotlin/io/github/youndie/kesh/conformance/Normaliser.kt` | `EXACT`, `UNORDERED`, `PAIRS`, `SHAPE` |
 | `conformance/src/jvmMain/kotlin/io/github/youndie/kesh/conformance/Script.kt` | the script format |
 | `conformance/src/jvmMain/kotlin/io/github/youndie/kesh/conformance/Main.kt` | the run, the oracle's version, the Lettuce smoke |
 | `conformance/run.sh` | the four servers and the run |
@@ -54,7 +54,9 @@ compare bytes), record golden files from Redis once (the oracle is run, every ti
 ## 3. How it is built
 
 * **Byte for byte by default; a normaliser is a line a reviewer can refuse.** `[unordered]` compares
-  two arrays as multisets; `[shape]` compares reply types, array lengths and nulls, and ignores
+  two arrays as multisets; `[pairs]` compares an even array as a multiset of (field, value) pairs —
+  a converted hash's `HGETALL`, where `[unordered]` would accept a value moved to another field
+  (B-06); `[shape]` compares reply types, array lengths and nulls, and ignores
   content — for what differs by design: identities, `HELLO`'s `server` and `version` (research D-18),
   `CLIENT LIST`. `random` and `cursor`, which research D-5 also names, arrive with the commands that
   need them (`SPOP`, B-08; `SCAN`, B-10).

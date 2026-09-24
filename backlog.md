@@ -38,12 +38,11 @@ A stage is a field on the item, not a directory.
 
 <!-- BEGIN INDEX -->
 
-## Open (16)
+## Open (15)
 
 | Task | | Priority | Size | Blocked by |
 |---|---|---|---|---|
 | [B-21](docs/backlog/B-21-first-consumer-and-pubsub.md) `[?]` | Who is the first consumer, and does Pub/Sub belong in v1? | P0 | XS | - |
-| [B-06](docs/backlog/B-06-hashes.md) `[~]` | Hashes, with a packed encoding for small ones | P1 | M | B-05 |
 | [B-07](docs/backlog/B-07-lists.md) `[ ]` | Lists | P1 | M | B-05 |
 | [B-08](docs/backlog/B-08-sets.md) `[ ]` | Sets | P1 | S | B-05 |
 | [B-09](docs/backlog/B-09-sorted-sets.md) `[ ]` | Sorted sets with logarithmic rank and range | P1 | L | B-05 |
@@ -59,7 +58,7 @@ A stage is a field on the item, not a directory.
 | [B-23](docs/backlog/B-23-mutator-assists-stall-writes.md) `[ ]` | Writes stall for seconds while the keyspace grows: decide on the collector's mutator assists | P1 | S | - |
 | [B-18](docs/backlog/B-18-soak-24h.md) `[ ]` | 24 h soak with TTL churn | P2 | S | B-17 |
 
-## Closed (7)
+## Closed (8)
 
 **Protocol and core**
 
@@ -70,6 +69,10 @@ A stage is a field on the item, not a directory.
 - [B-05](docs/backlog/B-05-strings-keyspace-lazy-expiry.md) `[x]` - Strings and keyspace on kesh's own hash table, lazy expiry
 - [B-19](docs/backlog/B-19-managed-heap-probe.md) `[x]` - Heap probe: can plain Kotlin objects hold the reference dataset?
 - [B-20](docs/backlog/B-20-define-cannot-serve.md) `[x]` - Define "the managed heap cannot serve the reference dataset" before B-19 reports
+
+**The five types**
+
+- [B-06](docs/backlog/B-06-hashes.md) `[x]` - Hashes, with a packed encoding for small ones
 
 <!-- END INDEX -->
 
