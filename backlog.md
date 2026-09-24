@@ -43,7 +43,7 @@ A stage is a field on the item, not a directory.
 | Task | | Priority | Size | Blocked by |
 |---|---|---|---|---|
 | [B-21](docs/backlog/B-21-first-consumer-and-pubsub.md) `[?]` | Who is the first consumer, and does Pub/Sub belong in v1? | P0 | XS | - |
-| [B-07](docs/backlog/B-07-lists.md) `[ ]` | Lists | P1 | M | B-05 |
+| [B-07](docs/backlog/B-07-lists.md) `[~]` | Lists | P1 | M | B-05 |
 | [B-08](docs/backlog/B-08-sets.md) `[ ]` | Sets | P1 | S | B-05 |
 | [B-09](docs/backlog/B-09-sorted-sets.md) `[ ]` | Sorted sets with logarithmic rank and range | P1 | L | B-05 |
 | [B-10](docs/backlog/B-10-scan-family.md) `[ ]` | SCAN, HSCAN, SSCAN, ZSCAN with the completeness guarantee | P1 | M | B-06, B-07, B-08, B-09 |
