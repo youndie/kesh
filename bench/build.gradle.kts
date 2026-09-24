@@ -23,6 +23,13 @@ kotlin {
             baseName = "kesh-heap-probe"
             binaryOption("fixedBlockPageSize", "16")
             freeCompilerArgs += "-Xruntime-logs=gc=info,gcScheduler=info"
+            // An arm: `-Pkesh.probeBinary=gc=pmcs` or `gcMarkSingleThreaded=true`. An unknown option is
+            // a warning and the binary comes out identical, so `bench/heap-probe/series.sh` compares
+            // each arm's md5 with the default before measuring it.
+            providers.gradleProperty("kesh.probeBinary").orNull?.split(",")?.forEach {
+                val (key, value) = it.split("=", limit = 2)
+                binaryOption(key, value)
+            }
         }
     }
 
