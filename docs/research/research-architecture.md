@@ -103,6 +103,8 @@ protocol are summarised here so that nothing depends on reading it).
 | The runtime does not read its cgroup memory limit; `GC.targetHeapBytes` is a trigger threshold, not a ceiling, and `GC.autotune` rewrites it. `GC.maxHeapBytes` is the ceiling | `youndie/kore!/kore-core/src/commonMain/kotlin/io/github/youndie/kore/runtime/MemoryBudget.kt`, `youndie/kore!/kore-core/src/nativeMain/kotlin/io/github/youndie/kore/runtime/HeapCeiling.native.kt` |
 | **The second CMS pause is the allocator's page bookkeeping**: with the world stopped after marking, every size class's `PageStore::PrepareForGC` walks the `used_` page list to its tail and frees every page the last sweep emptied — both linear in the number of pages | `JetBrains/kotlin@v2.4.20!/kotlin-native/runtime/src/gc/common/cpp/MainGCThread.hpp` lines 56–69; `JetBrains/kotlin@v2.4.20!/kotlin-native/runtime/src/alloc/custom/cpp/PageStore.hpp` line 24; `JetBrains/kotlin@v2.4.20!/kotlin-native/runtime/src/alloc/custom/cpp/AtomicStack.hpp` lines 79–81 |
 | Measured (B-19, a quarter of the reference dataset, same heap, interleaved): 16 KiB allocator pages paused 8–10 ms median and 84–139 ms p99; 256 KiB pages 0.8 ms and 8–18 ms, for 1 % more resident memory | `bench/reports/b-19/README.md` |
+| **Mutator assists**: when allocated bytes reach `targetHeapBytes` while a collection runs, every Kotlin thread logs "Pausing the mutators until epoch N is done" and waits for that epoch to finish. On by default; off when `GC.autotune` is off or `GC.maxHeapBytes` is finite; no binary option | `JetBrains/kotlin@v2.4.20!/kotlin-native/runtime/src/gcScheduler/common/cpp/GCSchedulerConfig.hpp` — `mutatorAssists()`; `JetBrains/kotlin@v2.4.20!/kotlin-native/runtime/src/gcScheduler/adaptive/cpp/GCSchedulerImpl.hpp` line 79 |
+| Measured (B-05, `SET`s growing the keyspace, `-Xruntime-logs=gc=info,gcScheduler=info`): every one of 56 epochs was assisted; the threads waited 1.6 s at 12.3 M marked objects, rising to 4.2 s at 26.6 M, while both stop-the-world pauses stayed under 3 ms. Single-key `SET`s at the same rate: 631 assists, epochs ≤ 5.2 ms | GC logs of the B-05 runs (the item's findings) |
 | Resident memory of a Kotlin/Native service follows its **thread** count (a 256 KiB page per size class per thread); `-Xbinary=fixedBlockPageSize=16` removes most of it | `youndie/katcher` issue #58; the mechanism is [KT-89365](https://youtrack.jetbrains.com/issue/KT-89365) |
 
 **Consequence 1 — §5a is outside everything measured, by more than an order of magnitude.** The
@@ -135,6 +137,15 @@ the pause is the page bookkeeping in the second stop-the-world phase (the facts 
 pages cut it tenfold where the object count changed nothing. Packing stays — for memory: naive held
 twice the live heap of packed, ~35 GB of resident memory at full scale. The mark itself is
 concurrent and was never the pause.
+
+**Correction found in B-05: under growth, the mark is the stall.** The last sentence holds for B-19's
+load — churn over a heap that does not grow. When writes grow the heap, allocation reaches the
+target while a mark is running, and the mutator assists (the facts above) stop every Kotlin thread
+until the mark ends: not a stop-the-world pause by the runtime's accounting, but for a client every
+command waits, and the wait is the whole mark — linear in live objects, 1.6–4.2 s at 12–27 M. At
+§5a's ~100 M objects that extrapolates to well over ten seconds, *hypothesis, not measured*. The
+lever is a finite `GC.maxHeapBytes`, which turns the assists off and lets the heap overshoot
+instead; the choice is B-23's, R-7.
 
 **Consequence 4 — `maxmemory` is not enforced by the runtime, and the container limit is not seen
 by it.** kesh's own accounting (D-10) is the only thing between a write and an OOM kill.
@@ -588,6 +599,13 @@ a forked child of a multi-threaded Kotlin/Native process has one thread and a ru
 threads — the collector's included — no longer exist (*hypothesis* that anything but raw writes is
 unsafe there), and reaping it with a `SIGCHLD` handler is R-3. Decided in B-14 with its cost
 measured.
+
+**R-7. Writes stall for seconds whenever the keyspace grows.** *Found in B-05.* Mechanism: the
+collector's mutator assists (§1.2, correction found in B-05) hold every thread for the length of a
+mark once allocation outruns it — a bulk load, a restore, a cache warming after a restart. Mitigation:
+B-23 measures the growth with the assists off, which trades the stall for heap overshoot during the
+mark; B-11's `maxmemory` has to leave room for that overshoot if they go off. Open: the overshoot's
+size at §5a scale.
 
 **Q-1. Who is the first consumer, and does Pub/Sub belong in v1?** (B-21, owner.) §1.1: the
 portfolio's only Redis user needs `PUBLISH`/`PSUBSCRIBE`, which v1 excludes, and nothing uses the

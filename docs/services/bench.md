@@ -97,3 +97,13 @@ The full script is about 5 GB; the full summary takes 46 s.
 * **The build machine is not a measurement host**: it builds, and it is shared. **The measurement
   hosts cannot build kesh** — they reach Maven Central but not GitHub or the portfolio's repository
   where kore lives. Build elsewhere, ship the binary (research §1.8).
+* **The build machine's clocks disagree** (found in B-05, 2026-09-25). Its monotonic clock runs about
+  9.8 % slow — 60.000 s by it were 65.87 s by its wall clock and 65.99 s by another machine's — and
+  the wall clock catches up in steps of +2.93 s about every 32 s. So a tool timing requests by the
+  wall clock, as `redis-benchmark` does, reports every request in flight across a step as ~2.93 s
+  slower: Redis 7.2 on the same host, 100 M `SET`s in 56 s, has a maximum of 2934.783 ms and a
+  next-slowest of 5.1 ms. And a duration the Kotlin/Native runtime logs, read off the monotonic clock,
+  is about 10 % short. Check before trusting either — the steps show as jumps in
+  `time.time() - time.monotonic()` sampled over a minute.
+* **`redis-benchmark` records anything slower than 3 s as 3 s** (`redis/redis@7.2.5!/src/redis-benchmark.c`
+  line 568): a maximum of 3000.3 ms is "3 s or more". A longer stall is read from the runtime's GC log.

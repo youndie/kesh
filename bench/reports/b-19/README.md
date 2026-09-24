@@ -14,6 +14,11 @@ the maximum rate one thread reaches unless a rate is given. Every stop-the-world
 (`bench/heap-probe/pauses.py`). Raw stdout and GC logs of every run: `raw.tgz` beside this file;
 `bench/heap-probe/epochs.py` reads them epoch by epoch.
 
+**A caveat found later (B-05, 2026-09-25):** the build machine's monotonic clock, which the runtime's
+GC log reads, was then running about 9.8 % slow (the bench service's quirks). Whether it did during
+these runs was not recorded. If it did, every pause below is about 10 % short; the comparison between
+the arms, taken interleaved on the same clock, is not affected.
+
 ## 1. The decisive run: the same heap, pages of 16 and 256 KiB
 
 Interleaved in one series, so both arms saw the same host. md5 `8e86069e…` (16 KiB, what sborka's

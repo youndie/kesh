@@ -48,12 +48,14 @@ free memory — under a tracing collector nothing does (research D-15).
 | `store/src/commonMain/kotlin/io/github/youndie/kesh/store/Glob.kt` | `stringmatchlen`, for `KEYS` and later `SCAN … MATCH` |
 | `store/src/commonMain/kotlin/io/github/youndie/kesh/store/RedisFloat.kt` | float parsing and printing — and its known divergence |
 | `store/src/commonTest/kotlin/io/github/youndie/kesh/store/` | tests on the JVM and linuxX64, time moved by hand |
+| `store/src/linuxX64Test/kotlin/io/github/youndie/kesh/store/KeyspaceGrowthTest.kt` | the rehash bound at sixteen million keys, on linuxX64 only (~2 GB) |
 
 ## 3. How it is built
 
 * **Its own hash table, not `HashMap`** (research §1.3, D-12). Two tables during a resize; every
   operation moves at most one bucket (and visits at most ten empty ones), so no command pays for the
-  whole table. `KeyspaceTest` grows a table to a million keys and asserts the bound on every step.
+  whole table. `KeyspaceTest` grows a table to a million keys and asserts the bound on every step;
+  `KeyspaceGrowthTest` does the same to sixteen million on linuxX64.
   The power-of-two table is also what `SCAN`'s guarantee needs (B-10).
 * **Keys hash by content, with a seed.** A `ByteArray` compares by identity, so the table hashes its
   bytes — FNV-1a finished like MurmurHash3's `fmix32` — with a seed the server draws per process, so
@@ -95,5 +97,9 @@ its policy and samples arrive with B-11 and B-12.
   cron; kesh has no cron yet (B-13 brings the first periodic work).
 * **`used_memory` falls when a key is deleted; resident memory falls only after a GC cycle** — and
   `used_memory` itself is B-11's.
+* **While writes grow the keyspace, commands stall for seconds** — not in the table, which moves one
+  bucket per operation at any size, but in the collector: its mutator assists hold every thread
+  until a mark finishes, 1.6–4.2 s at 12–27 M live objects (research §1.2, R-7). A 16 M-key load
+  with `redis-benchmark` saw 0.1 % of `SET`s over 1.6 s. B-23 decides whether to turn them off.
 * **`DEL` and `UNLINK` are the same operation**, as are `FLUSHALL` with and without `ASYNC`
   (research D-15).
