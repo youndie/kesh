@@ -3,7 +3,7 @@
 # process, one at a time. Writes raw stdout/stderr under OUT and prints one table row per run.
 #
 #   bench/heap-probe/series.sh OUT "arm encoding scale repeat [rate]" ...
-#   arms: default | pmcs | single-mark
+#   arms: default | pmcs | single-mark | page256
 #
 # A run starts only when the host is quiet — at least MIN_FREE_MB available and a 1-minute load
 # average under MAX_LOAD — and otherwise waits; a pause measured beside another resident process is
@@ -15,7 +15,7 @@ MIN_FREE_MB=${MIN_FREE_MB:-9000}
 MAX_LOAD=${MAX_LOAD:-1.5}
 mkdir -p "$OUT"
 
-declare -A OPTION=([default]="" [pmcs]="gc=pmcs" [single-mark]="gcMarkSingleThreaded=true")
+declare -A OPTION=([default]="" [pmcs]="gc=pmcs" [single-mark]="gcMarkSingleThreaded=true" [page256]="fixedBlockPageSize=256")
 build() { # arm -> path of its binary
   local arm=$1 dir=bench/build/bin/linuxX64/heapProbeReleaseExecutable
   if [ -n "${OPTION[$arm]}" ]; then
