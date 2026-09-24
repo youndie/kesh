@@ -100,4 +100,33 @@ class KeshServerTest {
             assertFails { aSocket(selector).tcp().connect("127.0.0.1", port) }
             selector.close()
         }
+
+    @Test
+    fun `a restart binds the same port while the last connection is in TIME-WAIT`() =
+        runBlocking {
+            val first = KeshServer(ServerConfig(host = "127.0.0.1", port = 0))
+            first.start()
+            val port = first.port
+            val selector = SelectorManager(Dispatchers.IO)
+            val socket = aSocket(selector).tcp().connect("127.0.0.1", port)
+            socket.openWriteChannel(autoFlush = true).writeFully("*1\r\n\$x\r\n".encodeToByteArray())
+            // The protocol error makes the server close first, which puts the server's side in TIME-WAIT.
+            assertEquals(
+                -1,
+                socket.openReadChannel().let {
+                    it.readExactly(42)
+                    it.readAvailable(ByteArray(1), 0, 1)
+                },
+            )
+            socket.close()
+            first.stop()
+            first.close()
+
+            val second = KeshServer(ServerConfig(host = "127.0.0.1", port = port))
+            second.start()
+            assertEquals(port, second.port)
+            second.stop()
+            second.close()
+            selector.close()
+        }
 }
