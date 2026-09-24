@@ -26,7 +26,7 @@ promises (D-2) on the compiler the portfolio pins (D-7), and a place for each mo
 - Not covered: RESP parsing beyond what `PING` needs (B-02), anything in `store` (B-05).
 
 - AC: `redis-cli -p 6379 ping` answers `PONG` from the `linuxX64` binary, built on the build machine through `wsl-run`.
-- AC: `./gradlew buildEnvironment` shows Kotlin 2.4.20, and no `gradle/libs.versions.toml` in the repository shadows the shared catalog (research §1.8).
+- AC: `./gradlew buildEnvironment` shows Kotlin 2.4.20, and `ktor-network` resolves to 3.6.0; kesh's own `gradle/libs.versions.toml` overrides `ktor` and nothing else — no `kotlin` line (research D-6, §1.8).
 - AC: `SIGTERM` stops the binary through kore's plan with exit code 0.
 
 ## Code anchors

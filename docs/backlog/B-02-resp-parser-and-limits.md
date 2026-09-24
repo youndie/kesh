@@ -24,7 +24,7 @@ because clients parse the error prefix.
   `Protocol error: unauthenticated multibulk length`; a bulk over 16 384 bytes →
   `Protocol error: unauthenticated bulk length`. The brief does not list these; a conformance
   script hits them on the first run.
-- **A connection ceiling below `FD_SETSIZE`** (research §1.4, D-13): `ktor-network` 3.5.2 throws
+- **A connection ceiling below `FD_SETSIZE`** (research §1.4, D-13): `ktor-network` (3.6.0, as 3.5.2) throws
   inside its selector for a descriptor ≥ 1024. `maxclients` defaults below that with headroom for
   the listener, HTTP, snapshot and stdio descriptors; the connection over the ceiling gets
   `-ERR max number of clients reached` and is closed. The chosen default and its arithmetic are

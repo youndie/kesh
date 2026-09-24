@@ -42,7 +42,7 @@ Read this table before any backlog item. Each row is argued in the section it na
 | 3 | D-11: active expiry repeats "while more than 25 % of a sample is expired" | Not what Redis does and not what its current documentation says. The source repeats while more than **10 %** is stale (at default effort); 25 is the slow cycle's **CPU budget** | §1.5, D-11 |
 | 4 | `DEL` frees the value before it replies; `UNLINK` replies at once and reclaims later | Under a tracing collector nothing is freed synchronously. Both drop a reference; the observable difference is only in `used_memory`, and that is how it is restated | §1.3, D-15 |
 | 5 | (silent) the keyspace is a map | The stdlib `HashMap` on Native rehashes the whole table in one call and cannot give `SCAN` its guarantee; `ByteArray` keys compare by identity. The keyspace is kesh's own table | §1.3, D-12 |
-| 6 | (silent) any number of clients | `ktor-network` 3.5.2 on Native multiplexes with `pselect` and refuses a descriptor ≥ `FD_SETSIZE` (1024); it also does not retry `EINTR`. A hard ceiling on connections, and a signal hazard | §1.4, D-13, R-3 |
+| 6 | (silent) any number of clients | `ktor-network` on Native (3.5.2 and 3.6.0 alike) multiplexes with `pselect` and refuses a descriptor ≥ `FD_SETSIZE` (1024); it also does not retry `EINTR`. A hard ceiling on connections, and a signal hazard | §1.4, D-13, R-3 |
 | 7 | D-5: compare replies byte for byte; `conformance` uses a Redis client library (§7) | A client library parses the reply, so it cannot compare bytes. And several replies are legitimately unordered or random. Raw sockets plus per-command normalisers | D-5 |
 | 8 | §10: which Redis to pin, and does its licence matter | Nothing in §6 is newer than Redis 7.0. 7.2 is the last BSD line; 7.4 and 8.x are not BSD. Pin 7.2 with `databases 1` | §1.6, §1.7, D-16 |
 | 9 | §10: the reference host needs at least 8 GB | The portfolio's measurement hosts have 7.7 GB. The one 16 GB machine is the build box | §1.9, Q-3 |
@@ -164,12 +164,16 @@ accounting: `used_memory` falls when the reply is sent. D-15 restates the rules 
 
 ### 1.4 The TCP transport: `ktor-network` on Kotlin/Native
 
-Verified against `ktorio/ktor` at tag `3.5.2` and Maven Central.
+Verified against `ktorio/ktor` at tags `3.5.2` and `3.6.0`, and Maven Central. kesh pins **3.6.0**
+(D-6); every selector fact below holds for both.
 
 | Fact | Where verified |
 |---|---|
 | `io.ktor:ktor-network-linuxx64` has 3.5.0, 3.5.1, 3.5.2 and 3.6.0; `latest` and `release` are 3.6.0 | `repo1.maven.org/maven2/io/ktor/ktor-network-linuxx64/maven-metadata.xml`, read 2026-09-24 |
-| The portfolio's catalog pins `ktor = "3.5.2"`, `kotlin = "2.4.20"`, `coroutines = "1.11.0"` | `youndie/sborka@f0e9a01!/gradle/libs.versions.toml` |
+| The portfolio's catalog pins `ktor = "3.5.2"`, `kotlin = "2.4.20"`, `coroutines = "1.11.0"` (unchanged at `cd1a2bf`, 2026-09-19) | `youndie/sborka@cd1a2bf!/gradle/libs.versions.toml` |
+| kore overrides it with its own `ktor = "3.6.0"`, and its research was read in that version | `youndie/kore@54cbc54!/gradle/libs.versions.toml` |
+| In 3.6.0, `SelectUtilsNix.kt`, `network.def` and `NativeUtils.kt` are byte-identical to 3.5.2; the only native changes are dropped `.toInt()` conversions in `CIOReader.kt`, `TCPSocketNative.kt` and a `@Suppress` in `SignalPoint.kt` | `diff -r` of `ktor-network/nix` and `ktor-network/posix` between tags `3.5.2` (`01c469a`) and `3.6.0` (`111c580`) |
+| `ktor-network-linuxx64` 3.6.0 depends on `kotlin-stdlib` 2.3.21, `kotlinx-coroutines-core` 1.11.0, `atomicfu` 0.33.0 (3.5.2: 2.3.21, 1.11.0, 0.32.1) | `repo1.maven.org/maven2/io/ktor/ktor-network-linuxx64/3.6.0/ktor-network-linuxx64-3.6.0.module` |
 | The Native selector is one loop around `pselect(maxDescriptor + 1, …)` over `fd_set`s | `ktorio/ktor@3.5.2!/ktor-network/nix/src/io/ktor/network/selector/SelectUtilsNix.kt` — `selectionLoop`; `ktorio/ktor@3.5.2!/ktor-network/nix/interop/network.def` — `selector_pselect` |
 | A descriptor `>= FD_SETSIZE` fails a `check(…)` with "File descriptor … is larger or equal to FD_SETSIZE" | `SelectUtilsNix.kt` — `addInterest` |
 | A negative `pselect` result is turned into a `PosixException` with no `EINTR` retry | `ktorio/ktor@3.5.2!/ktor-network/posix/src/io/ktor/network/util/NativeUtils.kt` — `Int.check` |
@@ -195,8 +199,9 @@ whether the process survives it. kore's end-to-end shutdown test passes against 
 R-3 carries it, and it also closes the door on anything that installs a `SIGCHLD` handler — which
 is how a fork-based `BGSAVE` would reap its child.
 
-**Hypothesis — 3.6.0 may differ.** Only 3.5.2 was read. Whether 3.6.0 changed the selector is
-checked by whoever bumps the catalog, not assumed.
+**Answered — 3.6.0 does not differ here** (the `diff` row above). The ceiling, the missing `EINTR`
+retry and the single `pselect` loop come with kesh's pin unchanged. The next bump re-reads these
+three files before anything else.
 
 ### 1.5 The Redis behaviour kesh reproduces
 
@@ -267,7 +272,7 @@ and `history`).
 
 | Fact | Where verified |
 |---|---|
-| Kotlin 2.4.20, ktor 3.5.2 through the shared catalog (see §1.4) | `youndie/sborka@f0e9a01!/gradle/libs.versions.toml` |
+| Kotlin 2.4.20 through the shared catalog; ktor 3.6.0 pinned in kesh's own catalog (see §1.4, D-6) | `youndie/sborka@cd1a2bf!/gradle/libs.versions.toml` |
 | A repository's own `gradle/libs.versions.toml` shadows the shared catalog; one service in the portfolio ran on 2.4.10 for weeks while everything around it assumed 2.4.20 | portfolio incident, 2026-09-23 (the brief's D-7 names the check) |
 | kore is not on Maven Central; it resolves from the portfolio's own repository | `youndie/kore!/README.md`, status block |
 | The portfolio's measurement hosts reach Maven Central over IPv6 but not GitHub or the portfolio's repository | portfolio host inventory |
@@ -340,7 +345,13 @@ And byte equality needs **normalisers**, declared per command in the script and 
 A normaliser is also a way to hide a real difference, so each one is a line in the script that a
 reviewer sees, and B-04's acceptance includes a deliberately wrong reply that the harness catches.
 
-### D-6. TCP through `ktor-network` — *verified, with a ceiling* (§1.4, D-13)
+### D-6. TCP through `ktor-network` 3.6.0 — *decision (owner, 2026-09-24), verified, with a ceiling* (§1.4, D-13)
+
+The brief named the catalog's 3.5.2. The owner chose 3.6.0, the current release, which is also what
+kore is built and researched against — so kesh and the library that owns its shutdown resolve the same
+ktor. It is pinned in kesh's own `gradle/libs.versions.toml` as a **single** override of the shared
+catalog: that file must not grow a `kotlin` line, or it shadows the compiler pin (D-7, §1.8).
+Both dependencies it moves are compatible with 2.4.20 (stdlib 2.3.21; coroutines unchanged).
 
 ### D-7. Kotlin 2.4.20 through sborka — *verified in the catalog*; the `buildEnvironment` check stays in B-01
 
