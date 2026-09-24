@@ -1,0 +1,58 @@
+# SET, GET and their variants — endpoint-strings. Remaining times are compared by shape: a second may
+# tick between the two servers' replies.
+FLUSHALL
+SET user:1001:name Ada
+GET user:1001:name
+GET missing
+SET k v NX
+SET k v XX
+SET k w NX GET
+SET k w XX GET
+SET k x GET
+GET k
+SET fresh v GET
+SET k v NX XX
+SET k v EX 10 PX 100
+SET k v KEEPTTL EX 10
+SET k v EX 10 KEEPTTL
+SET k v EX
+SET k v EX 0
+SET k v EX -5
+SET k v EX x
+SET k v EX 9223372036854775807
+SET k v PX 9223372036854775807
+SET k v FOO
+SET k v nx nx
+SET k v EX 5 EX 10
+[shape] TTL k
+SET k v KEEPTTL
+[shape] TTL k
+SET k w
+TTL k
+SETNX k v
+SETNX k2 v
+SETEX k 0 v
+SETEX k x v
+SETEX k 10 v
+[shape] TTL k
+PSETEX k 0 v
+PSETEX k 10000 v
+[shape] PTTL k
+GETSET k new
+TTL k
+GETSET nokey new
+GETDEL k
+GETDEL k
+GETEX nokey
+SET k v
+GETEX k
+GETEX k EX 100
+[shape] TTL k
+GETEX k PERSIST
+TTL k
+GETEX k EX 10 PX 100
+GETEX k PERSIST EX 10
+GETEX k FOO
+GETEX k EX 0
+GETEX k EXAT 1
+EXISTS k

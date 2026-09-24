@@ -28,6 +28,9 @@ plugins {
 // The RESP2 codec: common Kotlin, no I/O.
 include(":resp")
 
+// The keyspace and the commands on it: kesh's own hash table, expiry, strings (B-05 onwards).
+include(":store")
+
 // The binary: listener, connections, the store thread, kore's shutdown plan.
 include(":server")
 
@@ -37,5 +40,5 @@ include(":bench")
 // The oracle: the same command scripts against kesh and Redis 7.2, compared byte for byte (B-04).
 include(":conformance")
 
-// `store`, `snapshot` and `deploy/` arrive with the items that give them code (B-05, B-14, B-16). A module with no code has no build to verify, and the shape of
+// `snapshot` and `deploy/` arrive with the items that give them code (B-14, B-16). A module with no code has no build to verify, and the shape of
 // each one — `conformance` on the JVM, `bench` partly shell — is decided by the item that needs it.

@@ -4,6 +4,9 @@ import io.github.youndie.kesh.resp.Reply
 import io.github.youndie.kesh.resp.parseRedisLong
 import io.github.youndie.kesh.server.client.ClientState
 import io.github.youndie.kesh.server.client.Clients
+import io.github.youndie.kesh.store.Db
+import io.github.youndie.kesh.store.commands.KeyCommands
+import io.github.youndie.kesh.store.commands.StringCommands
 
 /**
  * Routes a parsed command to its implementation. Runs on the store thread only (research D-14).
@@ -17,6 +20,9 @@ import io.github.youndie.kesh.server.client.Clients
 class CommandDispatcher(
     private val clients: Clients,
     private val password: String?,
+    private val db: Db = Db(),
+    /** Milliseconds since the epoch; read once per data command (Redis's `commandTimeSnapshot`). */
+    private val clock: () -> Long = ::epochMillis,
 ) {
     private val table: Map<String, CommandSpec> =
         listOf(
@@ -55,6 +61,13 @@ class CommandDispatcher(
                     ),
                 handler = { _, _ -> commandInfo(null) },
             ),
+        ).plus(
+            (StringCommands.all + KeyCommands.all).map { command ->
+                CommandSpec(command.name, command.arity) { _, args ->
+                    db.now = clock()
+                    command.handler(db, args)
+                }
+            },
         ).associateBy { it.name }
 
     fun execute(

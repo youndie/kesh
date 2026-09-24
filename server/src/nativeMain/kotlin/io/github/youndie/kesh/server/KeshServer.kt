@@ -5,6 +5,7 @@ import io.github.youndie.kesh.server.client.Clients
 import io.github.youndie.kesh.server.client.DescriptorCeiling
 import io.github.youndie.kesh.server.command.CommandDispatcher
 import io.github.youndie.kesh.server.connection.Connection
+import io.github.youndie.kesh.store.Db
 import io.github.youndie.kore.lifecycle.ShutdownParticipant
 import io.ktor.network.selector.SelectorManager
 import io.ktor.network.sockets.InetSocketAddress
@@ -31,6 +32,7 @@ import kotlinx.coroutines.job
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.newSingleThreadContext
 import kotlinx.coroutines.withContext
+import kotlin.random.Random
 import kotlin.time.Duration.Companion.milliseconds
 
 /**
@@ -89,7 +91,8 @@ class KeshServer(
         }
         val clients = Clients(maxClients, passwordRequired = config.password != null)
         registry = clients
-        val commands = CommandDispatcher(clients, config.password)
+        // One keyspace, seeded per process so that keys chosen from outside cannot be made to collide.
+        val commands = CommandDispatcher(clients, config.password, Db(seed = Random.nextInt()))
 
         connections.launch {
             while (true) {

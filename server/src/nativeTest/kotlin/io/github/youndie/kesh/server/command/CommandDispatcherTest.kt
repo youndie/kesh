@@ -103,9 +103,10 @@ class CommandDispatcherTest {
     fun `an unknown command is unknown before it is unauthenticated in Redis's order`() {
         val locked = Setup(password = "secret")
         assertEquals(
-            "-ERR unknown command 'GET', with args beginning with: 'k' \r\n",
-            locked.reply(locked.connect(), "GET", "k"),
+            "-ERR unknown command 'NOPE', with args beginning with: 'k' \r\n",
+            locked.reply(locked.connect(), "NOPE", "k"),
         )
+        assertEquals("-NOAUTH Authentication required.\r\n", locked.reply(locked.connect(), "GET", "k"))
     }
 
     @Test
@@ -236,7 +237,7 @@ class CommandDispatcherTest {
 
     @Test
     fun `COMMAND COUNT and INFO describe the table`() {
-        assertEquals(":8\r\n", open.reply(me, "COMMAND", "COUNT"))
+        assertEquals(":48\r\n", open.reply(me, "COMMAND", "COUNT"))
         assertTrue(open.reply(me, "COMMAND", "INFO", "ping")!!.startsWith("*1\r\n*10\r\n$4\r\nping\r\n:-1\r\n"))
         assertEquals("*1\r\n*-1\r\n", open.reply(me, "COMMAND", "INFO", "nope"))
     }

@@ -78,13 +78,19 @@ private fun oracleVersion(oracle: Endpoint): String {
 
 /**
  * An unchanged client connects: Lettuce with its defaults opens with `HELLO 3`, gets `NOPROTO`, falls
- * back to RESP2 (research §1.1), and `PING` works. The first half of the "Lettuce connects unchanged"
- * scenario; `SET` and `GET` join it with B-05.
+ * back to RESP2 (research §1.1), and `SET`, `GET` and `PING` work — the "Lettuce connects unchanged"
+ * scenario of `feature-resp-connection`.
  */
 private fun lettuceSmoke(kesh: Endpoint): String {
     val client = RedisClient.create(RedisURI.create(kesh.host, kesh.port))
     return try {
-        client.connect().use { it.sync().ping() }
+        client.connect().use {
+            val commands = it.sync()
+            commands.set("lettuce:smoke", "Ada")
+            val read = commands.get("lettuce:smoke")
+            commands.del("lettuce:smoke")
+            if (read == "Ada") commands.ping() else "SET then GET read back $read"
+        }
     } catch (e: Exception) {
         "failed: $e"
     } finally {

@@ -1,0 +1,37 @@
+# INCR and its family. INCRBYFLOAT is compared only where Double and x86's long double agree (see
+# RedisFloat in the store module for the cases where they do not).
+FLUSHALL
+INCR counter
+INCRBY counter 10
+DECR counter
+DECRBY counter 5
+INCRBY counter x
+INCRBY counter 1.5
+DECRBY counter -9223372036854775808
+SET big 9223372036854775807
+INCR big
+GET big
+SET neg -9223372036854775808
+DECR neg
+SET s notanumber
+INCR s
+SET s 007
+INCR s
+SET s " 1"
+INCR s
+SET s -0
+INCR s
+SET f 10.50
+INCRBYFLOAT f 0.1
+INCRBYFLOAT f -5
+INCRBYFLOAT f x
+INCRBYFLOAT f nan
+SET g 5.0e3
+INCRBYFLOAT g 2.0e2
+INCRBYFLOAT nokey2 3
+SET h 1
+INCRBYFLOAT h 1.5
+SET inf inf
+INCRBYFLOAT inf 1
+SET i abc
+INCRBYFLOAT i 1
