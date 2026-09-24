@@ -77,15 +77,11 @@ class CommandReader(
     }
 
     private fun inline(): List<ByteArray>? {
-        val newline =
-            indexOf('\n', start) ?: run {
-                if (end - start >
-                    limits.inlineMaxSize
-                ) {
-                    throw ProtocolException("Protocol error: too big inline request")
-                }
-                return null
-            }
+        val newline = indexOf('\n', start)
+        if (newline == null) {
+            if (end - start > limits.inlineMaxSize) throw ProtocolException("Protocol error: too big inline request")
+            return null
+        }
         val lineEnd = if (newline > start && buffer[newline - 1] == '\r'.code.toByte()) newline - 1 else newline
         val args =
             splitInlineArguments(buffer.copyOfRange(start, lineEnd))
@@ -173,7 +169,7 @@ class CommandReader(
     }
 
     private companion object {
-        /** A request that asks for nothing; skipped by [next]. Compared by identity. */
+        /** A request that asks for nothing; skipped by [next]. Any empty list is one. */
         val EMPTY: List<ByteArray> = ArrayList(0)
 
         /** A count is the client's claim; the list grows to it only as the arguments arrive. */

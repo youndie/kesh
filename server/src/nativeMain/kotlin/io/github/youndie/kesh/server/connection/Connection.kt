@@ -4,69 +4,105 @@ import io.github.youndie.kesh.resp.CommandReader
 import io.github.youndie.kesh.resp.ProtocolException
 import io.github.youndie.kesh.resp.Reply
 import io.github.youndie.kesh.resp.ReplyWriter
+import io.github.youndie.kesh.server.client.ClientState
 import io.github.youndie.kesh.server.command.CommandDispatcher
-import io.ktor.network.sockets.Socket
-import io.ktor.network.sockets.openReadChannel
-import io.ktor.network.sockets.openWriteChannel
+import io.ktor.utils.io.ByteReadChannel
+import io.ktor.utils.io.ByteWriteChannel
 import io.ktor.utils.io.readAvailable
 import io.ktor.utils.io.writeFully
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.withContext
 
 /**
  * One client connection: read, parse, execute on the store thread, write — in that order, per read.
  *
- * Every command completed by one read is executed in one hand-off to the store thread and answered
- * in one write, so a pipeline of a thousand commands costs a handful of context switches and writes,
- * not a thousand. Replies stay in the order the commands arrived because a batch is executed in
- * order and the next read starts only after the batch is written.
+ * **Batches while authenticated, one command at a time before.** Every command completed by one read
+ * is executed in one hand-off to the store thread and answered in one write, so a pipeline of a
+ * thousand commands costs a handful of context switches. Before `AUTH` the parser applies the
+ * unauthenticated limits, and `AUTH` may change that between two commands of the same read — so
+ * until the connection is authenticated each command is parsed only after the previous one ran, as
+ * Redis does.
  *
- * A protocol error is answered after the replies to the commands before it, and the connection is
- * closed, as Redis does (`feature-resp-connection`).
+ * The connection closes after the reply when a command asks for it (`QUIT`, `CLIENT KILL` of itself),
+ * on a protocol error (answered first), when its unparsed bytes exceed `client-query-buffer-limit`
+ * (silently, as Redis does), when the dispatcher drops it (`POST`, `Host:`), and when another client
+ * kills it.
  */
 internal class Connection(
-    private val socket: Socket,
+    private val input: ByteReadChannel,
+    private val output: ByteWriteChannel,
+    private val client: ClientState,
+    private val reader: CommandReader,
+    private val queryBufferLimit: Long,
     private val storeThread: CoroutineDispatcher,
     private val commands: CommandDispatcher,
 ) {
     suspend fun serve() {
-        val input = socket.openReadChannel()
-        val output = socket.openWriteChannel(autoFlush = false)
-        val reader = CommandReader()
         val writer = ReplyWriter()
         val chunk = ByteArray(READ_CHUNK)
         try {
             while (true) {
                 val read = input.readAvailable(chunk, 0, chunk.size)
-                if (read < 0) break
+                if (read < 0) return
                 reader.feed(chunk, 0, read)
-
-                val batch = ArrayList<List<ByteArray>>()
-                var protocolError: ProtocolException? = null
-                while (true) {
-                    val command =
-                        try {
-                            reader.next()
-                        } catch (e: ProtocolException) {
-                            protocolError = e
-                            null
-                        } ?: break
-                    batch += command
-                }
-
-                if (batch.isNotEmpty()) {
-                    withContext(storeThread) { batch.map(commands::execute) }.forEach(writer::write)
-                }
-                protocolError?.let { writer.write(Reply.Error("ERR ${it.message}")) }
-                if (writer.length > 0) {
-                    output.writeFully(writer.toByteArray())
-                    output.flush()
-                    writer.clear()
-                }
-                if (protocolError != null) break
+                if (reader.buffered > queryBufferLimit) return
+                if (!answerWhatIsComplete(writer)) return
             }
-        } finally {
-            socket.close()
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            // A killed client's socket was closed under it; that is how a kill looks from here.
+            if (!client.killed) throw e
+        }
+    }
+
+    /** Executes and answers every complete command; `false` when the connection must now close. */
+    private suspend fun answerWhatIsComplete(writer: ReplyWriter): Boolean {
+        while (true) {
+            val authenticated = client.authenticated
+            val batch = ArrayList<List<ByteArray>>()
+            var refusal: ProtocolException? = null
+            try {
+                while (true) {
+                    batch += reader.next(authenticated) ?: break
+                    if (!authenticated) break
+                }
+            } catch (e: ProtocolException) {
+                refusal = e
+            }
+            if (batch.isEmpty() && refusal == null) return true
+
+            var keepOpen = true
+            if (batch.isNotEmpty()) {
+                val replies =
+                    withContext(storeThread) {
+                        val out = ArrayList<Reply>(batch.size)
+                        for (command in batch) {
+                            if (client.killed) break
+                            val reply = commands.execute(client, command)
+                            if (reply == null) {
+                                keepOpen = false
+                                break
+                            }
+                            out += reply
+                            if (client.closeAfterReply) break
+                        }
+                        out
+                    }
+                replies.forEach(writer::write)
+                if (client.closeAfterReply || client.killed) keepOpen = false
+            }
+            refusal?.let {
+                writer.write(Reply.Error("ERR ${it.message}"))
+                keepOpen = false
+            }
+            if (writer.length > 0) {
+                output.writeFully(writer.toByteArray())
+                output.flush()
+                writer.clear()
+            }
+            if (!keepOpen) return false
         }
     }
 
