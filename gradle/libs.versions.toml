@@ -12,8 +12,13 @@ sborka = "0.4.0.91"
 # the 2.4.20 compiler consumes.
 kore = "0.1.4"
 
+# The client the portfolio already uses (kompot's realtime bus, research §1.1), as the conformance
+# module's smoke test that an unchanged client connects. Test tooling only; nothing ships with it.
+lettuce = "7.6.0.RELEASE"
+
 [libraries]
 kore-core = { module = "io.github.youndie:kore-core", version.ref = "kore" }
+lettuce = { module = "io.lettuce:lettuce-core", version.ref = "lettuce" }
 
 [plugins]
 sborkaKmp = { id = "io.github.youndie.sborka.kmp", version.ref = "sborka" }

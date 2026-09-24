@@ -1,0 +1,17 @@
+# requires: password
+# Both servers run with `requirepass conformance-secret`; every connection starts unauthenticated.
+PING
+ECHO x
+FOO a
+AUTH wrong
+AUTH default wrong
+AUTH admin conformance-secret
+HELLO
+HELLO 2 AUTH default wrong
+[closes] QUIT
+# Before AUTH: more than 10 arguments, or a bulk over 16 384 bytes, closes the connection.
+[raw] *11\r\n$1\r\na\r\n$1\r\na\r\n$1\r\na\r\n$1\r\na\r\n$1\r\na\r\n$1\r\na\r\n$1\r\na\r\n$1\r\na\r\n$1\r\na\r\n$1\r\na\r\n$1\r\na\r\n
+[raw] *3\r\n$3\r\nSET\r\n$1\r\nk\r\n$16385\r\n
+AUTH conformance-secret
+PING
+[shape] HELLO 2 AUTH default conformance-secret

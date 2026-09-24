@@ -34,6 +34,8 @@ include(":server")
 // Measurement: the reference dataset generator (B-03), and later the heap probe and load profiles.
 include(":bench")
 
-// `store`, `snapshot`, `conformance` and `deploy/` arrive with the items that give them code (B-05,
-// B-14, B-04, B-16). A module with no code has no build to verify, and the shape of
+// The oracle: the same command scripts against kesh and Redis 7.2, compared byte for byte (B-04).
+include(":conformance")
+
+// `store`, `snapshot` and `deploy/` arrive with the items that give them code (B-05, B-14, B-16). A module with no code has no build to verify, and the shape of
 // each one — `conformance` on the JVM, `bench` partly shell — is decided by the item that needs it.

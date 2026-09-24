@@ -1,0 +1,18 @@
+# The protocol itself: framing errors close the connection after Redis's words for them; inline
+# commands are split as redis-cli splits them; an HTTP request aimed at the port is dropped.
+[raw] *1\r\n$4\r\nPING\r\n
+[raw] PING\r\n
+[raw] ECHO "two words"\r\nECHO 'it\'s'\r\n
+[raw] \r\n\r\nPING\r\n
+[raw] *0\r\n*1\r\n$4\r\nPING\r\n
+[raw] *1\r\n$x\r\n
+[raw] *12a\r\n
+[raw] *01\r\n
+[raw] *1\r\n+PING\r\n
+[raw] *1\r\n$-2\r\n
+[raw] SET k "v\r\n
+[raw] SET k "v"x\r\n
+[raw] POST / HTTP/1.1\r\nHost: localhost\r\n\r\n
+[raw] *2\r\n$4\r\nPING\r\n$5\r\nhello\r\n*1\r\n$4\r\nPING\r\n
+[closes] QUIT
+[raw] *1\r\n$4\r\nQUIT\r\n*1\r\n$4\r\nPING\r\n

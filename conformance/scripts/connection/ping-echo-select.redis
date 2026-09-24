@@ -1,0 +1,13 @@
+# PING, ECHO, SELECT and the errors around them — endpoint-connection.
+PING
+PING hello
+PING a b
+ECHO "two words"
+ECHO
+SELECT 0
+SELECT 1
+SELECT x
+SELECT -1
+FOO a b
+FOO
+"A\rB" "x\ny"

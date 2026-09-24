@@ -1,0 +1,5 @@
+# AUTH against a server with no password.
+AUTH secret
+AUTH default anything
+AUTH someone secret
+AUTH a b c

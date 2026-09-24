@@ -1,0 +1,13 @@
+# HELLO in RESP2. kesh answers `server: kesh`, `version: 7.2.0` by design (research D-18), so the full
+# reply is compared by shape; every refusal is compared byte for byte.
+#
+# NOT HERE: `HELLO 3`. Redis switches to RESP3 and kesh refuses it (research D-1), a designed difference
+# no comparison can pass. kesh's side is `ConnectionScenariosTest` "HELLO 3 is refused".
+[shape] HELLO
+[shape] HELLO 2
+HELLO 1
+HELLO x
+HELLO 2 FOO
+HELLO 2 SETNAME "a b"
+[shape] HELLO 2 SETNAME conformance
+CLIENT GETNAME
