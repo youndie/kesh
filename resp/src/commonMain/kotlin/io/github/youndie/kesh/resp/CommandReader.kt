@@ -1,25 +1,48 @@
 package io.github.youndie.kesh.resp
 
 /**
+ * The limits Redis 7.2 applies while reading a request (`redis/redis@7.2!/src/networking.c`,
+ * `processInlineBuffer` and `processMultibulkBuffer`; the constants in `server.h`).
+ *
+ * @property protoMaxBulkLen `proto-max-bulk-len`: the largest bulk string, 512 MB by default.
+ * @property inlineMaxSize `PROTO_INLINE_MAX_SIZE`: how far a line may run without its line ending —
+ *   an inline command, or the count line of a multibulk request or of a bulk string.
+ * @property unauthenticatedMaxArgs before `AUTH`, a multibulk request may carry at most this many.
+ * @property unauthenticatedMaxBulk before `AUTH`, a bulk string may be at most this long.
+ */
+data class RequestLimits(
+    val protoMaxBulkLen: Long = 512L * 1024 * 1024,
+    val inlineMaxSize: Int = 64 * 1024,
+    val unauthenticatedMaxArgs: Long = 10,
+    val unauthenticatedMaxBulk: Long = 16 * 1024,
+)
+
+/**
  * Incremental RESP2 request parser: bytes go in as the socket delivers them, complete commands come
  * out in order.
  *
- * A command split across reads and a buffer holding forty pipelined commands are the same path:
+ * A command split across reads and a buffer holding a thousand pipelined commands are the same path:
  * [feed] appends, [next] returns the next complete command or `null` when the bytes so far end
- * mid-command. The parser keeps no state between commands other than the unread bytes.
+ * mid-command. Two forms, as in Redis: a multibulk request (`*` first — every client library and
+ * `redis-cli`) and an inline command (anything else — a person in `telnet`), split by
+ * [splitInlineArguments].
  *
- * **B-01 scope:** arrays of bulk strings only — what every client library and `redis-cli` send.
- * Inline commands, the size limits and the unauthenticated limits are B-02; until then anything that
- * does not start with `*` is refused with Redis's own wording for that case.
+ * Every refusal is a [ProtocolException] carrying Redis's own words for that condition; the
+ * connection answers it and closes. The parser checks a limit the moment the line that breaks it is
+ * complete, as Redis does, so an oversized bulk is refused from its header, before its data arrives.
  *
  * Not thread-safe; one per connection.
  */
 class CommandReader(
+    private val limits: RequestLimits = RequestLimits(),
     initialCapacity: Int = 16 * 1024,
 ) {
     private var buffer = ByteArray(initialCapacity)
     private var start = 0
     private var end = 0
+
+    /** Bytes received and not yet returned as a command — what `client-query-buffer-limit` bounds. */
+    val buffered: Int get() = end - start
 
     fun feed(
         bytes: ByteArray,
@@ -32,42 +55,76 @@ class CommandReader(
     }
 
     /**
-     * The next complete command, or `null` if the buffered bytes end before one is complete.
+     * The next complete command, or `null` if the buffered bytes end before one is complete. Empty
+     * requests (a blank inline line, `*0`, `*-1`) are skipped, as Redis skips them.
      *
-     * @throws ProtocolException on bytes no Redis would accept; the connection must reply with the
-     *   exception's message and close, as Redis does.
+     * @param authenticated whether the connection has passed `AUTH` (or needs none). Before it, the
+     *   two unauthenticated limits of [RequestLimits] apply. Passed per call because `AUTH` changes it
+     *   between two commands of the same pipeline.
+     * @throws ProtocolException on bytes Redis would refuse.
      */
-    fun next(): List<ByteArray>? {
-        if (start == end) return null
-        var pos = start
-        if (buffer[pos] != '*'.code.toByte()) {
-            throw ProtocolException("Protocol error: inline commands are not supported yet")
+    fun next(authenticated: Boolean = true): List<ByteArray>? {
+        while (start < end) {
+            val command =
+                if (buffer[start] == '*'.code.toByte()) multibulk(authenticated) else inline()
+            when (command) {
+                null -> return null
+                EMPTY -> continue
+                else -> return command
+            }
         }
-        val countLine = lineEnd(pos + 1) ?: return null
+        return null
+    }
+
+    private fun inline(): List<ByteArray>? {
+        val newline =
+            indexOf('\n', start) ?: run {
+                if (end - start >
+                    limits.inlineMaxSize
+                ) {
+                    throw ProtocolException("Protocol error: too big inline request")
+                }
+                return null
+            }
+        val lineEnd = if (newline > start && buffer[newline - 1] == '\r'.code.toByte()) newline - 1 else newline
+        val args =
+            splitInlineArguments(buffer.copyOfRange(start, lineEnd))
+                ?: throw ProtocolException("Protocol error: unbalanced quotes in request")
+        start = newline + 1
+        return args.ifEmpty { EMPTY }
+    }
+
+    private fun multibulk(authenticated: Boolean): List<ByteArray>? {
+        val countEnd = lineEnd(start + 1, "Protocol error: too big mbulk count string") ?: return null
         val count =
-            parseLong(pos + 1, countLine)
+            parseRedisLong(buffer, start + 1, countEnd)
                 ?.takeIf { it <= Int.MAX_VALUE }
                 ?: throw ProtocolException("Protocol error: invalid multibulk length")
-        pos = countLine + 2
-        if (count <= 0) {
-            // `*0` and `*-1` are empty requests: Redis skips them and reads on.
-            start = pos
-            return next()
+        if (count > limits.unauthenticatedMaxArgs && !authenticated) {
+            throw ProtocolException("Protocol error: unauthenticated multibulk length")
         }
-        val args = ArrayList<ByteArray>(count.toInt())
+        var pos = countEnd + 2
+        if (count <= 0) {
+            start = pos
+            return EMPTY
+        }
+        val args = ArrayList<ByteArray>(minOf(count, PREALLOCATE_LIMIT).toInt())
         repeat(count.toInt()) {
             if (pos >= end) return null
             if (buffer[pos] != '$'.code.toByte()) {
                 throw ProtocolException("Protocol error: expected '$', got '${buffer[pos].toInt().toChar()}'")
             }
-            val lengthLine = lineEnd(pos + 1) ?: return null
+            val lengthEnd = lineEnd(pos + 1, "Protocol error: too big bulk count string") ?: return null
             val length =
-                parseLong(pos + 1, lengthLine)
-                    ?.takeIf { it >= 0 && it <= Int.MAX_VALUE }
+                parseRedisLong(buffer, pos + 1, lengthEnd)
+                    ?.takeIf { it >= 0 && it <= limits.protoMaxBulkLen }
                     ?: throw ProtocolException("Protocol error: invalid bulk length")
-            val dataStart = lengthLine + 2
+            if (length > limits.unauthenticatedMaxBulk && !authenticated) {
+                throw ProtocolException("Protocol error: unauthenticated bulk length")
+            }
+            val dataStart = lengthEnd + 2
+            if (dataStart.toLong() + length + 2 > end) return null
             val dataEnd = dataStart + length.toInt()
-            if (dataEnd + 2 > end) return null
             args += buffer.copyOfRange(dataStart, dataEnd)
             pos = dataEnd + 2
         }
@@ -75,33 +132,30 @@ class CommandReader(
         return args
     }
 
-    /** Index of the CR of the next CRLF at or after [from], or `null` if the line is not complete yet. */
-    private fun lineEnd(from: Int): Int? {
-        var i = from
-        while (i + 1 < end) {
-            if (buffer[i] == '\r'.code.toByte() && buffer[i + 1] == '\n'.code.toByte()) return i
-            i++
+    /**
+     * Index of the `\r` ending the count line that starts at [from], once the byte after it has
+     * arrived too; `null` while the line is incomplete. Like Redis, it looks for `\r` and skips two
+     * bytes. A line longer than `PROTO_INLINE_MAX_SIZE` without one is refused with [tooBig].
+     */
+    private fun lineEnd(
+        from: Int,
+        tooBig: String,
+    ): Int? {
+        val cr = indexOf('\r', from)
+        if (cr == null) {
+            if (end - from > limits.inlineMaxSize) throw ProtocolException(tooBig)
+            return null
         }
-        return null
+        return if (cr + 1 < end) cr else null
     }
 
-    private fun parseLong(
+    private fun indexOf(
+        char: Char,
         from: Int,
-        until: Int,
-    ): Long? {
-        if (from >= until || until - from > 19) return null
-        var i = from
-        val negative = buffer[i] == '-'.code.toByte()
-        if (negative) i++
-        if (i == until) return null
-        var value = 0L
-        while (i < until) {
-            val digit = buffer[i] - '0'.code.toByte()
-            if (digit !in 0..9) return null
-            value = value * 10 + digit
-            i++
-        }
-        return if (negative) -value else value
+    ): Int? {
+        val target = char.code.toByte()
+        for (i in from until end) if (buffer[i] == target) return i
+        return null
     }
 
     private fun compactOrGrow(incoming: Int) {
@@ -117,9 +171,17 @@ class CommandReader(
         start = 0
         end = unread
     }
+
+    private companion object {
+        /** A request that asks for nothing; skipped by [next]. Compared by identity. */
+        val EMPTY: List<ByteArray> = ArrayList(0)
+
+        /** A count is the client's claim; the list grows to it only as the arguments arrive. */
+        const val PREALLOCATE_LIMIT = 1024L
+    }
 }
 
-/** A request no Redis would accept. [message] is the reply, without the `ERR ` prefix. */
+/** A request Redis would refuse. [message] is the reply, without the `ERR ` prefix. */
 class ProtocolException(
     override val message: String,
 ) : Exception(message)
