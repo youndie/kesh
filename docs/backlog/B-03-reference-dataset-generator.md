@@ -1,7 +1,7 @@
 ---
 id: B-03
 title: "bench: the reference dataset generator, deterministic by seed"
-status: open
+status: wip
 priority: P0
 size: S
 stage: stage-1-protocol
