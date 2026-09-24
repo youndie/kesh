@@ -5,12 +5,13 @@ status: open
 priority: P1
 size: S
 stage: stage-3-memory
+epic: feature-keyspace
 blocked_by: [B-05]
 ---
 
 # B-13 — Active expiry, Redis's algorithm as its source has it
 
-**Feature:** `feature-keyspace` — drafted in the *docs/layer-drafts* branch; the `epic` field is added when that document reaches `main`.
+**Feature:** [feature-keyspace](../features/feature-keyspace.md).
 
 Keys that are never read again must still go (30 % of sessions and every rate counter in §5a).
 

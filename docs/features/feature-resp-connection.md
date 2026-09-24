@@ -74,9 +74,7 @@ All built (B-01, B-02), each against Redis 7.2's source; the addresses are in re
 
 ## 5. Scenarios
 
-Three stay *target* until B-05: *Pipelined order*, *Inline* and *Lettuce connects unchanged* need
-`INCR`, `EXISTS`, `SET` and `GET`. Each names the automated check that covers its protocol half today.
-Beside the scenarios, every command and refusal of this feature is compared with Redis 7.2 byte for
+All automated since B-05, which brought the data commands three of them needed. Beside the scenarios, every command and refusal of this feature is compared with Redis 7.2 byte for
 byte by `conformance/run.sh` — 78 comparisons, all agreeing, at B-04.
 
 ### Scenario: Ping
@@ -98,24 +96,27 @@ byte by `conformance/run.sh` — 78 comparisons, all agreeing, at B-04.
 * **Automated:** `server/src/nativeTest/kotlin/io/github/youndie/kesh/server/KeshServerTest.kt::a protocol error is answered and the connection closed`
 
 ### Scenario: Pipelined order
-*Target* until `INCR` exists (B-05); the ordering is covered today with 200 pipelined `PING <n>` by
-`KeshServerTest.kt::pipelined commands are answered in the order they were sent`.
 * **Given:** a connection and `k` absent
 * **When:** the client sends 1 000 `INCR k` without reading
 * **Then:** it reads 1 000 integer replies, `:1` to `:1000`, in order
+* **Automated:** `server/src/nativeTest/kotlin/io/github/youndie/kesh/server/ConnectionScenariosTest.kt::a thousand pipelined INCR are answered 1 to 1000 in order`
 
 ### Scenario: Inline
-*Target* until `EXISTS` exists (B-05); inline parsing is covered today with `PING` and a quoted `ECHO`
-by `ConnectionScenariosTest.kt::an inline command typed into telnet is answered`.
 * **Given:** a telnet session
 * **When:** the user types `EXISTS somekey`
 * **Then:** the reply is `:0`
+* **Automated:** `server/src/nativeTest/kotlin/io/github/youndie/kesh/server/ConnectionScenariosTest.kt::EXISTS typed into telnet answers 0 for a missing key`
 
 ### Scenario: Auth required
 * **Given:** `requirepass` is set
-* **When:** an unauthenticated client sends `PING`
+* **When:** an unauthenticated client sends `GET k`
 * **Then:** the reply is `-NOAUTH Authentication required.`
-* **And:** after `AUTH <password>`, `PING` answers `+PONG`
+* **Automated:** `server/src/nativeTest/kotlin/io/github/youndie/kesh/server/ConnectionScenariosTest.kt::GET before AUTH is refused with NOAUTH`
+
+### Scenario: AUTH opens the connection
+* **Given:** `requirepass` is set
+* **When:** an unauthenticated client sends `PING`, then `AUTH <password>` and `PING`
+* **Then:** the replies are `-NOAUTH Authentication required.`, `+OK`, `+PONG`
 * **Automated:** `server/src/nativeTest/kotlin/io/github/youndie/kesh/server/ConnectionScenariosTest.kt::with a password an unauthenticated command gets NOAUTH and AUTH opens the connection`
 
 ### Scenario: Oversized request before AUTH
@@ -137,12 +138,10 @@ by `ConnectionScenariosTest.kt::an inline command typed into telnet is answered`
 * **Automated:** `server/src/nativeTest/kotlin/io/github/youndie/kesh/server/ConnectionScenariosTest.kt::HELLO 3 is refused and the connection stays in RESP2`
 
 ### Scenario: Lettuce connects unchanged
-*Target* until `SET` and `GET` exist (B-05). The handshake half runs on every conformance run:
-Lettuce 7.6.0 with its defaults connects to kesh, falls back from `HELLO 3`, and `PING` answers
-`PONG` (`conformance/src/jvmMain/kotlin/io/github/youndie/kesh/conformance/Main.kt`, `lettuceSmoke`).
 * **Given:** Lettuce 7.6.0 with default options
 * **When:** it connects and runs `SET` then `GET`
 * **Then:** both succeed; the handshake fell back from `HELLO 3` to RESP2 without an error surfacing
+* **Automated:** `conformance/src/jvmMain/kotlin/io/github/youndie/kesh/conformance/Main.kt::lettuceSmoke` — on every `conformance/run.sh`
 
 ### Scenario: Connection ceiling
 * **Given:** `maxclients` N and N open connections
@@ -177,8 +176,7 @@ Lettuce 7.6.0 with its defaults connects to kesh, falls back from `HELLO 3`, and
 * **Commands pipelined behind a protocol error get no reply**: the connection is closed after the
   error, as in Redis.
 * **An unauthenticated client asking for a command kesh lacks gets "unknown command"**, not
-  `NOAUTH`: the existence check comes first, in Redis too. The brief's scenario used `GET k`, which
-  would say "unknown command" here until B-05, so the scenario uses `PING`.
+  `NOAUTH`: the existence check comes first, in Redis too.
 * **Before `AUTH` a pipeline is parsed one command at a time**, and so is slower — deliberately, so
   that `AUTH` takes effect for the command right after it.
 * **Any signal can kill the process through the selector's `pselect`** (research R-3) — relevant to

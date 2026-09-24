@@ -106,7 +106,7 @@ class CommandsTest {
     }
 
     @Test
-    fun `TTL is -2 for a missing key and -1 without expiry and and rounds to the nearest second`() {
+    fun `TTL is -2 for a missing key and -1 without expiry and rounds to the nearest second`() {
         r("SET", "k", "v", "EX", "10")
         db.now += 9_400
         assertEquals(":1\r\n", r("TTL", "k"))
@@ -143,7 +143,7 @@ class CommandsTest {
     }
 
     @Test
-    fun `DEL and UNLINK both count live keys only and and EXISTS counts repeats`() {
+    fun `DEL and UNLINK both count live keys only and EXISTS counts repeats`() {
         r("MSET", "a", "1", "b", "2")
         r("SET", "gone", "x", "PX", "1")
         db.now += 2

@@ -5,12 +5,13 @@ status: open
 priority: P1
 size: M
 stage: stage-2-types
+epic: feature-keyspace
 blocked_by: [B-06, B-07, B-08, B-09]
 ---
 
 # B-10 — SCAN, HSCAN, SSCAN, ZSCAN with the completeness guarantee
 
-**Feature:** `feature-keyspace` — drafted in the *docs/layer-drafts* branch; the `epic` field is added when that document reaches `main`.
+**Feature:** [feature-keyspace](../features/feature-keyspace.md).
 
 `SCAN` promises that every key present for the whole iteration is returned at least once, across
 resizes. Redis gets that from a reverse-binary cursor over a power-of-two table; kesh's table (B-05,

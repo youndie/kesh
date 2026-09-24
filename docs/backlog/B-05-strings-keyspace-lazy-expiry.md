@@ -5,12 +5,13 @@ status: wip
 priority: P0
 size: M
 stage: stage-1-protocol
+epic: feature-strings
 blocked_by: [B-02, B-04, B-19]
 ---
 
 # B-05 — Strings and keyspace on kesh's own hash table, lazy expiry
 
-**Feature:** `feature-strings`, `feature-keyspace` — drafted in the *docs/layer-drafts* branch; the `epic` field is added when that document reaches `main`.
+**Feature:** [feature-strings](../features/feature-strings.md), [feature-keyspace](../features/feature-keyspace.md).
 
 The first real data. It is also where the keyspace's data structure is chosen, and that choice is
 hard to undo.

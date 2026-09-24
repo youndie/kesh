@@ -256,6 +256,14 @@ Verified against `redis/redis` sources: the `7.2` branch (head is 7.2.16, `redis
 unauthenticated limits, `decrement would overflow` and `WRONGPASS` are behaviour a conformance
 script will hit on the first run; they go into the feature documents now rather than being discovered as red.
 
+**Consequence 3 (B-05) — one reply cannot be matched on this platform.** `INCRBYFLOAT` computes in
+C's `long double` — 80-bit on x86-64 — and prints with `%.17Lf` (`redis/redis@7.2!/src/util.c` —
+`ld2string`); Kotlin has no such type. kesh computes in `Double` and prints the shortest decimal
+that reads back the same, fixed-point and trimmed: `10.5 + 0.1` agrees (`10.6`), `0.1 + 0.2` does not
+(Redis `0.3`, kesh `0.30000000000000004`). Redis itself answers like kesh where `long double` is a
+`double`. Recorded as a known divergence in `feature-strings`; the conformance scripts compare only the
+agreeing cases, and say so.
+
 **Consequence 2 — D-11 is corrected** (the 25 % is a CPU budget, the repeat threshold is 10 %), and
 its note "check the current wording" is answered: the documentation no longer carries a number, so
 the source is the authority.
@@ -449,12 +457,15 @@ a sample is expired, the slow cycle bounded to **25 % of CPU** time, 10 cycles a
 "Active expiry" scenario of the brief (≥ 99 % of 100 000 `PX 50` keys gone within 2 s) is
 consistent with this and is kept.
 
-### D-12. The keyspace is kesh's own hash table, with incremental rehashing — *new*
+### D-12. The keyspace is kesh's own hash table, with incremental rehashing — *built in B-05*
 
 Why: §1.3. The stdlib map stalls on growth and cannot give `SCAN` its guarantee.
 Rejected: `HashMap<Key, Value>` with a wrapper key — simple, and the 16 M-key growth step alone is
 a pause measured in hundreds of milliseconds (*hypothesis*, measured in B-05's growth test).
 Price: a data structure the portfolio has to own and test — which D-3 already accepts in principle.
+Built as `store/src/commonMain/kotlin/io/github/youndie/kesh/store/keyspace/Keyspace.kt`: bucket
+chains, one bucket moved per operation (Redis's `_dictRehashStep`), a per-process hash seed. The bound
+is asserted on every step while a table grows to a million keys (`KeyspaceTest`).
 
 ### D-13. A connection ceiling below `FD_SETSIZE`, refused the way Redis refuses it — *built in B-02*
 
