@@ -47,6 +47,7 @@ Read this table before any backlog item. Each row is argued in the section it na
 | 8 | §10: which Redis to pin, and does its licence matter | Nothing in §6 is newer than Redis 7.0. 7.2 is the last BSD line; 7.4 and 8.x are not BSD. Pin 7.2 with `databases 1` | §1.6, §1.7, D-16 |
 | 9 | §10: the reference host needs at least 8 GB | The portfolio's measurement hosts have 7.7 GB. The one 16 GB machine is the build box | §1.9, Q-3 |
 | 10 | `SIGTERM` … saves if configured, and exits within the chart's grace period | Saving ~4.3 GB is not free; the grace period has to be derived from a measured `SAVE`, not chosen | R-5 |
+| 11 | §6: a wrong password answers `-ERR invalid password`; §4: at startup the server refuses connections until the snapshot is loaded | Redis 7.2 answers `-WRONGPASS …`. And while loading, Redis accepts connections and answers `-LOADING …` rather than refusing them — which is right for kesh is open (B-14) | §1.5 |
 
 ---
 
@@ -217,12 +218,15 @@ Verified against `redis/redis` sources: the `7.2` branch (head is 7.2.16, `redis
 | `DECRBY k -9223372036854775808` | `ERR decrement would overflow` — a second string the brief does not list | `redis/redis@7.2!/src/t_string.c` — `decrbyCommand` |
 | not an integer | `ERR value is not an integer or out of range` | `redis/redis@8.2.0!/src/object.c` |
 | `SELECT` out of range | `ERR DB index is out of range` | `redis/redis@8.2.0!/src/db.c` |
+| wrong password | `-WRONGPASS invalid username-password pair or user is disabled.` — not the brief's `-ERR invalid password` | `redis/redis@7.2!/src/acl.c` |
+| a command while the dataset loads | `-LOADING Redis is loading the dataset in memory` — Redis accepts the connection and refuses the command; the brief refuses the connection | `redis/redis@7.2!/src/server.c` — `createSharedObjects`, `processCommand` |
+| wrong arity | `ERR wrong number of arguments for '<command>' command` | `redis/redis@7.2!/src/server.c` |
 | active expiry | 20 keys per loop; the slow cycle may use up to **25 % of CPU**; the loop repeats while the expired share of a sample exceeds `ACTIVE_EXPIRE_CYCLE_ACCEPTABLE_STALE` = **10 %** (lowered further by `active-expire-effort`); `hz 10` | `redis/redis@7.2.5!/src/expire.c` — the `ACTIVE_EXPIRE_CYCLE_*` defines and `activeExpireCycle`; `redis/redis@7.2.5!/redis.conf` |
 | the current `EXPIRE` documentation says only that Redis "periodically … tests a few keys at random amongst the set of keys with an expiration"; it no longer states a percentage | `redis.io/docs/latest/commands/expire/`, "How Redis expires keys", read 2026-09-24 |
 
 **Consequence 1 — the brief's error list is incomplete in ways a client notices.** The
-unauthenticated limits and `decrement would overflow` are behaviour a conformance script will hit
-on the first run; they go into the feature documents now rather than being discovered as red.
+unauthenticated limits, `decrement would overflow` and `WRONGPASS` are behaviour a conformance
+script will hit on the first run; they go into the feature documents now rather than being discovered as red.
 
 **Consequence 2 — D-11 is corrected** (the 25 % is a CPU budget, the repeat threshold is 10 %), and
 its note "check the current wording" is answered: the documentation no longer carries a number, so
