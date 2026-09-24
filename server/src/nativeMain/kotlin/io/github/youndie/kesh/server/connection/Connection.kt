@@ -13,6 +13,7 @@ import io.ktor.utils.io.writeFully
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.withContext
+import kotlinx.io.IOException
 
 /**
  * One client connection: read, parse, execute on the store thread, write — in that order, per read.
@@ -51,9 +52,11 @@ internal class Connection(
             }
         } catch (e: CancellationException) {
             throw e
-        } catch (e: Exception) {
-            // A killed client's socket was closed under it; that is how a kill looks from here.
-            if (!client.killed) throw e
+        } catch (_: IOException) {
+            // The peer reset or closed mid-read or mid-write, or another client killed this one and
+            // closed the socket under it. Either way the connection is over, which is not a failure:
+            // Redis logs it at verbose level only. In B-02's 1 100-connection flood, reporting it
+            // put 318 "connection failed" lines in the log for nothing.
         }
     }
 
