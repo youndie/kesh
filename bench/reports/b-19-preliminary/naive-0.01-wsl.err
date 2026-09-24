@@ -1,0 +1,230 @@
+[INFO][gc][tid#73993][0.000s] Adaptive GC scheduler initialized
+[INFO][gc][tid#73993][0.000s] Concurrent Mark & Sweep GC initialized
+[INFO][gc][tid#73995][0.000s] Initializing Concurrent Mark & Sweep GC.
+[INFO][gcScheduler][tid#73993][0.003s] Scheduling GC by allocation: total allocated 9445016 bytes
+[INFO][gc][tid#73995][0.003s] Epoch #1: Started.
+[INFO][gcScheduler][tid#73995][0.005s] Updated heap boundaries: alive 9917384, target 19834768, trigger 17851291
+[INFO][gc][tid#73995][0.005s] Epoch #1: Root set: 0 thread local references, 50 stack references, 40 global references, 0 stable references. In total 90 roots.
+[INFO][gc][tid#73995][0.005s] Epoch #1: Mark: 7290 objects.
+[INFO][gc][tid#73995][0.005s] Epoch #1: Sweep extra objects: swept 0 objects, kept 0 objects
+[INFO][gc][tid#73995][0.005s] Epoch #1: Sweep: swept 4738 objects, kept 7290 objects
+[INFO][gc][tid#73995][0.005s] Epoch #1: Heap memory usage: before 10626416 bytes, after 11068784 bytes
+[INFO][gc][tid#73995][0.005s] Epoch #1: Time to pause #1: 0 microseconds.
+[INFO][gc][tid#73995][0.005s] Epoch #1: Mutators pause time #1: 8 microseconds.
+[INFO][gc][tid#73995][0.005s] Epoch #1: Time to pause #2: 0 microseconds.
+[INFO][gc][tid#73995][0.005s] Epoch #1: Mutators pause time #2: 6 microseconds.
+[INFO][gc][tid#73995][0.005s] Epoch #1: Finished. Total GC epoch time is 1096 microseconds.
+[INFO][gc][tid#73995][0.005s] Epoch #1: Finalization is done in 6 microseconds after epoch end.
+[INFO][gcScheduler][tid#73993][0.018s] Scheduling GC by allocation: total allocated 17855448 bytes
+[INFO][gc][tid#73995][0.018s] Epoch #2: Started. Time since last GC 13706 microseconds.
+[INFO][gcScheduler][tid#73995][0.021s] Updated heap boundaries: alive 14758968, target 29517936, trigger 26566142
+[INFO][gc][tid#73995][0.021s] Epoch #2: Root set: 0 thread local references, 50 stack references, 40 global references, 0 stable references. In total 90 roots.
+[INFO][gc][tid#73995][0.021s] Epoch #2: Mark: 38281 objects.
+[INFO][gc][tid#73995][0.021s] Epoch #2: Sweep extra objects: swept 0 objects, kept 0 objects
+[INFO][gc][tid#73995][0.021s] Epoch #2: Sweep: swept 52902 objects, kept 38281 objects
+[INFO][gc][tid#73995][0.021s] Epoch #2: Heap memory usage: before 19047792 bytes, after 20276592 bytes
+[INFO][gc][tid#73995][0.021s] Epoch #2: Time to pause #1: 0 microseconds.
+[INFO][gc][tid#73995][0.021s] Epoch #2: Mutators pause time #1: 15 microseconds.
+[INFO][gc][tid#73995][0.021s] Epoch #2: Time to pause #2: 0 microseconds.
+[INFO][gc][tid#73995][0.021s] Epoch #2: Mutators pause time #2: 49 microseconds.
+[INFO][gc][tid#73995][0.021s] Epoch #2: Finished. Total GC epoch time is 2792 microseconds.
+[INFO][gc][tid#73995][0.021s] Epoch #2: Finalization is done in 6 microseconds after epoch end.
+[INFO][gcScheduler][tid#73993][0.040s] Scheduling GC by allocation: total allocated 26568224 bytes
+[INFO][gc][tid#73995][0.040s] Epoch #3: Started. Time since last GC 19218 microseconds.
+[INFO][gcScheduler][tid#73995][0.044s] Updated heap boundaries: alive 21625880, target 43251760, trigger 38926584
+[INFO][gc][tid#73995][0.044s] Epoch #3: Root set: 0 thread local references, 50 stack references, 40 global references, 0 stable references. In total 90 roots.
+[INFO][gc][tid#73995][0.044s] Epoch #3: Mark: 80867 objects.
+[INFO][gc][tid#73995][0.044s] Epoch #3: Sweep extra objects: swept 0 objects, kept 0 objects
+[INFO][gc][tid#73995][0.044s] Epoch #3: Sweep: swept 81044 objects, kept 80867 objects
+[INFO][gc][tid#73995][0.044s] Epoch #3: Heap memory usage: before 27747696 bytes, after 29697392 bytes
+[INFO][gc][tid#73995][0.044s] Epoch #3: Time to pause #1: 0 microseconds.
+[INFO][gc][tid#73995][0.044s] Epoch #3: Mutators pause time #1: 11 microseconds.
+[INFO][gc][tid#73995][0.044s] Epoch #3: Time to pause #2: 0 microseconds.
+[INFO][gc][tid#73995][0.044s] Epoch #3: Mutators pause time #2: 6 microseconds.
+[INFO][gc][tid#73995][0.044s] Epoch #3: Finished. Total GC epoch time is 3819 microseconds.
+[INFO][gc][tid#73995][0.044s] Epoch #3: Finalization is done in 7 microseconds after epoch end.
+[INFO][gcScheduler][tid#73993][0.072s] Scheduling GC by allocation: total allocated 38936480 bytes
+[INFO][gc][tid#73995][0.072s] Epoch #4: Started. Time since last GC 27660 microseconds.
+[INFO][gcScheduler][tid#73995][0.078s] Updated heap boundaries: alive 32200752, target 64401504, trigger 57961353
+[INFO][gc][tid#73995][0.078s] Epoch #4: Root set: 0 thread local references, 50 stack references, 40 global references, 0 stable references. In total 90 roots.
+[INFO][gc][tid#73995][0.078s] Epoch #4: Mark: 148028 objects.
+[INFO][gc][tid#73995][0.078s] Epoch #4: Sweep extra objects: swept 0 objects, kept 0 objects
+[INFO][gc][tid#73995][0.078s] Epoch #4: Sweep: swept 117517 objects, kept 148028 objects
+[INFO][gc][tid#73995][0.078s] Epoch #4: Heap memory usage: before 40215920 bytes, after 43640176 bytes
+[INFO][gc][tid#73995][0.078s] Epoch #4: Time to pause #1: 1 microseconds.
+[INFO][gc][tid#73995][0.078s] Epoch #4: Mutators pause time #1: 11 microseconds.
+[INFO][gc][tid#73995][0.078s] Epoch #4: Time to pause #2: 0 microseconds.
+[INFO][gc][tid#73995][0.078s] Epoch #4: Mutators pause time #2: 4 microseconds.
+[INFO][gc][tid#73995][0.078s] Epoch #4: Finished. Total GC epoch time is 6579 microseconds.
+[INFO][gc][tid#73995][0.078s] Epoch #4: Finalization is done in 7 microseconds after epoch end.
+[INFO][gcScheduler][tid#73993][0.118s] Scheduling GC by allocation: total allocated 57972392 bytes
+[INFO][gc][tid#73995][0.118s] Epoch #5: Started. Time since last GC 39623 microseconds.
+[WARNING][gc,gcScheduler][tid#73993][0.124s] Pausing the mutators until epoch 5 is done
+[INFO][gcScheduler][tid#73995][0.136s] Updated heap boundaries: alive 49463760, target 98927520, trigger 89034768
+[INFO][gc][tid#73995][0.136s] Epoch #5: Root set: 0 thread local references, 39 stack references, 40 global references, 0 stable references. In total 79 roots.
+[INFO][gc][tid#73995][0.136s] Epoch #5: Mark: 337519 objects.
+[INFO][gc][tid#73995][0.136s] Epoch #5: Sweep extra objects: swept 0 objects, kept 0 objects
+[INFO][gc][tid#73995][0.136s] Epoch #5: Sweep: swept 178524 objects, kept 337519 objects
+[INFO][gc][tid#73995][0.136s] Epoch #5: Heap memory usage: before 59532656 bytes, after 65971568 bytes
+[INFO][gc][tid#73995][0.136s] Epoch #5: Time to pause #1: 3 microseconds.
+[INFO][gc][tid#73995][0.136s] Epoch #5: Mutators pause time #1: 17 microseconds.
+[INFO][gc][tid#73995][0.136s] Epoch #5: Time to pause #2: 0 microseconds.
+[INFO][gc][tid#73995][0.136s] Epoch #5: Mutators pause time #2: 2 microseconds.
+[INFO][gc][tid#73995][0.136s] Epoch #5: Finished. Total GC epoch time is 17763 microseconds.
+[INFO][gc][tid#73995][0.136s] Epoch #5: Finalization is done in 7 microseconds after epoch end.
+[INFO][gcScheduler][tid#73993][0.169s] Scheduling GC by allocation: total allocated 89044120 bytes
+[INFO][gc][tid#73995][0.169s] Epoch #6: Started. Time since last GC 33135 microseconds.
+[WARNING][gc,gcScheduler][tid#73993][0.177s] Pausing the mutators until epoch 6 is done
+[INFO][gcScheduler][tid#73995][0.211s] Updated heap boundaries: alive 86031976, target 172063952, trigger 154857556
+[INFO][gc][tid#73995][0.211s] Epoch #6: Root set: 0 thread local references, 56 stack references, 40 global references, 0 stable references. In total 96 roots.
+[INFO][gc][tid#73995][0.211s] Epoch #6: Mark: 1029013 objects.
+[INFO][gc][tid#73995][0.211s] Epoch #6: Sweep extra objects: swept 0 objects, kept 0 objects
+[INFO][gc][tid#73995][0.211s] Epoch #6: Sweep: swept 299576 objects, kept 1029013 objects
+[INFO][gc][tid#73995][0.211s] Epoch #6: Heap memory usage: before 101999984 bytes, after 100492656 bytes
+[INFO][gc][tid#73995][0.211s] Epoch #6: Time to pause #1: 1 microseconds.
+[INFO][gc][tid#73995][0.211s] Epoch #6: Mutators pause time #1: 19 microseconds.
+[INFO][gc][tid#73995][0.211s] Epoch #6: Time to pause #2: 0 microseconds.
+[INFO][gc][tid#73995][0.211s] Epoch #6: Mutators pause time #2: 2551 microseconds.
+[INFO][gc][tid#73995][0.211s] Epoch #6: Finished. Total GC epoch time is 42277 microseconds.
+[INFO][gc][tid#73995][0.211s] Epoch #6: Finalization is done in 8 microseconds after epoch end.
+[INFO][gcScheduler][tid#73993][0.271s] Scheduling GC by allocation: total allocated 154862768 bytes
+[INFO][gc][tid#73995][0.271s] Epoch #7: Started. Time since last GC 60311 microseconds.
+[WARNING][gc,gcScheduler][tid#73993][0.284s] Pausing the mutators until epoch 7 is done
+[INFO][gcScheduler][tid#73995][0.339s] Updated heap boundaries: alive 132559944, target 265119888, trigger 238607899
+[INFO][gc][tid#73995][0.339s] Epoch #7: Root set: 0 thread local references, 49 stack references, 41 global references, 0 stable references. In total 90 roots.
+[INFO][gc][tid#73995][0.339s] Epoch #7: Mark: 1975687 objects.
+[INFO][gc][tid#73995][0.339s] Epoch #7: Sweep extra objects: swept 0 objects, kept 0 objects
+[INFO][gc][tid#73995][0.339s] Epoch #7: Sweep: swept 821845 objects, kept 1975687 objects
+[INFO][gc][tid#73995][0.339s] Epoch #7: Heap memory usage: before 159196464 bytes, after 177055024 bytes
+[INFO][gc][tid#73995][0.339s] Epoch #7: Time to pause #1: 2 microseconds.
+[INFO][gc][tid#73995][0.339s] Epoch #7: Mutators pause time #1: 12 microseconds.
+[INFO][gc][tid#73995][0.339s] Epoch #7: Time to pause #2: 0 microseconds.
+[INFO][gc][tid#73995][0.339s] Epoch #7: Mutators pause time #2: 22 microseconds.
+[INFO][gc][tid#73995][0.339s] Epoch #7: Finished. Total GC epoch time is 67284 microseconds.
+[INFO][gc][tid#73995][0.339s] Epoch #7: Finalization is done in 7 microseconds after epoch end.
+[INFO][gcScheduler][tid#73993][0.581s] Scheduling GC by allocation: total allocated 238608728 bytes
+[INFO][gc][tid#73995][0.581s] Epoch #8: Started. Time since last GC 242308 microseconds.
+[INFO][gcScheduler][tid#73995][0.691s] Updated heap boundaries: alive 167652320, target 335304640, trigger 301774176
+[INFO][gc][tid#73995][0.691s] Epoch #8: Root set: 0 thread local references, 46 stack references, 41 global references, 0 stable references. In total 87 roots.
+[INFO][gc][tid#73995][0.691s] Epoch #8: Mark: 2575946 objects.
+[INFO][gc][tid#73995][0.691s] Epoch #8: Sweep extra objects: swept 0 objects, kept 0 objects
+[INFO][gc][tid#73995][0.691s] Epoch #8: Sweep: swept 1353551 objects, kept 2575946 objects
+[INFO][gc][tid#73995][0.691s] Epoch #8: Heap memory usage: before 254801896 bytes, after 264590320 bytes
+[INFO][gc][tid#73995][0.691s] Epoch #8: Time to pause #1: 1 microseconds.
+[INFO][gc][tid#73995][0.691s] Epoch #8: Mutators pause time #1: 12 microseconds.
+[INFO][gc][tid#73995][0.691s] Epoch #8: Time to pause #2: 0 microseconds.
+[INFO][gc][tid#73995][0.691s] Epoch #8: Mutators pause time #2: 2045 microseconds.
+[INFO][gc][tid#73995][0.691s] Epoch #8: Finished. Total GC epoch time is 110256 microseconds.
+[INFO][gc][tid#73995][0.691s] Epoch #8: Finalization is done in 7 microseconds after epoch end.
+[INFO][gcScheduler][tid#73993][1.130s] Scheduling GC by allocation: total allocated 301775352 bytes
+[INFO][gc][tid#73995][1.130s] Epoch #9: Started. Time since last GC 439095 microseconds.
+[INFO][gcScheduler][tid#73995][1.263s] Updated heap boundaries: alive 171584720, target 343169440, trigger 308852496
+[INFO][gc][tid#73995][1.263s] Epoch #9: Root set: 0 thread local references, 47 stack references, 41 global references, 0 stable references. In total 88 roots.
+[INFO][gc][tid#73995][1.263s] Epoch #9: Mark: 2617183 objects.
+[INFO][gc][tid#73995][1.263s] Epoch #9: Sweep extra objects: swept 0 objects, kept 0 objects
+[INFO][gc][tid#73995][1.263s] Epoch #9: Sweep: swept 2260705 objects, kept 2617183 objects
+[INFO][gc][tid#73995][1.263s] Epoch #9: Heap memory usage: before 332518384 bytes, after 337990640 bytes
+[INFO][gc][tid#73995][1.263s] Epoch #9: Time to pause #1: 2 microseconds.
+[INFO][gc][tid#73995][1.263s] Epoch #9: Mutators pause time #1: 13 microseconds.
+[INFO][gc][tid#73995][1.263s] Epoch #9: Time to pause #2: 0 microseconds.
+[INFO][gc][tid#73995][1.263s] Epoch #9: Mutators pause time #2: 1579 microseconds.
+[INFO][gc][tid#73995][1.263s] Epoch #9: Finished. Total GC epoch time is 132482 microseconds.
+[INFO][gc][tid#73995][1.263s] Epoch #9: Finalization is done in 6 microseconds after epoch end.
+[INFO][gcScheduler][tid#73993][1.668s] Scheduling GC by allocation: total allocated 308854704 bytes
+[INFO][gc][tid#73995][1.668s] Epoch #10: Started. Time since last GC 404879 microseconds.
+[INFO][gcScheduler][tid#73995][1.808s] Updated heap boundaries: alive 174501872, target 349003744, trigger 314103369
+[INFO][gc][tid#73995][1.808s] Epoch #10: Root set: 0 thread local references, 46 stack references, 41 global references, 0 stable references. In total 87 roots.
+[INFO][gc][tid#73995][1.808s] Epoch #10: Mark: 2660255 objects.
+[INFO][gc][tid#73995][1.808s] Epoch #10: Sweep extra objects: swept 0 objects, kept 0 objects
+[INFO][gc][tid#73995][1.808s] Epoch #10: Sweep: swept 2343079 objects, kept 2660255 objects
+[INFO][gc][tid#73995][1.808s] Epoch #10: Heap memory usage: before 338957296 bytes, after 350966768 bytes
+[INFO][gc][tid#73995][1.808s] Epoch #10: Time to pause #1: 1 microseconds.
+[INFO][gc][tid#73995][1.808s] Epoch #10: Mutators pause time #1: 13 microseconds.
+[INFO][gc][tid#73995][1.808s] Epoch #10: Time to pause #2: 0 microseconds.
+[INFO][gc][tid#73995][1.808s] Epoch #10: Mutators pause time #2: 108 microseconds.
+[INFO][gc][tid#73995][1.808s] Epoch #10: Finished. Total GC epoch time is 140462 microseconds.
+[INFO][gc][tid#73995][1.808s] Epoch #10: Finalization is done in 7 microseconds after epoch end.
+[INFO][gcScheduler][tid#73993][2.217s] Scheduling GC by allocation: total allocated 314103536 bytes
+[INFO][gc][tid#73995][2.217s] Epoch #11: Started. Time since last GC 408602 microseconds.
+[INFO][gcScheduler][tid#73995][2.361s] Updated heap boundaries: alive 174602544, target 349205088, trigger 314284579
+[INFO][gc][tid#73995][2.361s] Epoch #11: Root set: 0 thread local references, 51 stack references, 41 global references, 0 stable references. In total 92 roots.
+[INFO][gc][tid#73995][2.361s] Epoch #11: Mark: 2662265 objects.
+[INFO][gc][tid#73995][2.361s] Epoch #11: Sweep extra objects: swept 0 objects, kept 0 objects
+[INFO][gc][tid#73995][2.361s] Epoch #11: Sweep: swept 2423754 objects, kept 2662265 objects
+[INFO][gc][tid#73995][2.361s] Epoch #11: Heap memory usage: before 350966768 bytes, after 356570096 bytes
+[INFO][gc][tid#73995][2.361s] Epoch #11: Time to pause #1: 2 microseconds.
+[INFO][gc][tid#73995][2.361s] Epoch #11: Mutators pause time #1: 28 microseconds.
+[INFO][gc][tid#73995][2.361s] Epoch #11: Time to pause #2: 0 microseconds.
+[INFO][gc][tid#73995][2.361s] Epoch #11: Mutators pause time #2: 281 microseconds.
+[INFO][gc][tid#73995][2.361s] Epoch #11: Finished. Total GC epoch time is 144096 microseconds.
+[INFO][gc][tid#73995][2.361s] Epoch #11: Finalization is done in 8 microseconds after epoch end.
+[INFO][gcScheduler][tid#73993][2.775s] Scheduling GC by allocation: total allocated 314289224 bytes
+[INFO][gc][tid#73995][2.775s] Epoch #12: Started. Time since last GC 413944 microseconds.
+[INFO][gcScheduler][tid#73995][2.923s] Updated heap boundaries: alive 175668048, target 351336096, trigger 316202486
+[INFO][gc][tid#73995][2.923s] Epoch #12: Root set: 0 thread local references, 51 stack references, 41 global references, 0 stable references. In total 92 roots.
+[INFO][gc][tid#73995][2.923s] Epoch #12: Mark: 2679576 objects.
+[INFO][gc][tid#73995][2.923s] Epoch #12: Sweep extra objects: swept 0 objects, kept 0 objects
+[INFO][gc][tid#73995][2.923s] Epoch #12: Sweep: swept 2429653 objects, kept 2679576 objects
+[INFO][gc][tid#73995][2.923s] Epoch #12: Heap memory usage: before 356570096 bytes, after 358126576 bytes
+[INFO][gc][tid#73995][2.923s] Epoch #12: Time to pause #1: 1 microseconds.
+[INFO][gc][tid#73995][2.923s] Epoch #12: Mutators pause time #1: 21 microseconds.
+[INFO][gc][tid#73995][2.923s] Epoch #12: Time to pause #2: 0 microseconds.
+[INFO][gc][tid#73995][2.923s] Epoch #12: Mutators pause time #2: 602 microseconds.
+[INFO][gc][tid#73995][2.923s] Epoch #12: Finished. Total GC epoch time is 148580 microseconds.
+[INFO][gc][tid#73995][2.923s] Epoch #12: Finalization is done in 7 microseconds after epoch end.
+[INFO][gcScheduler][tid#73993][3.333s] Scheduling GC by allocation: total allocated 316206880 bytes
+[INFO][gc][tid#73995][3.333s] Epoch #13: Started. Time since last GC 409424 microseconds.
+[INFO][gcScheduler][tid#73995][3.484s] Updated heap boundaries: alive 175846624, target 351693248, trigger 316523923
+[INFO][gc][tid#73995][3.484s] Epoch #13: Root set: 0 thread local references, 48 stack references, 41 global references, 0 stable references. In total 89 roots.
+[INFO][gc][tid#73995][3.484s] Epoch #13: Mark: 2680345 objects.
+[INFO][gc][tid#73995][3.484s] Epoch #13: Sweep extra objects: swept 0 objects, kept 0 objects
+[INFO][gc][tid#73995][3.484s] Epoch #13: Sweep: swept 2459154 objects, kept 2680345 objects
+[INFO][gc][tid#73995][3.484s] Epoch #13: Heap memory usage: before 358126576 bytes, after 360109040 bytes
+[INFO][gc][tid#73995][3.484s] Epoch #13: Time to pause #1: 1 microseconds.
+[INFO][gc][tid#73995][3.484s] Epoch #13: Mutators pause time #1: 11 microseconds.
+[INFO][gc][tid#73995][3.484s] Epoch #13: Time to pause #2: 0 microseconds.
+[INFO][gc][tid#73995][3.484s] Epoch #13: Mutators pause time #2: 462 microseconds.
+[INFO][gc][tid#73995][3.484s] Epoch #13: Finished. Total GC epoch time is 151371 microseconds.
+[INFO][gc][tid#73995][3.484s] Epoch #13: Finalization is done in 7 microseconds after epoch end.
+[INFO][gcScheduler][tid#73993][3.898s] Scheduling GC by allocation: total allocated 316528184 bytes
+[INFO][gc][tid#73995][3.898s] Epoch #14: Started. Time since last GC 413880 microseconds.
+[INFO][gcScheduler][tid#73995][4.055s] Updated heap boundaries: alive 176196768, target 352393536, trigger 317154182
+[INFO][gc][tid#73995][4.055s] Epoch #14: Root set: 0 thread local references, 50 stack references, 41 global references, 0 stable references. In total 91 roots.
+[INFO][gc][tid#73995][4.055s] Epoch #14: Mark: 2686677 objects.
+[INFO][gc][tid#73995][4.055s] Epoch #14: Sweep extra objects: swept 0 objects, kept 0 objects
+[INFO][gc][tid#73995][4.055s] Epoch #14: Sweep: swept 2459152 objects, kept 2686677 objects
+[INFO][gc][tid#73995][4.055s] Epoch #14: Heap memory usage: before 360109040 bytes, after 360223728 bytes
+[INFO][gc][tid#73995][4.055s] Epoch #14: Time to pause #1: 1 microseconds.
+[INFO][gc][tid#73995][4.055s] Epoch #14: Mutators pause time #1: 11 microseconds.
+[INFO][gc][tid#73995][4.055s] Epoch #14: Time to pause #2: 0 microseconds.
+[INFO][gc][tid#73995][4.055s] Epoch #14: Mutators pause time #2: 505 microseconds.
+[INFO][gc][tid#73995][4.055s] Epoch #14: Finished. Total GC epoch time is 157357 microseconds.
+[INFO][gc][tid#73995][4.055s] Epoch #14: Finalization is done in 7 microseconds after epoch end.
+[INFO][gcScheduler][tid#73993][4.509s] Scheduling GC by allocation: total allocated 317154400 bytes
+[INFO][gc][tid#73995][4.509s] Epoch #15: Started. Time since last GC 453855 microseconds.
+[INFO][gcScheduler][tid#73995][4.662s] Updated heap boundaries: alive 176350904, target 352701808, trigger 317431627
+[INFO][gc][tid#73995][4.662s] Epoch #15: Root set: 0 thread local references, 47 stack references, 41 global references, 0 stable references. In total 88 roots.
+[INFO][gc][tid#73995][4.662s] Epoch #15: Mark: 2687673 objects.
+[INFO][gc][tid#73995][4.662s] Epoch #15: Sweep extra objects: swept 0 objects, kept 0 objects
+[INFO][gc][tid#73995][4.662s] Epoch #15: Sweep: swept 2472860 objects, kept 2687673 objects
+[INFO][gc][tid#73995][4.662s] Epoch #15: Heap memory usage: before 360223728 bytes, after 360256496 bytes
+[INFO][gc][tid#73995][4.662s] Epoch #15: Time to pause #1: 2 microseconds.
+[INFO][gc][tid#73995][4.662s] Epoch #15: Mutators pause time #1: 13 microseconds.
+[INFO][gc][tid#73995][4.662s] Epoch #15: Time to pause #2: 0 microseconds.
+[INFO][gc][tid#73995][4.662s] Epoch #15: Mutators pause time #2: 915 microseconds.
+[INFO][gc][tid#73995][4.662s] Epoch #15: Finished. Total GC epoch time is 152277 microseconds.
+[INFO][gc][tid#73995][4.662s] Epoch #15: Finalization is done in 7 microseconds after epoch end.
+[INFO][gcScheduler][tid#73993][5.094s] Scheduling GC by allocation: total allocated 317434488 bytes
+[INFO][gc][tid#73995][5.094s] Epoch #16: Started. Time since last GC 432275 microseconds.
+[INFO][gcScheduler][tid#73995][5.248s] Updated heap boundaries: alive 176869552, target 353739104, trigger 318365193
+[INFO][gc][tid#73995][5.248s] Epoch #16: Root set: 0 thread local references, 50 stack references, 41 global references, 0 stable references. In total 91 roots.
+[INFO][gc][tid#73995][5.248s] Epoch #16: Mark: 2695173 objects.
+[INFO][gc][tid#73995][5.248s] Epoch #16: Sweep extra objects: swept 0 objects, kept 0 objects
+[INFO][gc][tid#73995][5.248s] Epoch #16: Sweep: swept 2473789 objects, kept 2695173 objects
+[INFO][gc][tid#73995][5.248s] Epoch #16: Heap memory usage: before 360256496 bytes, after 359519216 bytes
+[INFO][gc][tid#73995][5.248s] Epoch #16: Time to pause #1: 2 microseconds.
+[INFO][gc][tid#73995][5.248s] Epoch #16: Mutators pause time #1: 14 microseconds.
+[INFO][gc][tid#73995][5.248s] Epoch #16: Time to pause #2: 0 microseconds.
+[INFO][gc][tid#73995][5.248s] Epoch #16: Mutators pause time #2: 1025 microseconds.
+[INFO][gc][tid#73995][5.248s] Epoch #16: Finished. Total GC epoch time is 153918 microseconds.
+[INFO][gc][tid#73995][5.248s] Epoch #16: Finalization is done in 7 microseconds after epoch end.

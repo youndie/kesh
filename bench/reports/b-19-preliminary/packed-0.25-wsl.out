@@ -1,0 +1,4 @@
+PROBE start encoding=packed scale=0.25 seed=42 at=0.0s vmrss=3840kB vmhwm=3840kB threads=3
+PROBE loaded keys=3950500 at=12.143s vmrss=3253680kB vmhwm=3494072kB threads=3
+PROBE window-start at=12.144s vmrss=3253680kB vmhwm=3494072kB threads=3
+PROBE window-end operations=19150000 ops_per_s=311129 at=73.694s vmrss=4317116kB vmhwm=4338332kB threads=3

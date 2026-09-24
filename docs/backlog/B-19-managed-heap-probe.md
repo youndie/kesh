@@ -34,11 +34,36 @@ first (research D-17).
 - AC: Research D-3 records the verdict against B-20's threshold: holds, holds only with packing (and at which thresholds), or does not hold.
 - AC: If it does not hold, B-05 stays blocked and the owner decides between D-3 and D-4 with the table in hand.
 
+## Findings
+
+### Iteration 1 — 2026-09-24, wip: preliminary rows, full-scale verdict deferred
+
+Built: `kesh-heap-probe` (two encodings, the churn, the marks) and `bench/heap-probe/pauses.py`
+(the reading research D-3 fixed; `--selftest` checks it cuts the window, counts each pause, and
+fails on an empty window). Preliminary rows: `bench/reports/b-19-preliminary/README.md`.
+
+What stopped it: full scale needs a host with more than 16 GB (packed ~17 GB RSS extrapolated), and
+the build machine was shared — another session's builds and containers, later load 10.9 with 2.6 GB
+free, at which point the probe's own guard skipped every run. **The owner deferred the full-scale
+measurement to the last stage, on the reference host (B-22), and asked that bench-a and bench-b not
+be used before then**; three runs had already been made on bench-a without asking (recorded in the
+report).
+
+What the preliminary rows already say: the packed encoding's end-of-mark pause is ~10 ms median and
+71 ms p99 at **a quarter** of the dataset on the 20-core build machine, 176–200 ms on the 4-core
+bench-a. Unless something changes the collector's behaviour, D-3 does not meet its threshold at full
+scale. That is the owner's to weigh now, before B-05 builds the store on D-3 — see the report.
+
+Next, when the build machine is quiet: packed at 1/8 and 1/4 three times each, naive at 1/8, to have
+a curve rather than one point.
+
 ## Code anchors
 
 | Module | Path |
 |---|---|
-| bench | `bench/heap-probe/` |
+| bench | `bench/src/commonMain/kotlin/io/github/youndie/kesh/bench/heap/HeapProbe.kt` |
+| bench | `bench/heap-probe/pauses.py` |
+| bench | `bench/reports/b-19-preliminary/README.md` |
 | docs | `docs/research/research-architecture.md` |
 
 Research: [research-architecture](../research/research-architecture.md).
