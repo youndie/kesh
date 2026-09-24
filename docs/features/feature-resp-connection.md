@@ -4,7 +4,7 @@ title: The protocol and the connection
 type: feature
 status: active
 owner: unassigned
-involved_services: [resp, server]
+involved_services: [resp, server, conformance]
 client_entries: []
 api: [endpoint-connection]
 tags: [protocol]
@@ -70,14 +70,14 @@ All built (B-01, B-02), each against Redis 7.2's source; the addresses are in re
 | server | `server/src/nativeMain/kotlin/io/github/youndie/kesh/server/connection/Connection.kt` — the per-connection loop |
 | server | `server/src/nativeMain/kotlin/io/github/youndie/kesh/server/command/CommandDispatcher.kt` — the connection commands |
 | server | `server/src/nativeMain/kotlin/io/github/youndie/kesh/server/client/Clients.kt` — the registry and the ceiling |
-
-The conformance scripts for this feature arrive with B-04, in the `conformance` module.
+| conformance | `conformance/scripts/connection/` — every command here against Redis 7.2, byte for byte (B-04) |
 
 ## 5. Scenarios
 
-Three stay *target*: *Pipelined order* and *Inline* as written need `INCR` and `EXISTS` (B-05), and
-*Lettuce connects unchanged* needs a JVM client, which arrives with the conformance module (B-04).
-Each names the automated check that covers its protocol half today.
+Three stay *target* until B-05: *Pipelined order*, *Inline* and *Lettuce connects unchanged* need
+`INCR`, `EXISTS`, `SET` and `GET`. Each names the automated check that covers its protocol half today.
+Beside the scenarios, every command and refusal of this feature is compared with Redis 7.2 byte for
+byte by `conformance/run.sh` — 78 comparisons, all agreeing, at B-04.
 
 ### Scenario: Ping
 * **Given:** a new connection
@@ -137,8 +137,9 @@ by `ConnectionScenariosTest.kt::an inline command typed into telnet is answered`
 * **Automated:** `server/src/nativeTest/kotlin/io/github/youndie/kesh/server/ConnectionScenariosTest.kt::HELLO 3 is refused and the connection stays in RESP2`
 
 ### Scenario: Lettuce connects unchanged
-*Target*, B-04: the handshake half is checked against Lettuce's source (research §1.1) — `HELLO 3`
-answered with `NOPROTO` makes it fall back — but no Lettuce client has run against kesh yet.
+*Target* until `SET` and `GET` exist (B-05). The handshake half runs on every conformance run:
+Lettuce 7.6.0 with its defaults connects to kesh, falls back from `HELLO 3`, and `PING` answers
+`PONG` (`conformance/src/jvmMain/kotlin/io/github/youndie/kesh/conformance/Main.kt`, `lettuceSmoke`).
 * **Given:** Lettuce 7.6.0 with default options
 * **When:** it connects and runs `SET` then `GET`
 * **Then:** both succeed; the handshake fell back from `HELLO 3` to RESP2 without an error surfacing

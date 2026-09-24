@@ -38,11 +38,10 @@ A stage is a field on the item, not a directory.
 
 <!-- BEGIN INDEX -->
 
-## Open (19)
+## Open (18)
 
 | Task | | Priority | Size | Blocked by |
 |---|---|---|---|---|
-| [B-04](docs/backlog/B-04-differential-conformance-harness.md) `[~]` | conformance: the differential harness against Redis 7.2, raw bytes with declared normalisers | P0 | M | B-02 |
 | [B-05](docs/backlog/B-05-strings-keyspace-lazy-expiry.md) `[ ]` | Strings and keyspace on kesh's own hash table, lazy expiry | P0 | M | B-02, B-04, B-19 |
 | [B-19](docs/backlog/B-19-managed-heap-probe.md) `[ ]` | Heap probe: can plain Kotlin objects hold the reference dataset? | P0 | S/M | B-01 |
 | [B-20](docs/backlog/B-20-define-cannot-serve.md) `[?]` | Define "the managed heap cannot serve the reference dataset" before B-19 reports | P0 | XS | - |
@@ -62,13 +61,14 @@ A stage is a field on the item, not a directory.
 | [B-22](docs/backlog/B-22-reference-host.md) `[?]` | Choose the reference host for the load report and the soak | P1 | XS | - |
 | [B-18](docs/backlog/B-18-soak-24h.md) `[ ]` | 24 h soak with TTL churn | P2 | S | B-17 |
 
-## Closed (3)
+## Closed (4)
 
 **Protocol and core**
 
 - [B-01](docs/backlog/B-01-project-skeleton.md) `[x]` - Project skeleton: the modules, sborka, kore, a linuxX64 binary that answers PING
 - [B-02](docs/backlog/B-02-resp-parser-and-limits.md) `[x]` - resp: parser and writer, pipelining, inline commands, limits and the connection ceiling
 - [B-03](docs/backlog/B-03-reference-dataset-generator.md) `[x]` - bench: the reference dataset generator, deterministic by seed
+- [B-04](docs/backlog/B-04-differential-conformance-harness.md) `[x]` - conformance: the differential harness against Redis 7.2, raw bytes with declared normalisers
 
 <!-- END INDEX -->
 

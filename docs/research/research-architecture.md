@@ -359,6 +359,15 @@ And byte equality needs **normalisers**, declared per command in the script and 
 A normaliser is also a way to hide a real difference, so each one is a line in the script that a
 reviewer sees, and B-04's acceptance includes a deliberately wrong reply that the harness catches.
 
+**Built in B-04** ([conformance](../services/conformance.md)). `unordered` and `shape` exist; `random` and `cursor`
+arrive with `SPOP` (B-08) and `SCAN` (B-10). The planted wrong reply (`SELECT 1` → `DB index out of
+range`) failed the run at byte 14 of both `SELECT` lines and passed once removed. Two things the
+design above did not foresee:
+- **`HELLO 3` cannot be compared at all**: Redis switches to RESP3 and kesh refuses it (D-1). It is
+  left out of the scripts, and kesh's side is its own test.
+- **`[closes]` has to hold both servers to the claim**, not only to agreeing: the harness's own test
+  found that two servers which both stayed open agreed on a line saying they close.
+
 ### D-6. TCP through `ktor-network` 3.6.0 — *decision (owner, 2026-09-24), verified, with a ceiling* (§1.4, D-13)
 
 The brief named 3.5.2. The owner chose 3.6.0, the current release, which is also what kore is built
@@ -445,6 +454,8 @@ Why: §1.6 and §1.7. Complete for §6, BSD-licensed, still patched. `databases 
 database: with Redis's default of 16, `SELECT 1` succeeds on the oracle and fails on kesh, and every
 script touching it would diff for a reason nobody wants to read twice.
 The oracle's configuration lives next to the harness and is part of what B-04 reviews.
+**At B-04**: `conformance/oracle/redis.conf`; every run prints the oracle's version — `redis_version
+7.2.16`, the head of the 7.2 line. The owner's confirmation of the pin is still open.
 
 ### D-17. Measure the heap before building on it — *new, deviation from the brief's order*
 

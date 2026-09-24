@@ -56,7 +56,11 @@ request, merge when green.
 Builds, tests and the conformance oracle run on the Linux build machine (see the global agent
 instructions for the wrapper), not on the Mac; the repository has a sync session there named
 `kesh`. What CI will run for the code: `./gradlew ktlintCheck :resp:jvmTest :resp:linuxX64Test
-:server:linuxX64Test :bench:jvmTest :bench:linuxX64Test`. **`ktlintFormat` runs on the Mac** (`LOCAL=1 ./gradlew ktlintFormat`): on the
+:server:linuxX64Test :bench:jvmTest :bench:linuxX64Test :conformance:jvmTest`. **The oracle** is
+`conformance/run.sh` (needs Docker): it builds kesh, compares every script with Redis 7.2 and must
+end with "all agree" — run it for any change to a command's reply. A mutation made with `sed` must be checked with `git diff` before its run is read: after the
+formatter the pattern may not match, and the green run then tested the unchanged code (it happened
+twice). **`ktlintFormat` runs on the Mac** (`LOCAL=1 ./gradlew ktlintFormat`): on the
 synced copy its edits are reverted by the sync before anyone sees them. Latency and pause numbers are taken with **one subject per
 host** and the load generator elsewhere (research §1.2, consequence 5); the build machine is not a
 measurement host.
