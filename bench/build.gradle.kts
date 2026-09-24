@@ -15,13 +15,14 @@ kotlin {
             entryPoint = "io.github.youndie.kesh.bench.main"
             baseName = "kesh-dataset"
         }
-        // The heap probe (B-19). Built as kesh's server is built — `fixedBlockPageSize=16`, which
-        // `sborka.native-service` gives the server, and the default collector — plus the GC log, which
-        // is a compiler flag rather than a switch: the pauses it measures are read from that log.
+        // The heap probe (B-19). Built as kesh's server is built — 256 KiB allocator pages (research
+        // D-19) and the default collector — plus the GC log, which is a compiler flag rather than a
+        // switch: the pauses it measures are read from that log. B-19's series before D-19 ran with
+        // 16 KiB pages; the `page16` arm of `series.sh` rebuilds that.
         binaries.executable("heapProbe") {
             entryPoint = "io.github.youndie.kesh.bench.heap.main"
             baseName = "kesh-heap-probe"
-            binaryOption("fixedBlockPageSize", "16")
+            binaryOption("fixedBlockPageSize", "256")
             freeCompilerArgs += "-Xruntime-logs=gc=info,gcScheduler=info"
             // An arm: `-Pkesh.probeBinary=gc=pmcs` or `gcMarkSingleThreaded=true`. An unknown option is
             // a warning and the binary comes out identical, so `bench/heap-probe/series.sh` compares

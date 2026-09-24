@@ -11,6 +11,14 @@ plugins {
 nativeService {
     entryPoint = "io.github.youndie.kesh.server.main"
     baseName = "kesh"
+
+    // 256 KiB allocator pages, the compiler's default — not the 16 sborka sets for every native
+    // service. The collector's second stop-the-world pause walks and frees the allocator's pages
+    // (PageStore::PrepareForGC), so it follows the page count: on a quarter of the reference dataset,
+    // 16 KiB pages paused 8–10 ms at the median and 84–139 ms at p99, 256 KiB pages 0.8 ms and 8–18 ms,
+    // with 1 % more resident memory (B-19, research D-19). 16 KiB buys back per-thread pages in
+    // services with many threads and small heaps; kesh is the opposite.
+    allocatorPageSize = 256
 }
 
 kotlin {
