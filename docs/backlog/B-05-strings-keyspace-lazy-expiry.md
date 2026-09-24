@@ -1,7 +1,7 @@
 ---
 id: B-05
 title: "Strings and keyspace on kesh's own hash table, lazy expiry"
-status: open
+status: wip
 priority: P0
 size: M
 stage: stage-1-protocol

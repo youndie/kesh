@@ -42,7 +42,7 @@ A stage is a field on the item, not a directory.
 
 | Task | | Priority | Size | Blocked by |
 |---|---|---|---|---|
-| [B-05](docs/backlog/B-05-strings-keyspace-lazy-expiry.md) `[ ]` | Strings and keyspace on kesh's own hash table, lazy expiry | P0 | M | B-02, B-04, B-19 |
+| [B-05](docs/backlog/B-05-strings-keyspace-lazy-expiry.md) `[~]` | Strings and keyspace on kesh's own hash table, lazy expiry | P0 | M | B-02, B-04, B-19 |
 | [B-21](docs/backlog/B-21-first-consumer-and-pubsub.md) `[?]` | Who is the first consumer, and does Pub/Sub belong in v1? | P0 | XS | - |
 | [B-06](docs/backlog/B-06-hashes.md) `[ ]` | Hashes, with a packed encoding for small ones | P1 | M | B-05 |
 | [B-07](docs/backlog/B-07-lists.md) `[ ]` | Lists | P1 | M | B-05 |
