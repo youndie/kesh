@@ -1,7 +1,7 @@
 ---
 id: B-06
 title: "Hashes, with a packed encoding for small ones"
-status: open
+status: wip
 priority: P1
 size: M
 stage: stage-2-types
