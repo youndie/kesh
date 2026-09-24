@@ -31,8 +31,8 @@ first (research D-17).
 - Not covered: the protocol, the real store, the reference load — that is B-17.
 
 - AC: A table per scale and encoding: live heap, resident memory, objects marked, pause p50/p99/max, mark duration, host and commit.
-- AC: Research D-3 records the verdict against B-20's threshold: holds, holds only with packing (and at which thresholds), or does not hold.
-- AC: If it does not hold, B-05 stays blocked and the owner decides between D-3 and D-4 with the table in hand.
+- AC: Research D-3 records the verdict against B-20's threshold: holds, holds only with packing (and at which thresholds), or does not hold. *(Amended 2026-09-24 by the owner: the threshold is a known limitation, not a gate. The verdict is now the explanation — what the pause is made of, what it grows with, shown with a control that could have refuted it — and the encoding the store is built with.)*
+- AC: ~~If it does not hold, B-05 stays blocked and the owner decides between D-3 and D-4 with the table in hand.~~ Decided before the table was complete: D-3 stands, the pause is documented.
 
 ## Findings
 

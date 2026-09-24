@@ -349,6 +349,16 @@ What it is set against: the portfolio's own measurement put this platform's end-
 worth fixing". The reference dataset is several times larger. The threshold is demanding, and meant
 to be.
 
+**Amended by the owner on 2026-09-24, after B-19's first rows: the threshold is no longer a gate.**
+The packed encoding measured 35–37 ms p99 at an eighth of the dataset and 60–71 ms at a quarter
+(`bench/reports/b-19-preliminary/`), so the 10 ms line would have failed D-3 at any scale worth
+having. The owner's decision: *"relax the criterion — keep it as a known limitation, if we understand
+where it comes from."* So D-3 stands, the collector pause becomes a known, documented limitation of
+kesh, and the condition moves from a number to an explanation: B-19 has to show what the pause is
+made of and what it grows with, with a control that could have refuted it. The full-scale figure is
+still taken, on the reference host at the last stage (B-17, B-22), and reported per D-9 rather than
+gated.
+
 ### D-4. One process holds the whole working set — *decision; the size is a choice, not a need*
 
 §1.1 found no current consumer of the capacity, so §5a is a target the owner sets, not a demand the
@@ -499,7 +509,8 @@ version (a Redis client would read it as a Redis older than RESP2 handshakes).
 
 ## 3. Risks and open questions
 
-**R-1. The collector's pause at §5a scale is unusable.** Mechanism: CMS's end-of-mark pause grew
+**R-1. The collector's pause at §5a scale is unusable.** *Accepted as a known limitation on
+2026-09-24 (D-3, amended); what remains open is its explanation (B-19) and its full-scale figure (B-17).* Mechanism: CMS's end-of-mark pause grew
 from ~5 ms at 128 MB to 20–35 ms at 1 GB (§1.2); §5a is several times that in bytes and ~20× in
 objects. Mitigation: B-19 before B-05 (D-17); packed encodings as the first design lever (D-3); a
 threshold set in advance (B-20). Open: if B-19 fails, D-3 or D-4 changes — that is the owner's
