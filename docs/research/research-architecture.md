@@ -332,6 +332,23 @@ is chosen to fit them.
 The compact-encoding clause of D-3 is where the design effort goes (§1.2, consequence 3): packed
 small hashes, sets and lists are expected to decide the verdict, not polish it.
 
+**The threshold, set by the owner on 2026-09-24, before B-19 measured anything (B-20):** the managed
+heap serves the reference dataset if the collector's **stop-the-world pause p99 is at most 10 ms**.
+Read precisely, so that B-19 cannot choose its reading after the fact:
+
+- every stop-the-world pause the collector makes during the measured window counts — for CMS, both
+  of its pauses per cycle, not the shorter one only;
+- the window is the write churn B-19 applies to the full reference dataset (scale 1.0) once it is
+  built; the build itself is not the window;
+- one subject on the host (§1.2, consequence 5), with the host named beside the number;
+- the verdict takes the better of B-19's two encodings, naive and packed: D-3 holds if either one
+  meets the threshold, and then that encoding is the one the store is built with.
+
+What it is set against: the portfolio's own measurement put this platform's end-of-mark pause at
+9–12 ms p99 at 512 MB and 19–35 ms at 1 GB (§1.2) — the same 10 ms line that study used for "a pause
+worth fixing". The reference dataset is several times larger. The threshold is demanding, and meant
+to be.
+
 ### D-4. One process holds the whole working set — *decision; the size is a choice, not a need*
 
 §1.1 found no current consumer of the capacity, so §5a is a target the owner sets, not a demand the
@@ -523,10 +540,9 @@ future service that needs §5a; (b) add Pub/Sub, which makes kompot's multi-inst
 consumer — and needs a RESP2 subscribe mode on a connection, which D-14 does not preclude; (c) size
 v1 down to what a first consumer needs, which makes R-1 smaller.
 
-**Q-2. What does "the managed heap cannot serve the reference dataset" mean in numbers?** (B-20,
-owner, before B-19 reports.) For example: the §5a heap does not fit on the reference host; or GC
-pause p99 exceeds a client's timeout budget; or p99.9 exceeds a stated figure. This document
-proposes none, deliberately.
+**Q-2. What does "the managed heap cannot serve the reference dataset" mean in numbers?**
+*Answered by the owner on 2026-09-24 (B-20):* a stop-the-world pause p99 above 10 ms at full scale.
+The precise reading is under D-3.
 
 **Q-3. The reference host.** (B-22, owner.) §1.9: the measurement hosts are below the brief's own
 8 GB floor, and the build machine is shared. Blocks B-17 and B-18.

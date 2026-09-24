@@ -1,7 +1,7 @@
 ---
 id: B-20
 title: "Define \"the managed heap cannot serve the reference dataset\" before B-19 reports"
-status: question
+status: done
 priority: P0
 size: XS
 stage: stage-1-protocol
@@ -30,3 +30,9 @@ A threshold chosen after the numbers are seen is chosen to fit them.
 | docs | `docs/research/research-architecture.md` |
 
 Research: [research-architecture](../research/research-architecture.md).
+
+## Answer — 2026-09-24, the owner
+
+**Stop-the-world pause p99 at most 10 ms.** Recorded in research D-3 with its precise reading —
+every collector pause in the churn window counts, at full scale, one subject on the host, the better
+of the two encodings decides — before B-19 has measured anything.

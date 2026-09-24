@@ -38,13 +38,12 @@ A stage is a field on the item, not a directory.
 
 <!-- BEGIN INDEX -->
 
-## Open (18)
+## Open (17)
 
 | Task | | Priority | Size | Blocked by |
 |---|---|---|---|---|
 | [B-05](docs/backlog/B-05-strings-keyspace-lazy-expiry.md) `[ ]` | Strings and keyspace on kesh's own hash table, lazy expiry | P0 | M | B-02, B-04, B-19 |
 | [B-19](docs/backlog/B-19-managed-heap-probe.md) `[ ]` | Heap probe: can plain Kotlin objects hold the reference dataset? | P0 | S/M | B-01 |
-| [B-20](docs/backlog/B-20-define-cannot-serve.md) `[?]` | Define "the managed heap cannot serve the reference dataset" before B-19 reports | P0 | XS | - |
 | [B-21](docs/backlog/B-21-first-consumer-and-pubsub.md) `[?]` | Who is the first consumer, and does Pub/Sub belong in v1? | P0 | XS | - |
 | [B-06](docs/backlog/B-06-hashes.md) `[ ]` | Hashes, with a packed encoding for small ones | P1 | M | B-05 |
 | [B-07](docs/backlog/B-07-lists.md) `[ ]` | Lists | P1 | M | B-05 |
@@ -61,7 +60,7 @@ A stage is a field on the item, not a directory.
 | [B-22](docs/backlog/B-22-reference-host.md) `[?]` | Choose the reference host for the load report and the soak | P1 | XS | - |
 | [B-18](docs/backlog/B-18-soak-24h.md) `[ ]` | 24 h soak with TTL churn | P2 | S | B-17 |
 
-## Closed (4)
+## Closed (5)
 
 **Protocol and core**
 
@@ -69,6 +68,7 @@ A stage is a field on the item, not a directory.
 - [B-02](docs/backlog/B-02-resp-parser-and-limits.md) `[x]` - resp: parser and writer, pipelining, inline commands, limits and the connection ceiling
 - [B-03](docs/backlog/B-03-reference-dataset-generator.md) `[x]` - bench: the reference dataset generator, deterministic by seed
 - [B-04](docs/backlog/B-04-differential-conformance-harness.md) `[x]` - conformance: the differential harness against Redis 7.2, raw bytes with declared normalisers
+- [B-20](docs/backlog/B-20-define-cannot-serve.md) `[x]` - Define "the managed heap cannot serve the reference dataset" before B-19 reports
 
 <!-- END INDEX -->
 
