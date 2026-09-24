@@ -1,7 +1,7 @@
 ---
 id: B-01
 title: "Project skeleton: the modules, sborka, kore, a linuxX64 binary that answers PING"
-status: open
+status: wip
 priority: P0
 size: S
 stage: stage-1-protocol
