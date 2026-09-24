@@ -1,8 +1,16 @@
-build/
+# Gradle and Kotlin output.
 .gradle/
+build/
+!gradle/wrapper/gradle-wrapper.jar
 .kotlin/
-*.iml
+
+# Kotlin/Native and IDE.
+.konan/
 .idea/
+*.iml
 local.properties
+.DS_Store
+
+# Raw benchmark output is committed only inside a report directory (B-17); a local run's is not.
 /bench/reports/raw/
 *.snapshot

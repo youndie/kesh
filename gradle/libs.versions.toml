@@ -1,0 +1,21 @@
+# kesh's own versions. What the portfolio agrees on — Kotlin, ktor, coroutines — comes from the
+# shared `wip` catalog that `io.github.youndie.sborka.settings` provides, and is NOT repeated here:
+# a `kotlin` line in this file would shadow the compiler pin (research §1.8, D-7).
+
+[versions]
+# The build conventions. The same number as the settings plugin in settings.gradle.kts, so the
+# conventions and the catalog they were released with are one tested combination.
+sborka = "0.4.0.91"
+
+# Ordered shutdown and probes. On the portfolio's repository, not on Maven Central. 0.1.4 is the
+# latest published; it depends on kotlinx-coroutines 1.11.0 and kotlin-stdlib 2.4.10, both of which
+# the 2.4.20 compiler consumes.
+kore = "0.1.4"
+
+[libraries]
+kore-core = { module = "io.github.youndie:kore-core", version.ref = "kore" }
+
+[plugins]
+sborkaKmp = { id = "io.github.youndie.sborka.kmp", version.ref = "sborka" }
+sborkaLint = { id = "io.github.youndie.sborka.lint", version.ref = "sborka" }
+sborkaNativeService = { id = "io.github.youndie.sborka.native-service", version.ref = "sborka" }
