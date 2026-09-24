@@ -1,7 +1,7 @@
 ---
 id: B-02
 title: "resp: parser and writer, pipelining, inline commands, limits and the connection ceiling"
-status: open
+status: wip
 priority: P0
 size: M
 stage: stage-1-protocol

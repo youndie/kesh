@@ -42,7 +42,7 @@ A stage is a field on the item, not a directory.
 
 | Task | | Priority | Size | Blocked by |
 |---|---|---|---|---|
-| [B-02](docs/backlog/B-02-resp-parser-and-limits.md) `[ ]` | resp: parser and writer, pipelining, inline commands, limits and the connection ceiling | P0 | M | B-01 |
+| [B-02](docs/backlog/B-02-resp-parser-and-limits.md) `[~]` | resp: parser and writer, pipelining, inline commands, limits and the connection ceiling | P0 | M | B-01 |
 | [B-03](docs/backlog/B-03-reference-dataset-generator.md) `[ ]` | bench: the reference dataset generator, deterministic by seed | P0 | S | B-01 |
 | [B-04](docs/backlog/B-04-differential-conformance-harness.md) `[ ]` | conformance: the differential harness against Redis 7.2, raw bytes with declared normalisers | P0 | M | B-02 |
 | [B-05](docs/backlog/B-05-strings-keyspace-lazy-expiry.md) `[ ]` | Strings and keyspace on kesh's own hash table, lazy expiry | P0 | M | B-02, B-04, B-19 |
