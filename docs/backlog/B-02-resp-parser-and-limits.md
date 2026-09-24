@@ -5,12 +5,13 @@ status: open
 priority: P0
 size: M
 stage: stage-1-protocol
+epic: feature-resp-connection
 blocked_by: [B-01]
 ---
 
 # B-02 — resp: parser and writer, pipelining, inline commands, limits and the connection ceiling
 
-**Feature:** `feature-resp-connection` — drafted in the *docs/layer-drafts* branch; the `epic` field is added when that document reaches `main`.
+**Feature:** [feature-resp-connection](../features/feature-resp-connection.md).
 
 The protocol is the product's surface: every client and tool talks to kesh only through it. It has
 to accept exactly what Redis accepts and refuse exactly what Redis refuses, with Redis's words,

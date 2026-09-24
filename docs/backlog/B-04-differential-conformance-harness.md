@@ -5,12 +5,13 @@ status: open
 priority: P0
 size: M
 stage: stage-1-protocol
+epic: feature-resp-connection
 blocked_by: [B-02]
 ---
 
 # B-04 — conformance: the differential harness against Redis 7.2, raw bytes with declared normalisers
 
-**Feature:** `feature-resp-connection` — drafted in the *docs/layer-drafts* branch; the `epic` field is added when that document reaches `main`.
+**Feature:** [feature-resp-connection](../features/feature-resp-connection.md).
 
 "Compatible" is only true where it is checked (brief D-5). The harness runs the same command script
 against kesh and against a real `redis-server` and compares the replies.

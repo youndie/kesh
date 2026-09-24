@@ -5,11 +5,12 @@ status: question
 priority: P0
 size: XS
 stage: stage-1-protocol
+epic: feature-resp-connection
 ---
 
 # B-21 — Who is the first consumer, and does Pub/Sub belong in v1?
 
-**Feature:** `feature-resp-connection` — drafted in the *docs/layer-drafts* branch; the `epic` field is added when that document reaches `main`.
+**Feature:** [feature-resp-connection](../features/feature-resp-connection.md).
 
 Research §1.1 searched every working tree in the portfolio: the only Redis consumer is kompot's
 multi-instance realtime bus, and it uses only `PUBLISH` and `PSUBSCRIBE` — which v1 excludes. No

@@ -20,9 +20,9 @@ a measurement, with the address), **decisions** (with the reason and the rejecte
 **risks** (with the machinery that mitigates them). Anything unverified is marked *hypothesis* and
 names the backlog item that settles it.
 
-**State on 2026-09-24: nothing is implemented.** The layer documents — features, API, modules — are
-drafted in a branch (*docs/layer-drafts*) and reach `main` one by one, as the code they describe
-lands. The technical brief this research started from lives in that branch as
+**State on 2026-09-24: the skeleton (B-01) — a linuxX64 binary that answers `PING` — and nothing
+else.** The layer documents — features, API, modules — are drafted in a branch (*docs/layer-drafts*)
+and reach `main` one by one, as the code they describe lands. The technical brief this research started from lives in that branch as
 *research/kesh-technical-brief.md* and is deleted before its last document merges. The brief's §8
 (decisions) and §10 (open questions) are carried here, amended where the evidence disagreed.
 The brief's §5a — the reference dataset every measurement talks about — is carried as
@@ -170,8 +170,17 @@ Verified against `ktorio/ktor` at tags `3.5.2` and `3.6.0`, and Maven Central. k
 | Fact | Where verified |
 |---|---|
 | `io.ktor:ktor-network-linuxx64` has 3.5.0, 3.5.1, 3.5.2 and 3.6.0; `latest` and `release` are 3.6.0 | `repo1.maven.org/maven2/io/ktor/ktor-network-linuxx64/maven-metadata.xml`, read 2026-09-24 |
-| The portfolio's catalog pins `ktor = "3.5.2"`, `kotlin = "2.4.20"`, `coroutines = "1.11.0"` (unchanged at `cd1a2bf`, 2026-09-19) | `youndie/sborka@cd1a2bf!/gradle/libs.versions.toml` |
-| kore overrides it with its own `ktor = "3.6.0"`, and its research was read in that version | `youndie/kore@54cbc54!/gradle/libs.versions.toml` |
+| The shared catalog sborka **publishes** (`wip`, `io.github.youndie.sborka:catalog`) pins `kotlin = "2.4.20"`, `ktor = "3.6.0"` (since `f0e9a01`, "take Ktor 3.6.0"), `coroutines = "1.11.0"`; release 0.4.0.91 carries the same | `youndie/sborka@cd1a2bf!/catalog/sborka.versions.toml`; `reposilite.kotlin.website/snapshots/io/github/youndie/sborka/catalog/0.4.0.91/catalog-0.4.0.91.toml` |
+| sborka's `gradle/libs.versions.toml` is a different file — the catalog of sborka's **own** build — and still says `ktor = "3.5.2"` | `youndie/sborka@cd1a2bf!/gradle/libs.versions.toml` |
+| kore pins its own `ktor = "3.6.0"`, and its research was read in that version | `youndie/kore@54cbc54!/gradle/libs.versions.toml` |
+| ktor's `SocketOptions.reuseAddress` defaults to `false`; Redis sets `SO_REUSEADDR` on its listeners | `ktorio/ktor@3.6.0!/ktor-network/common/src/io/ktor/network/sockets/SocketOptions.kt`; `redis/redis@7.2!/src/anet.c` — `anetSetReuseAddr` |
+
+**Correction found while implementing B-01.** This table used to say "the portfolio's catalog pins
+`ktor = "3.5.2"`", citing sborka's `gradle/libs.versions.toml`. That is the catalog sborka builds
+*itself* with, not the one it publishes; the published `wip` catalog took 3.6.0 in the very commit
+cited. So D-6's "pin 3.6.0 in kesh's own catalog as a single override" was a fix for a problem that
+did not exist: kesh reads `ktor` from `wip` like everything else and pins nothing (D-6 below).
+Whoever reads a sborka version next: `catalog/sborka.versions.toml` is the published one.
 | In 3.6.0, `SelectUtilsNix.kt`, `network.def` and `NativeUtils.kt` are byte-identical to 3.5.2; the only native changes are dropped `.toInt()` conversions in `CIOReader.kt`, `TCPSocketNative.kt` and a `@Suppress` in `SignalPoint.kt` | `diff -r` of `ktor-network/nix` and `ktor-network/posix` between tags `3.5.2` (`01c469a`) and `3.6.0` (`111c580`) |
 | `ktor-network-linuxx64` 3.6.0 depends on `kotlin-stdlib` 2.3.21, `kotlinx-coroutines-core` 1.11.0, `atomicfu` 0.33.0 (3.5.2: 2.3.21, 1.11.0, 0.32.1) | `repo1.maven.org/maven2/io/ktor/ktor-network-linuxx64/3.6.0/ktor-network-linuxx64-3.6.0.module` |
 | The Native selector is one loop around `pselect(maxDescriptor + 1, …)` over `fd_set`s | `ktorio/ktor@3.5.2!/ktor-network/nix/src/io/ktor/network/selector/SelectUtilsNix.kt` — `selectionLoop`; `ktorio/ktor@3.5.2!/ktor-network/nix/interop/network.def` — `selector_pselect` |
@@ -272,7 +281,7 @@ and `history`).
 
 | Fact | Where verified |
 |---|---|
-| Kotlin 2.4.20 through the shared catalog; ktor 3.6.0 pinned in kesh's own catalog (see §1.4, D-6) | `youndie/sborka@cd1a2bf!/gradle/libs.versions.toml` |
+| Kotlin 2.4.20 and ktor 3.6.0 through the shared `wip` catalog; kesh pins neither (see §1.4, D-6) | `youndie/sborka@cd1a2bf!/catalog/sborka.versions.toml` |
 | A repository's own `gradle/libs.versions.toml` shadows the shared catalog; one service in the portfolio ran on 2.4.10 for weeks while everything around it assumed 2.4.20 | portfolio incident, 2026-09-23 (the brief's D-7 names the check) |
 | kore is not on Maven Central; it resolves from the portfolio's own repository | `youndie/kore!/README.md`, status block |
 | The portfolio's measurement hosts reach Maven Central over IPv6 but not GitHub or the portfolio's repository | portfolio host inventory |
@@ -347,13 +356,16 @@ reviewer sees, and B-04's acceptance includes a deliberately wrong reply that th
 
 ### D-6. TCP through `ktor-network` 3.6.0 — *decision (owner, 2026-09-24), verified, with a ceiling* (§1.4, D-13)
 
-The brief named the catalog's 3.5.2. The owner chose 3.6.0, the current release, which is also what
-kore is built and researched against — so kesh and the library that owns its shutdown resolve the same
-ktor. It is pinned in kesh's own `gradle/libs.versions.toml` as a **single** override of the shared
-catalog: that file must not grow a `kotlin` line, or it shadows the compiler pin (D-7, §1.8).
-Both dependencies it moves are compatible with 2.4.20 (stdlib 2.3.21; coroutines unchanged).
+The brief named 3.5.2. The owner chose 3.6.0, the current release, which is also what kore is built
+and researched against — so kesh and the library that owns its shutdown resolve the same ktor. Its
+dependencies are compatible with 2.4.20 (stdlib 2.3.21; coroutines unchanged).
 
-### D-7. Kotlin 2.4.20 through sborka — *verified in the catalog*; the `buildEnvironment` check stays in B-01
+**Amended in B-01:** the shared `wip` catalog already carries 3.6.0 (§1.4, correction), so kesh takes
+it from there — `server/build.gradle.kts` reads `wip.versions.ktor` for `ktor-network`, which the
+catalog versions but does not list — and `gradle/libs.versions.toml` pins neither `ktor` nor
+`kotlin`. Verified in B-01 with `dependencyInsight`: `io.ktor:ktor-network-linuxx64:3.6.0`.
+
+### D-7. Kotlin 2.4.20 through sborka — *verified in B-01*: `buildEnvironment` resolves the Kotlin Gradle plugin 2.4.20, and kesh's catalog has no `kotlin` line
 
 ### D-8. `memtier_benchmark` for load, `redis-benchmark` for smoke — *verified* (GPL-2.0, tool only)
 
@@ -393,7 +405,10 @@ descriptors; the exact default is set in B-02 and recorded here. The refusal is
 Rejected: raising the limit (`FD_SETSIZE` is compiled into glibc's `fd_set`) or writing an `epoll`
 transport now (a second network stack before the first one has a user).
 
-### D-14. One thread owns the keyspace — *proposed; taken in B-01, confirmed or amended in B-05*
+### D-14. One thread owns the keyspace — *taken in B-01; confirmed or amended in B-05*
+
+Built as `newSingleThreadContext("kesh-store")` in `server/src/nativeMain/kotlin/io/github/youndie/kesh/server/KeshServer.kt`;
+every command, `PING` included, reaches it through one hand-off per read batch (`services/server.md`).
 
 Every command runs to completion on a single store thread; connections parse and write on the I/O
 side and hand commands over in order. That gives Redis's semantics — each command atomic, `MSET`

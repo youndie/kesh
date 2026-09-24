@@ -24,11 +24,11 @@ top to bottom.
 
 There is no `screens/` layer: kesh has no user interface.
 
-**Where the layer documents are.** `main` describes what exists, and nothing is implemented yet, so
-`features/`, `api/` and `services/` are drafted in the branch *docs/layer-drafts* with
-`status: draft`. Each reaches `main` in the pull request that implements it, as `status: active`,
-with its scenarios' `**Automated:**` lines and live code anchors. Until then this tree holds the
-research and the backlog.
+**Where the layer documents are.** `main` describes what exists. A layer document reaches `main` in
+the pull request that implements it, as `status: active`, with its scenarios' `**Automated:**` lines,
+live code anchors, and whatever is not built yet marked *target*. The rest are drafted in the branch
+*docs/layer-drafts* with `status: draft`. On `main` since B-01: `resp`, `server`,
+`feature-resp-connection`, `endpoint-connection`.
 
 **Backlog** — [backlog.md](../backlog.md): the index and the decisions; the items themselves are
 one file each in [`backlog/`](backlog/), cited as `[B-12](backlog/B-12-some-slug.md)`.
@@ -66,3 +66,16 @@ no file behind it, fails `coverage_map.py`.
 ### Research (1)
 
 - [x] [research-architecture](research/research-architecture.md) — verified facts, the deviations from the brief, decisions D-1…D-17, risks, the reference dataset
+
+### Services (2)
+
+- [x] [resp](services/resp.md) — the RESP2 parser and writer
+- [x] [server](services/server.md) — the binary: listener, connections, the store thread, ordered stop
+
+### Features (1)
+
+- [x] [feature-resp-connection](features/feature-resp-connection.md) — RESP2, pipelining, protocol errors; auth, inline and limits *target*
+
+### API (1)
+
+- [x] [endpoint-connection](api/endpoint-connection.md) — `PING` built; `AUTH`, `HELLO`, `SELECT`, `CLIENT`, `COMMAND` *target*

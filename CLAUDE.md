@@ -1,8 +1,8 @@
 # CLAUDE.md — kesh
 
 A Redis-compatible (RESP2) in-memory store on Kotlin/Native, `linuxX64`, built with the portfolio's
-sborka conventions and kore. **State: nothing is implemented.** Read before writing code — the
-obvious design is wrong in several documented ways.
+sborka conventions and kore. **State: the skeleton (B-01) — `resp`, `server`, a binary that answers
+`PING`.** Read before writing code — the obvious design is wrong in several documented ways.
 
 ## Where to start a session
 
@@ -45,7 +45,10 @@ merging.
 ## Where things run
 
 Builds, tests and the conformance oracle run on the Linux build machine (see the global agent
-instructions for the wrapper), not on the Mac. Latency and pause numbers are taken with **one subject per
+instructions for the wrapper), not on the Mac; the repository has a sync session there named
+`kesh`. What CI will run for the code: `./gradlew ktlintCheck :resp:jvmTest :resp:linuxX64Test
+:server:linuxX64Test`. **`ktlintFormat` runs on the Mac** (`LOCAL=1 ./gradlew ktlintFormat`): on the
+synced copy its edits are reverted by the sync before anyone sees them. Latency and pause numbers are taken with **one subject per
 host** and the load generator elsewhere (research §1.2, consequence 5); the build machine is not a
 measurement host.
 

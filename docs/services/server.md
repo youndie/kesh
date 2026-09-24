@@ -1,0 +1,113 @@
+---
+id: server
+title: "server — the binary: TCP listener, connections, dispatch, lifecycle"
+type: service
+status: active
+module: server
+tech_stack: [Kotlin/Native linuxX64, ktor-network 3.6.0, kore 0.1.4]
+owner: unassigned
+depends_on: [resp, kore, ktor-network]
+publishes: [native binary kesh]
+---
+
+# server
+
+## 1. Responsibility
+
+The process: accepts TCP connections, owns each connection, hands parsed commands to the store
+thread in order and writes the replies back, and stops in order on `SIGTERM` through kore.
+
+**Built (B-01):** the listener, connections, the store thread, `PING`, Redis's unknown-command and
+arity errors, kore's shutdown plan with the listener as its drain participant.
+
+***Target*:** connection state (auth, name, id) and the rest of
+[endpoint-connection](../api/endpoint-connection.md) (B-02); the `maxclients` ceiling below
+`FD_SETSIZE` (B-02, research D-13); the HTTP port with probes and metrics (B-15); snapshot load and
+save (B-14); `CONFIG` (B-11); `INFO` (B-15). The data commands go to the `store` module (B-05).
+
+**Deliberately does not:** implement any data command, or accept more connections than its selector
+can watch (research D-13, from B-02).
+
+## 2. API contracts
+
+* [endpoint-connection](../api/endpoint-connection.md) is implemented here. `endpoint-server` and
+  `endpoint-http` are drafted in the *docs/layer-drafts* branch and arrive with B-11, B-14 and B-15.
+* **Auth tier:** one shared password (`requirepass`) — *target*, B-02.
+
+## 2a. Code anchors
+
+| File | What is there |
+|---|---|
+| `server/src/nativeMain/kotlin/io/github/youndie/kesh/server/Main.kt` | `main`: start, then kore's `runUntilSignal` with the listener as the drain |
+| `server/src/nativeMain/kotlin/io/github/youndie/kesh/server/KeshServer.kt` | the listener, the store thread, the connection scope, the drain |
+| `server/src/nativeMain/kotlin/io/github/youndie/kesh/server/connection/Connection.kt` | read → parse → execute on the store thread → write, per read |
+| `server/src/nativeMain/kotlin/io/github/youndie/kesh/server/command/CommandDispatcher.kt` | command routing; runs on the store thread only |
+| `server/src/nativeMain/kotlin/io/github/youndie/kesh/server/ServerConfig.kt` | environment |
+| `server/src/nativeTest/kotlin/io/github/youndie/kesh/server/KeshServerTest.kt` | through a real socket: PING, pipelining, protocol error, drain, restart |
+| `server/build.gradle.kts` | linuxX64 only; `sborka.native-service` names the binary `kesh` |
+
+## 3. How it is built
+
+* **One store thread executes every command** (research D-14, taken in B-01). A connection reads
+  and parses on the I/O dispatcher; every command completed by one read is executed in **one**
+  hand-off to the store thread (`newSingleThreadContext("kesh-store")`), and the replies are written
+  in one write. Order holds because a batch runs in order and the next read waits for the write.
+  Even `PING` goes through the hand-off, so the atomicity guarantee is structural, not something the
+  data commands add later.
+* **The drain cancels, then closes.** `stop()` cancels the accept loop and the connections, then
+  closes the listener. The other order let `IOException: Accept failed` escape while the socket did
+  not yet report itself closed, and an uncaught coroutine exception terminates a Kotlin/Native
+  process — 4 of 8 test runs before the fix, 0 of 20 after. Letting in-flight commands finish and
+  their replies flush first is B-16's graceful stop.
+* **A connection's failure stays in the connection.** The connection scope has a
+  `CoroutineExceptionHandler` that reports and carries on; without it one failing socket would end
+  the process for the same reason.
+* **`SO_REUSEADDR`, as Redis sets it** (`redis/redis@7.2!/src/anet.c` — `anetSetReuseAddr`). A
+  connection the server closed leaves the server's port in TIME-WAIT; ktor's default is off, and
+  without the flag a restart inside that window died at startup with `EADDRINUSE`.
+
+## 4. Dependencies
+
+| Kind | Name | What for |
+|---|---|---|
+| Module | [resp](resp.md) | parsing and writing |
+| Library | kore-core 0.1.4 | `runUntilSignal`, the shutdown plan |
+| Library | `ktor-network` 3.6.0, from the shared `wip` catalog | TCP (research D-6) |
+
+## 5. Infrastructure and deploy
+
+* **Binary:** `kesh.kexe`, the release executable of the linuxX64 target; `stageNativeImage` copies it
+  as `kesh` into the module's `native-image` build directory, with the list of shared libraries it
+  asks for (glibc only).
+* **Image, chart, probes, metrics:** *target* — B-15, B-16.
+
+## 6. Local setup
+
+On the Linux build machine (the repository is synced there; see `CLAUDE.md`):
+
+```bash
+./gradlew :server:linkReleaseExecutableLinuxX64
+KESH_PORT=6379 server/build/bin/linuxX64/releaseExecutable/kesh.kexe
+docker run --rm --network host redis:7.2 redis-cli -p 6379 ping
+```
+
+## 7. Configuration
+
+`ServerConfig.kt` is the list. Today: `KESH_PORT` (default 6379), `KESH_BIND` (default `0.0.0.0`).
+
+**`KESH_` in upper case, decided in B-01.** The brief spelled the prefix `kesh_`, which read as a
+working-name substitution rather than a decision; environment variables are conventionally upper
+case.
+
+## 8. Quirks
+
+* **Any signal is a hazard** (research R-3). `pselect` is never restarted after a signal handler, and
+  `ktor-network` does not retry `EINTR` — the process dies with `PosixException.InterruptedException`.
+  Do not profile kesh with an in-process, signal-based sampler; use `perf` from outside. Do not
+  install a `SIGCHLD` handler. Ten `SIGTERM`s with a client connected all exited 0 in B-01, which is
+  consistent with the handler rarely landing on the selector thread and proves nothing stronger.
+* **A stop takes five seconds even with nothing to announce.** kore's announce stage waits its
+  default `preDrainWait` (5 s) for readiness to propagate, and kesh has no readiness gate until B-15.
+  Harmless now; B-16 sizes it with the rest of the grace period.
+* **The selector is O(descriptors) per wake-up**, one thread for all connections. Irrelevant at the
+  reference load; the reason not to promise hundreds of busy connections without a measurement.
