@@ -28,6 +28,8 @@ class GlobTest {
             Triple("user:*", "user:1001", true),
             Triple("*:tags", "post:9:tags", true),
             Triple("a*b*c", "axxbyyc", true),
-        ).forEach { (pattern, string, expected) -> assertEquals(expected, m(pattern, string), "'$pattern' against '$string'") }
+        ).forEach { (pattern, string, expected) ->
+            assertEquals(expected, m(pattern, string), "'$pattern' against '$string'")
+        }
     }
 }

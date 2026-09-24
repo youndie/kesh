@@ -30,6 +30,14 @@ class RedisFloatTest {
         assertEquals(5000.0, RedisFloat.parse("5.0e3"))
         assertEquals(0.5, RedisFloat.parse(".5"))
         assertEquals(Double.POSITIVE_INFINITY, RedisFloat.parse("inf"))
-        listOf("", " 1", "1 ", "nan", "abc", "1.5x", "1f").forEach { assertNull(RedisFloat.parse(it), "accepted '$it'") }
+        listOf(
+            "",
+            " 1",
+            "1 ",
+            "nan",
+            "abc",
+            "1.5x",
+            "1f",
+        ).forEach { assertNull(RedisFloat.parse(it), "accepted '$it'") }
     }
 }

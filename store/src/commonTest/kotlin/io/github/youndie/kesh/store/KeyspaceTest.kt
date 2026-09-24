@@ -41,7 +41,15 @@ class KeyspaceTest {
         repeat(1000) { keyspace.put(key(it), it) }
         repeat(1000) { if (it % 2 == 0) keyspace.remove(key(it)) }
         assertEquals(500, keyspace.size)
-        repeat(1000) { i -> if (i % 2 == 0) assertNull(keyspace.get(key(i))) else assertEquals(i, keyspace.get(key(i))!!.value) }
+        repeat(1000) { i ->
+            if (i % 2 ==
+                0
+            ) {
+                assertNull(keyspace.get(key(i)))
+            } else {
+                assertEquals(i, keyspace.get(key(i))!!.value)
+            }
+        }
     }
 
     @Test

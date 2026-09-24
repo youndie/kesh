@@ -68,6 +68,30 @@ class ConnectionScenariosTest {
         "*${args.size}\r\n" + args.joinToString("") { "$${it.encodeToByteArray().size}\r\n$it\r\n" }
 
     @Test
+    fun `a thousand pipelined INCR are answered 1 to 1000 in order`() =
+        scenario { connect ->
+            val c = connect()
+            c.send(command("INCR", "k").repeat(1000))
+            c.expect((1..1000).joinToString("") { ":$it\r\n" })
+        }
+
+    @Test
+    fun `EXISTS typed into telnet answers 0 for a missing key`() =
+        scenario { connect ->
+            val c = connect()
+            c.send("EXISTS somekey\r\n")
+            c.expect(":0\r\n")
+        }
+
+    @Test
+    fun `GET before AUTH is refused with NOAUTH`() =
+        scenario(ServerConfig(password = "secret")) { connect ->
+            val c = connect()
+            c.send(command("GET", "k"))
+            c.expect("-NOAUTH Authentication required.\r\n")
+        }
+
+    @Test
     fun `an inline command typed into telnet is answered`() =
         scenario { connect ->
             val c = connect()

@@ -25,9 +25,21 @@ object StringCommands {
         listOf(
             StoreCommand("get", 2) { db, a -> answering { get(db, a[1]) } },
             StoreCommand("set", -3) { db, a -> answering { set(db, a) } },
-            StoreCommand("setnx", 3) { db, a -> answering { setGeneric(db, "setnx", a[1], a[2], nx = true, abortReply = ZERO, okReply = ONE) } },
-            StoreCommand("setex", 4) { db, a -> answering { setGeneric(db, "setex", a[1], a[3], expire = a[2], unitSeconds = true, relative = true) } },
-            StoreCommand("psetex", 4) { db, a -> answering { setGeneric(db, "psetex", a[1], a[3], expire = a[2], unitSeconds = false, relative = true) } },
+            StoreCommand("setnx", 3) { db, a ->
+                answering {
+                    setGeneric(db, "setnx", a[1], a[2], nx = true, abortReply = ZERO, okReply = ONE)
+                }
+            },
+            StoreCommand("setex", 4) { db, a ->
+                answering {
+                    setGeneric(db, "setex", a[1], a[3], expire = a[2], unitSeconds = true, relative = true)
+                }
+            },
+            StoreCommand("psetex", 4) { db, a ->
+                answering {
+                    setGeneric(db, "psetex", a[1], a[3], expire = a[2], unitSeconds = false, relative = true)
+                }
+            },
             StoreCommand("getset", 3) { db, a -> answering { getset(db, a) } },
             StoreCommand("getdel", 2) { db, a -> answering { getdel(db, a) } },
             StoreCommand("getex", -2) { db, a -> answering { getex(db, a) } },
@@ -35,10 +47,21 @@ object StringCommands {
             StoreCommand("mset", -3) { db, a -> mset(db, a, nx = false) },
             StoreCommand("msetnx", -3) { db, a -> mset(db, a, nx = true) },
             StoreCommand("append", 3) { db, a -> answering { append(db, a) } },
-            StoreCommand("strlen", 2) { db, a -> answering { Reply.Integer((stringOf(db.lookup(a[1]))?.size ?: 0).toLong()) } },
+            StoreCommand(
+                "strlen",
+                2,
+            ) { db, a -> answering { Reply.Integer((stringOf(db.lookup(a[1]))?.size ?: 0).toLong()) } },
             StoreCommand("incr", 2) { db, a -> answering { incrBy(db, a[1], 1) } },
             StoreCommand("decr", 2) { db, a -> answering { incrBy(db, a[1], -1) } },
-            StoreCommand("incrby", 3) { db, a -> answering { incrBy(db, a[1], long(a[2]) ?: return@answering NOT_AN_INTEGER) } },
+            StoreCommand("incrby", 3) { db, a ->
+                answering {
+                    incrBy(
+                        db,
+                        a[1],
+                        long(a[2]) ?: return@answering NOT_AN_INTEGER,
+                    )
+                }
+            },
             StoreCommand("decrby", 3) { db, a -> answering { decrBy(db, a) } },
             StoreCommand("incrbyfloat", 3) { db, a -> answering { incrByFloat(db, a) } },
             StoreCommand("getrange", 4) { db, a -> answering { getrange(db, a) } },
@@ -69,35 +92,53 @@ object StringCommands {
             val hasNext = j + 1 < a.size
             val expiryFree = unit == null
             when {
-                option.equals("nx", true) && !xx -> nx = true
-                option.equals("xx", true) && !nx -> xx = true
-                option.equals("get", true) -> get = true
-                option.equals("keepttl", true) && expiryFree -> keepTtl = true
+                option.equals("nx", true) && !xx -> {
+                    nx = true
+                }
+
+                option.equals("xx", true) && !nx -> {
+                    xx = true
+                }
+
+                option.equals("get", true) -> {
+                    get = true
+                }
+
+                option.equals("keepttl", true) && expiryFree -> {
+                    keepTtl = true
+                }
+
                 option.equals("ex", true) && !keepTtl && (unit == null || unit == "ex") && hasNext -> {
                     unit = "ex"
                     expire = a[++j]
                     unitSeconds = true
                     relative = true
                 }
+
                 option.equals("px", true) && !keepTtl && (unit == null || unit == "px") && hasNext -> {
                     unit = "px"
                     expire = a[++j]
                     unitSeconds = false
                     relative = true
                 }
+
                 option.equals("exat", true) && !keepTtl && (unit == null || unit == "exat") && hasNext -> {
                     unit = "exat"
                     expire = a[++j]
                     unitSeconds = true
                     relative = false
                 }
+
                 option.equals("pxat", true) && !keepTtl && (unit == null || unit == "pxat") && hasNext -> {
                     unit = "pxat"
                     expire = a[++j]
                     unitSeconds = false
                     relative = false
                 }
-                else -> return SYNTAX
+
+                else -> {
+                    return SYNTAX
+                }
             }
             j++
         }
@@ -176,12 +217,24 @@ object StringCommands {
             val option = a[j].decodeToString().lowercase()
             val hasNext = j + 1 < a.size
             when {
-                option == "persist" && unit == null -> persist = true
-                option in setOf("ex", "px", "exat", "pxat") && !persist && (unit == null || unit == option) && hasNext -> {
+                option == "persist" && unit == null -> {
+                    persist = true
+                }
+
+                option in
+                    setOf(
+                        "ex",
+                        "px",
+                        "exat",
+                        "pxat",
+                    ) && !persist && (unit == null || unit == option) && hasNext -> {
                     unit = option
                     expire = a[++j]
                 }
-                else -> return SYNTAX
+
+                else -> {
+                    return SYNTAX
+                }
             }
             j++
         }
@@ -189,7 +242,8 @@ object StringCommands {
         val value = stringOf(entry)!!
         if (expire != null) {
             val absolute = unit == "exat" || unit == "pxat"
-            val expireAt = expireMillis(db, "getex", expire, unitSeconds = unit == "ex" || unit == "exat", relative = !absolute)
+            val expireAt =
+                expireMillis(db, "getex", expire, unitSeconds = unit == "ex" || unit == "exat", relative = !absolute)
             if (absolute && expireAt <= db.now) {
                 db.keyspace.remove(a[1])
             } else {
@@ -317,7 +371,14 @@ object StringCommands {
         val current = stringOf(entry)!!
         if (patch.isEmpty()) return Reply.Integer(current.size.toLong())
         checkLength(offset, patch.size.toLong())
-        val value = if (offset + patch.size > current.size) current.copyOf((offset + patch.size).toInt()) else current.copyOf()
+        val value =
+            if (offset + patch.size >
+                current.size
+            ) {
+                current.copyOf((offset + patch.size).toInt())
+            } else {
+                current.copyOf()
+            }
         patch.copyInto(value, offset.toInt())
         entry.value = value
         return Reply.Integer(value.size.toLong())

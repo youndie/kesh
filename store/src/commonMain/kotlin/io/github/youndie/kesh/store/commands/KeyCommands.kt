@@ -28,12 +28,28 @@ object KeyCommands {
         listOf(
             StoreCommand("del", -2) { db, a -> delete(db, a) },
             StoreCommand("unlink", -2) { db, a -> delete(db, a) },
-            StoreCommand("exists", -2) { db, a -> Reply.Integer((1 until a.size).count { db.lookup(a[it]) != null }.toLong()) },
+            StoreCommand(
+                "exists",
+                -2,
+            ) { db, a -> Reply.Integer((1 until a.size).count { db.lookup(a[it]) != null }.toLong()) },
             StoreCommand("type", 2) { db, a -> Reply.Simple(typeName(db.lookup(a[1])?.value)) },
-            StoreCommand("expire", -3) { db, a -> answering { expire(db, a, "expire", unitSeconds = true, relative = true) } },
-            StoreCommand("pexpire", -3) { db, a -> answering { expire(db, a, "pexpire", unitSeconds = false, relative = true) } },
-            StoreCommand("expireat", -3) { db, a -> answering { expire(db, a, "expireat", unitSeconds = true, relative = false) } },
-            StoreCommand("pexpireat", -3) { db, a -> answering { expire(db, a, "pexpireat", unitSeconds = false, relative = false) } },
+            StoreCommand(
+                "expire",
+                -3,
+            ) { db, a -> answering { expire(db, a, "expire", unitSeconds = true, relative = true) } },
+            StoreCommand(
+                "pexpire",
+                -3,
+            ) { db, a -> answering { expire(db, a, "pexpire", unitSeconds = false, relative = true) } },
+            StoreCommand(
+                "expireat",
+                -3,
+            ) { db, a -> answering { expire(db, a, "expireat", unitSeconds = true, relative = false) } },
+            StoreCommand("pexpireat", -3) { db, a ->
+                answering {
+                    expire(db, a, "pexpireat", unitSeconds = false, relative = false)
+                }
+            },
             StoreCommand("ttl", 2) { db, a -> ttl(db, a[1], millis = false, absolute = false) },
             StoreCommand("pttl", 2) { db, a -> ttl(db, a[1], millis = true, absolute = false) },
             StoreCommand("expiretime", 2) { db, a -> ttl(db, a[1], millis = false, absolute = true) },

@@ -11,7 +11,16 @@ class CommandsTest {
     private val db = Db().apply { now = 1_000_000 }
     private val commands = (StringCommands.all + KeyCommands.all).associateBy { it.name }
 
-    private fun r(vararg args: String): String = commands.getValue(args[0].lowercase()).handler(db, args.map { it.encodeToByteArray() }).encode().decodeToString()
+    private fun r(vararg args: String): String =
+        commands
+            .getValue(args[0].lowercase())
+            .handler(
+                db,
+                args.map {
+                    it.encodeToByteArray()
+                },
+            ).encode()
+            .decodeToString()
 
     @Test
     fun `set and get`() {
@@ -21,7 +30,7 @@ class CommandsTest {
     }
 
     @Test
-    fun `an expiring set is gone once its time has passed and and not a millisecond before`() {
+    fun `an expiring set is gone once its time has passed and not a millisecond before`() {
         r("SET", "session:42", "x", "PX", "100")
         db.now += 100
         assertEquals("$1\r\nx\r\n", r("GET", "session:42"))
@@ -64,7 +73,13 @@ class CommandsTest {
         assertEquals("$19\r\n9223372036854775807\r\n", r("GET", "c"))
         r("SET", "d", "0")
         assertEquals("-ERR decrement would overflow\r\n", r("DECRBY", "d", "-9223372036854775808"))
-        assertEquals("-ERR value is not an integer or out of range\r\n", r("INCR", "user:1001:name").also { r("SET", "user:1001:name", "Ada") }.let { r("INCR", "user:1001:name") })
+        assertEquals(
+            "-ERR value is not an integer or out of range\r\n",
+            r("INCR", "user:1001:name")
+                .also {
+                    r("SET", "user:1001:name", "Ada")
+                }.let { r("INCR", "user:1001:name") },
+        )
     }
 
     @Test
@@ -116,8 +131,14 @@ class CommandsTest {
         assertEquals(":1\r\n", r("EXPIRE", "k", "10", "NX"))
         assertEquals(":0\r\n", r("EXPIRE", "k", "5", "GT"))
         assertEquals(":1\r\n", r("EXPIRE", "k", "5", "LT"))
-        assertEquals("-ERR NX and XX, GT or LT options at the same time are not compatible\r\n", r("EXPIRE", "k", "5", "NX", "GT"))
-        assertEquals("-ERR GT and LT options at the same time are not compatible\r\n", r("EXPIRE", "k", "5", "GT", "LT"))
+        assertEquals(
+            "-ERR NX and XX, GT or LT options at the same time are not compatible\r\n",
+            r("EXPIRE", "k", "5", "NX", "GT"),
+        )
+        assertEquals(
+            "-ERR GT and LT options at the same time are not compatible\r\n",
+            r("EXPIRE", "k", "5", "GT", "LT"),
+        )
         assertEquals("-ERR Unsupported option FOO\r\n", r("EXPIRE", "k", "5", "FOO"))
     }
 

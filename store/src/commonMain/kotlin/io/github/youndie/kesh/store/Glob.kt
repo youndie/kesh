@@ -31,7 +31,9 @@ object Glob {
         var patternLen = pLen
         var s = sStart
         var stringLen = sLen
+
         fun pat(i: Int): Int = if (i < pattern.size) pattern[i].toInt() and 0xFF else 0
+
         fun str(i: Int): Int = if (i < string.size) string[i].toInt() and 0xFF else 0
 
         while (patternLen > 0 && stringLen > 0) {
@@ -43,7 +45,17 @@ object Glob {
                     }
                     if (patternLen == 1) return true
                     while (stringLen > 0) {
-                        if (match(pattern, p + 1, patternLen - 1, string, s, stringLen, skipLongerMatches, nesting + 1)) {
+                        if (match(
+                                pattern,
+                                p + 1,
+                                patternLen - 1,
+                                string,
+                                s,
+                                stringLen,
+                                skipLongerMatches,
+                                nesting + 1,
+                            )
+                        ) {
                             return true
                         }
                         if (skipLongerMatches[0]) return false
@@ -53,10 +65,12 @@ object Glob {
                     skipLongerMatches[0] = true
                     return false
                 }
+
                 '?'.code -> {
                     s++
                     stringLen--
                 }
+
                 '['.code -> {
                     p++
                     patternLen--
@@ -99,6 +113,7 @@ object Glob {
                     s++
                     stringLen--
                 }
+
                 else -> {
                     if (pat(p) == '\\'.code && patternLen >= 2) {
                         p++
