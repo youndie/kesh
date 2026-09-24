@@ -1,7 +1,7 @@
 ---
 id: B-19
 title: "Heap probe: can plain Kotlin objects hold the reference dataset?"
-status: open
+status: wip
 priority: P0
 size: S/M
 stage: stage-1-protocol
