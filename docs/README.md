@@ -28,7 +28,7 @@ There is no `screens/` layer: kesh has no user interface.
 the pull request that implements it, as `status: active`, with its scenarios' `**Automated:**` lines,
 live code anchors, and whatever is not built yet marked *target*. The rest are drafted in the branch
 *docs/layer-drafts* with `status: draft`. On `main`: `resp`, `server`,
-`feature-resp-connection`, `endpoint-connection` (B-01, B-02).
+`feature-resp-connection`, `endpoint-connection` (B-01, B-02), `bench` (B-03).
 
 **Backlog** — [backlog.md](../backlog.md): the index and the decisions; the items themselves are
 one file each in [`backlog/`](backlog/), cited as `[B-12](backlog/B-12-some-slug.md)`.
@@ -67,10 +67,11 @@ no file behind it, fails `coverage_map.py`.
 
 - [x] [research-architecture](research/research-architecture.md) — verified facts, the deviations from the brief, decisions D-1…D-17, risks, the reference dataset
 
-### Services (2)
+### Services (3)
 
 - [x] [resp](services/resp.md) — the RESP2 parser and writer
 - [x] [server](services/server.md) — the binary: listener, connections, the store thread, ordered stop
+- [x] [bench](services/bench.md) — the reference dataset generator; heap probe, load profiles and soak *target*
 
 ### Features (1)
 

@@ -48,6 +48,7 @@ Read this table before any backlog item. Each row is argued in the section it na
 | 9 | §10: the reference host needs at least 8 GB | The portfolio's measurement hosts have 7.7 GB. The one 16 GB machine is the build box | §1.9, Q-3 |
 | 10 | `SIGTERM` … saves if configured, and exits within the chart's grace period | Saving ~4.3 GB is not free; the grace period has to be derived from a measured `SAVE`, not chosen | R-5 |
 | 11 | §6: a wrong password answers `-ERR invalid password`; §4: at startup the server refuses connections until the snapshot is loaded | Redis 7.2 answers `-WRONGPASS …`. And while loading, Redis accepts connections and answers `-LOADING …` rather than refusing them — which is right for kesh is open (B-14) | §1.5 |
+| 12 | §5a: 2 000 leaderboards of 1 000–100 000 members hold 0.3 GB | Drawn uniformly they hold 1.6 GB. The table is consistent only with mostly small boards: B-03 draws a stratified power law with a mean near 9 700 | appendix A |
 
 ---
 
@@ -563,5 +564,35 @@ Zipf-distributed; pipelines 1 and 16 deep, over 50 connections.
 **Fixed values for scenarios:** user `1001` (name `Ada`, plan `pro`), board `board:2026-09`, date
 2026-10-01.
 
-The dataset's own code anchor, once it exists: `bench/src/` (B-03).
+### How the generator reads the table (B-03)
+
+The generator is `bench/src/commonMain/kotlin/io/github/youndie/kesh/bench/ReferenceDataset.kt`;
+`kesh-dataset --seed N --scale F [--out PATH] [--summary-only] [--check]` is its command line. What
+it had to decide, because the table does not say:
+
+- **"User data" is keys plus values**, plus 8 bytes per sorted-set score. Values alone cannot be
+  meant: the counters would hold 0.01 GB against the table's 0.05.
+- **The ranges are not uniform.** Drawn uniformly, most parts miss their total by 5–10 %, so each part
+  draws inside its range with the mean its total implies (`SkewedRange`; the arithmetic is beside each
+  part in the code).
+- **The leaderboards are the one inconsistency.** 2 000 boards of 1 000–100 000 members hold 1.6 GB
+  drawn uniformly, not 0.3 GB. The table holds only if most boards are small and a few large — a
+  truncated power law with a mean of about 9 700 members, which is what leaderboards look like. It is
+  drawn **stratified** (one draw per equal slice of probability, shuffled): a plain sample of 2 000
+  from that tail missed the total by +5.0 % at seed 42, which is noise about the seed, not the store.
+- **SplitMix64, not `kotlin.random`**, whose sequence is promised only within one Kotlin runtime
+  version. `ReferenceDatasetTest` pins the digest of seed 42 at scale 0.0005, and it is equal on the
+  JVM and on linuxX64.
+
+Measured, seed 42, scale 1.0 (the same within 0.1 % for seeds 7 and 1 000): 15 802 000 keys,
+4 259 648 349 bytes of user data against 4 260 000 000; every part within 0.4 % of the table. The
+2 % holds at full scale; at scale 0.01 the 20 leaderboards are −11 %, which is why scaled-down runs
+state their scale.
+
+**A baseline from Redis itself** (Redis 7.2, the oracle's image, scale 0.01 loaded with
+`redis-cli --pipe`): 42 139 834 bytes of user data held in `used_memory` 73 137 392
+(`used_memory_dataset` 61 896 728) — 1.74× and 1.47×. Not a target for kesh; the figure B-11's ratio
+will be read beside.
+
+The dataset's code anchor: `bench/src/commonMain/kotlin/io/github/youndie/kesh/bench/`.
 
