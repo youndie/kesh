@@ -17,13 +17,13 @@ publishes: [native binary kesh]
 The process: accepts TCP connections, owns each connection, hands parsed commands to the store
 thread in order and writes the replies back, and stops in order on `SIGTERM` through kore.
 
-**Built (B-01):** the listener, connections, the store thread, `PING`, Redis's unknown-command and
-arity errors, kore's shutdown plan with the listener as its drain participant.
+**Built (B-01, B-02):** the listener, connections, the store thread, the client registry, every
+command of [endpoint-connection](../api/endpoint-connection.md), `requirepass`, the `maxclients`
+ceiling below `FD_SETSIZE` (research D-13), and kore's shutdown plan with the listener as its drain
+participant.
 
-***Target*:** connection state (auth, name, id) and the rest of
-[endpoint-connection](../api/endpoint-connection.md) (B-02); the `maxclients` ceiling below
-`FD_SETSIZE` (B-02, research D-13); the HTTP port with probes and metrics (B-15); snapshot load and
-save (B-14); `CONFIG` (B-11); `INFO` (B-15). The data commands go to the `store` module (B-05).
+***Target*:** the HTTP port with probes and metrics (B-15); snapshot load and save (B-14); `CONFIG`
+(B-11); `INFO` (B-15). The data commands go to the `store` module (B-05).
 
 **Deliberately does not:** implement any data command, or accept more connections than its selector
 can watch (research D-13, from B-02).
@@ -32,7 +32,8 @@ can watch (research D-13, from B-02).
 
 * [endpoint-connection](../api/endpoint-connection.md) is implemented here. `endpoint-server` and
   `endpoint-http` are drafted in the *docs/layer-drafts* branch and arrive with B-11, B-14 and B-15.
-* **Auth tier:** one shared password (`requirepass`) — *target*, B-02.
+* **Auth tier:** one shared password (`KESH_PASSWORD`, Redis's `requirepass`); before `AUTH` only
+  `AUTH`, `HELLO` and `QUIT` are answered.
 
 ## 2a. Code anchors
 
@@ -41,7 +42,10 @@ can watch (research D-13, from B-02).
 | `server/src/nativeMain/kotlin/io/github/youndie/kesh/server/Main.kt` | `main`: start, then kore's `runUntilSignal` with the listener as the drain |
 | `server/src/nativeMain/kotlin/io/github/youndie/kesh/server/KeshServer.kt` | the listener, the store thread, the connection scope, the drain |
 | `server/src/nativeMain/kotlin/io/github/youndie/kesh/server/connection/Connection.kt` | read → parse → execute on the store thread → write, per read |
-| `server/src/nativeMain/kotlin/io/github/youndie/kesh/server/command/CommandDispatcher.kt` | command routing; runs on the store thread only |
+| `server/src/nativeMain/kotlin/io/github/youndie/kesh/server/command/CommandDispatcher.kt` | the command table and the connection commands; store thread only |
+| `server/src/nativeMain/kotlin/io/github/youndie/kesh/server/client/Clients.kt` | the client registry and the `maxclients` count; store thread only |
+| `server/src/nativeMain/kotlin/io/github/youndie/kesh/server/client/DescriptorCeiling.kt` | the default `maxclients`, from the descriptors open at startup |
+| `server/src/nativeTest/kotlin/io/github/youndie/kesh/server/ConnectionScenariosTest.kt` | the feature's scenarios through a real socket |
 | `server/src/nativeMain/kotlin/io/github/youndie/kesh/server/ServerConfig.kt` | environment |
 | `server/src/nativeTest/kotlin/io/github/youndie/kesh/server/KeshServerTest.kt` | through a real socket: PING, pipelining, protocol error, drain, restart |
 | `server/build.gradle.kts` | linuxX64 only; `sborka.native-service` names the binary `kesh` |
@@ -59,6 +63,15 @@ can watch (research D-13, from B-02).
   not yet report itself closed, and an uncaught coroutine exception terminates a Kotlin/Native
   process — 4 of 8 test runs before the fix, 0 of 20 after. Letting in-flight commands finish and
   their replies flush first is B-16's graceful stop.
+* **Clients live on the store thread too.** Registration, `CLIENT LIST` and `CLIENT KILL` all run
+  there, so the `maxclients` count and the registry are exact without a lock: an accepted socket is
+  registered in one hand-off, or told `-ERR max number of clients reached` and closed.
+* **Batch when authenticated, one at a time before.** The parser applies Redis's unauthenticated
+  limits before `AUTH`, and `AUTH` can change that between two commands of one read — so until the
+  client is authenticated, each command is parsed only after the previous one ran.
+* **The default `maxclients` is measured, not typed** (research D-13). After binding, the server
+  counts `/proc/self/fd` and sets the ceiling to `FD_SETSIZE` − open − 32 reserved: 986 on the build
+  machine. A configured value above it is refused at startup, naming both numbers.
 * **A connection's failure stays in the connection.** The connection scope has a
   `CoroutineExceptionHandler` that reports and carries on; without it one failing socket would end
   the process for the same reason.
@@ -93,7 +106,9 @@ docker run --rm --network host redis:7.2 redis-cli -p 6379 ping
 
 ## 7. Configuration
 
-`ServerConfig.kt` is the list. Today: `KESH_PORT` (default 6379), `KESH_BIND` (default `0.0.0.0`).
+`ServerConfig.kt` is the list. Today: `KESH_PORT` (6379), `KESH_BIND` (`0.0.0.0`), `KESH_PASSWORD`
+(none), `KESH_MAXCLIENTS` (derived), `KESH_PROTO_MAX_BULK_LEN` (512 MB),
+`KESH_CLIENT_QUERY_BUFFER_LIMIT` (1 GB). The printed configuration never shows the password.
 
 **`KESH_` in upper case, decided in B-01.** The brief spelled the prefix `kesh_`, which read as a
 working-name substitution rather than a decision; environment variables are conventionally upper
@@ -109,5 +124,9 @@ case.
 * **A stop takes five seconds even with nothing to announce.** kore's announce stage waits its
   default `preDrainWait` (5 s) for readiness to propagate, and kesh has no readiness gate until B-15.
   Harmless now; B-16 sizes it with the rest of the grace period.
+* **A peer that resets is a closed connection, not a failure.** Reporting it put 318 lines in the
+  log during B-02's 1 100-connection flood; Redis logs it at verbose level only.
+* **Out of descriptors is survivable.** An `accept` that fails (EMFILE under a low `ulimit -n`) is
+  logged and retried after 100 ms, as Redis keeps listening; it used to end the accept loop.
 * **The selector is O(descriptors) per wake-up**, one thread for all connections. Irrelevant at the
   reference load; the reason not to promise hundreds of busy connections without a measurement.

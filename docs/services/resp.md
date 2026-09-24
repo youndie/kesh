@@ -24,13 +24,11 @@ RESP3 (research D-1; `HELLO 3` is refused one layer up, in `server`).
 
 * **The wire:** RESP2 as Redis's protocol specification describes it. Pipelining is a property of
   the parser: it yields every complete command in a buffer, in order.
-* **Built (B-01):** arrays of bulk strings — what every client library and `redis-cli` send — with
-  Redis's error strings for a malformed multibulk length, a malformed bulk length and a non-bulk
-  argument; replies of all five RESP2 kinds.
-* ***Target* (B-02):** inline commands; `proto-max-bulk-len`, `client-query-buffer-limit`; the two
-  limits Redis 7.2 enforces before `AUTH` (more than 10 arguments, a bulk over 16 384 bytes —
-  research §1.5). Until then a request that does not start with `*` is refused with
-  `Protocol error: inline commands are not supported yet`, which is kesh's wording, not Redis's.
+* **Built (B-01, B-02):** multibulk requests and inline commands (split as Redis's
+  `sdssplitargs`); integers parsed as Redis's `string2ll` (no sign on positives, no leading zeros);
+  `proto-max-bulk-len`; the 64 KB line limit; and before `AUTH` the two limits Redis 7.2 enforces —
+  more than 10 arguments, a bulk over 16 384 bytes (research §1.5). Every refusal carries Redis's
+  own words. `client-query-buffer-limit` is enforced by `server`, from `CommandReader.buffered`.
 * **Errors:** see [endpoint-connection](../api/endpoint-connection.md).
 
 ## 2a. Code anchors
@@ -40,6 +38,8 @@ RESP3 (research D-1; `HELLO 3` is refused one layer up, in `server`).
 | `resp/src/commonMain/kotlin/io/github/youndie/kesh/resp/CommandReader.kt` | the incremental parser and `ProtocolException` |
 | `resp/src/commonMain/kotlin/io/github/youndie/kesh/resp/ReplyWriter.kt` | the encoder: one growing buffer per connection, so a batch is one write |
 | `resp/src/commonMain/kotlin/io/github/youndie/kesh/resp/Reply.kt` | the five reply kinds |
+| `resp/src/commonMain/kotlin/io/github/youndie/kesh/resp/InlineArguments.kt` | `sdssplitargs`, ported |
+| `resp/src/commonMain/kotlin/io/github/youndie/kesh/resp/RedisNumbers.kt` | `string2ll`, ported; shared with the commands |
 | `resp/src/commonTest/kotlin/io/github/youndie/kesh/resp/` | tests, run on the JVM and on linuxX64 |
 
 ## 3. How it is built
@@ -50,7 +50,13 @@ pipelined commands are the same code path; `CommandReaderTest` feeds one command
 boundary. It is common Kotlin with no I/O and no dependencies, so the tests run on both targets.
 
 Why not a parser that reads from a suspending channel byte by byte: that ties the protocol to one
-transport and makes the malformed-input fuzz (B-02) a network test.
+transport and makes the malformed-input fuzz a network test. `CommandReaderFuzzTest` feeds 20 000
+seeded random inputs in random pieces and accepts only a command, `null` or a `ProtocolException`;
+its positive control is a mutation that reads a bulk past the buffer, which it catches.
+
+Limits are checked the moment the line that breaks them is complete, so an oversized bulk is refused
+from its header, before its data arrives. The unauthenticated limits depend on the caller's
+`authenticated` argument, passed per command because `AUTH` changes it mid-pipeline.
 
 A text reply (`Reply.Simple`, `Reply.Error`) refuses CR and LF at construction: the protocol has no
 escaping for them, and a line break in an error built from user input would desynchronise the
@@ -66,7 +72,7 @@ A module of this build; not published.
 
 ## 7. Configuration
 
-None of its own. The limits (B-02) are passed in by `server`.
+None of its own: `RequestLimits` is passed in by `server`, from its configuration.
 
 ## 8. Quirks
 

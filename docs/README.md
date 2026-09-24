@@ -27,8 +27,8 @@ There is no `screens/` layer: kesh has no user interface.
 **Where the layer documents are.** `main` describes what exists. A layer document reaches `main` in
 the pull request that implements it, as `status: active`, with its scenarios' `**Automated:**` lines,
 live code anchors, and whatever is not built yet marked *target*. The rest are drafted in the branch
-*docs/layer-drafts* with `status: draft`. On `main` since B-01: `resp`, `server`,
-`feature-resp-connection`, `endpoint-connection`.
+*docs/layer-drafts* with `status: draft`. On `main`: `resp`, `server`,
+`feature-resp-connection`, `endpoint-connection` (B-01, B-02).
 
 **Backlog** — [backlog.md](../backlog.md): the index and the decisions; the items themselves are
 one file each in [`backlog/`](backlog/), cited as `[B-12](backlog/B-12-some-slug.md)`.
@@ -74,8 +74,8 @@ no file behind it, fails `coverage_map.py`.
 
 ### Features (1)
 
-- [x] [feature-resp-connection](features/feature-resp-connection.md) — RESP2, pipelining, protocol errors; auth, inline and limits *target*
+- [x] [feature-resp-connection](features/feature-resp-connection.md) — RESP2 and inline, pipelining, auth, Redis's request limits, the connection ceiling
 
 ### API (1)
 
-- [x] [endpoint-connection](api/endpoint-connection.md) — `PING` built; `AUTH`, `HELLO`, `SELECT`, `CLIENT`, `COMMAND` *target*
+- [x] [endpoint-connection](api/endpoint-connection.md) — `PING`, `ECHO`, `QUIT`, `AUTH`, `HELLO`, `SELECT`, `CLIENT`, `COMMAND`; protocol errors

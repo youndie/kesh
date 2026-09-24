@@ -1,7 +1,7 @@
 ---
 id: B-02
 title: "resp: parser and writer, pipelining, inline commands, limits and the connection ceiling"
-status: wip
+status: done
 priority: P0
 size: M
 stage: stage-1-protocol
@@ -40,11 +40,56 @@ because clients parse the error prefix.
 - AC: With `maxclients` N, connection N+1 receives `-ERR max number of clients reached`, and the first N keep being served.
 - AC: Before `AUTH`, an 11-argument request and a 16 385-byte bulk are refused with Redis's two strings.
 
+## Findings
+
+### Iteration 1 — 2026-09-24, done
+
+Acceptance, on the Linux build machine with the release binary:
+
+- The feature's scenarios: 11 of 14 automated (`ConnectionScenariosTest`, `CommandDispatcherTest`,
+  `KeshServerTest`); the three left are *target* for reasons outside this item — `INCR` and `EXISTS`
+  (B-05), a Lettuce client (B-04) — and each names what covers its protocol half today.
+- `redis-cli` 7.2.16 and `nc`: `NOAUTH`, `WRONGPASS` via `-a`, `PONG` after it; `AUTH` + `HELLO 3` +
+  `PING` on one connection → `+OK`, `-NOPROTO …`, `+PONG`; an inline quoted `ECHO`, `SELECT 1`,
+  `CLIENT SETNAME`/`GETNAME`, `QUIT` dropping the `PING` after it; `CLIENT LIST` with Redis's keys.
+- Fuzz: 20 000 seeded random inputs in random pieces through `CommandReader` (JVM and linuxX64) —
+  only commands, `null` or `ProtocolException`; its positive control (a bulk read past the buffer)
+  fails it. Through sockets: 200 connections of garbage, then `PING` → `PONG`.
+- `maxclients`: the derived default is 986 on this machine (`FD_SETSIZE` 1024 − 6 open − 32
+  reserved, research D-13). 1 100 connections held open from Python: 986 served, 114 refused with
+  `-ERR max number of clients reached`, all 986 still answering, recovery after release, exit 0.
+- Before `AUTH`: 11 arguments → `unauthenticated multibulk length`, a 16 385-byte bulk →
+  `unauthenticated bulk length`, each followed by a closed connection.
+- 103 tests (resp 32 × 2 targets, server 39), `ktlintCheck` clean, five repeated server runs clean.
+  Mutations caught: the unauthenticated bulk limit ignored; the ceiling off by one; the auth gate
+  removed; batching before `AUTH`; `POST` answered; no query-buffer limit; a glued quote accepted;
+  a bulk read past the buffer.
+
+Found on the way, decided here:
+
+- **Redis checks existence and arity before authentication**, so an unauthenticated unknown command
+  is "unknown command". The brief's *Auth required* scenario used `GET k`, which would read so until
+  B-05; the scenario now uses `PING`.
+- **`POST` and `Host:` close the connection without a reply** (Redis's cross-protocol-scripting
+  guard) — not in the brief, necessary once inline commands exist.
+- **`AUTH` mid-pipeline**: before `AUTH` each command is parsed only after the previous one ran, so
+  the unauthenticated limits stop at the right command.
+- **A peer reset is not a failure**: the flood logged 318 "connection failed" lines until it was
+  treated as a close.
+- **An `accept` that fails is retried**, so running out of descriptors no longer ends the accept loop.
+- **`HELLO` reports `server: kesh`, `version: 7.2.0`** — research D-18.
+
+Not done here, on purpose: `COMMAND` entries without key specs and `COMMAND DOCS` empty (the data
+commands fill them, B-05 on); `CLIENT LIST` values kesh does not track written as zero, `fd=-1`.
+
 ## Code anchors
 
 | Module | Path |
 |---|---|
-| resp | `resp/src/commonMain/kotlin/io/github/youndie/kesh/resp/` |
-| server | `server/src/nativeMain/kotlin/io/github/youndie/kesh/server/connection/` |
+| resp | `resp/src/commonMain/kotlin/io/github/youndie/kesh/resp/CommandReader.kt` |
+| resp | `resp/src/commonMain/kotlin/io/github/youndie/kesh/resp/InlineArguments.kt` |
+| server | `server/src/nativeMain/kotlin/io/github/youndie/kesh/server/command/CommandDispatcher.kt` |
+| server | `server/src/nativeMain/kotlin/io/github/youndie/kesh/server/client/DescriptorCeiling.kt` |
+| server | `server/src/nativeMain/kotlin/io/github/youndie/kesh/server/connection/Connection.kt` |
 
 Research: [research-architecture](../research/research-architecture.md).

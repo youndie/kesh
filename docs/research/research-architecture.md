@@ -235,6 +235,10 @@ Verified against `redis/redis` sources: the `7.2` branch (head is 7.2.16, `redis
 | wrong password | `-WRONGPASS invalid username-password pair or user is disabled.` — not the brief's `-ERR invalid password` | `redis/redis@7.2!/src/acl.c` |
 | a command while the dataset loads | `-LOADING Redis is loading the dataset in memory` — Redis accepts the connection and refuses the command; the brief refuses the connection | `redis/redis@7.2!/src/server.c` — `createSharedObjects`, `processCommand` |
 | wrong arity | `ERR wrong number of arguments for '<command>' command` | `redis/redis@7.2!/src/server.c` |
+| **the order of checks**: the command exists, then its arity, then authentication — an unauthenticated unknown command is "unknown command", not `NOAUTH` | `redis/redis@7.2!/src/server.c` — `processCommand`, lines 3876–3924 |
+| `POST` or `Host:` as a command closes the connection without a reply (cross-protocol scripting) | `redis/redis@7.2!/src/networking.c` — `securityWarningCommand` |
+| inline commands split by `sdssplitargs`; a 64 KB line without its ending is `too big inline request` (`… mbulk count string`, `… bulk count string` for count lines) | `redis/redis@7.2!/src/sds.c`; `redis/redis@7.2!/src/server.h` — `PROTO_INLINE_MAX_SIZE` |
+| integers in the protocol parse as `string2ll`: no `+`, no leading zeros, at most 20 characters | `redis/redis@7.2!/src/util.c` — `string2ll` |
 | active expiry | 20 keys per loop; the slow cycle may use up to **25 % of CPU**; the loop repeats while the expired share of a sample exceeds `ACTIVE_EXPIRE_CYCLE_ACCEPTABLE_STALE` = **10 %** (lowered further by `active-expire-effort`); `hz 10` | `redis/redis@7.2.5!/src/expire.c` — the `ACTIVE_EXPIRE_CYCLE_*` defines and `activeExpireCycle`; `redis/redis@7.2.5!/redis.conf` |
 | the current `EXPIRE` documentation says only that Redis "periodically … tests a few keys at random amongst the set of keys with an expiration"; it no longer states a percentage | `redis.io/docs/latest/commands/expire/`, "How Redis expires keys", read 2026-09-24 |
 
@@ -396,12 +400,21 @@ Rejected: `HashMap<Key, Value>` with a wrapper key — simple, and the 16 M-key 
 a pause measured in hundreds of milliseconds (*hypothesis*, measured in B-05's growth test).
 Price: a data structure the portfolio has to own and test — which D-3 already accepts in principle.
 
-### D-13. A connection ceiling below `FD_SETSIZE`, refused the way Redis refuses it — *new*
+### D-13. A connection ceiling below `FD_SETSIZE`, refused the way Redis refuses it — *built in B-02*
 
 Why: §1.4. Without it, the connection that crosses 1024 descriptors throws inside the selector.
-`maxclients` defaults to a value with headroom for the listener, HTTP, snapshot and stdio
-descriptors; the exact default is set in B-02 and recorded here. The refusal is
-`-ERR max number of clients reached`.
+The refusal is `-ERR max number of clients reached`, then close.
+
+**The default is measured at startup, not typed** (B-02). After binding, the server counts
+`/proc/self/fd` and sets `maxclients` to `FD_SETSIZE` (1024) − open − 32 reserved. The 32 cover what
+is not a RESP connection: the connection being refused (it holds a descriptor while it is told),
+the HTTP listener and its selector's wakeup pipe (B-15), probe and metrics connections, the snapshot
+and its temporary twin (B-14), and a margin. On the build machine that is **986** (6 open at
+startup). A `KESH_MAXCLIENTS` above the ceiling is refused at startup, naming both numbers.
+Descriptors are handed out lowest-free, so while the count stays under the ceiling every
+descriptor does too. Verified with the release binary, `ulimit -n` 1024: of 1 100 connections held
+open, 986 were served, 114 refused with Redis's string, all 986 still answered, nothing was logged
+as a failure, and the process exited 0 on `SIGTERM`.
 Rejected: raising the limit (`FD_SETSIZE` is compiled into glibc's `fd_set`) or writing an `epoll`
 transport now (a second network stack before the first one has a user).
 
@@ -443,6 +456,15 @@ Why: §1.2. It is cheap (a generator and a map, no protocol) and it is the one m
 invalidate the architecture; everything else in the backlog can only tune it.
 What it does not do: replace B-17. B-19 is a heap under synthetic churn; B-17 is the product under
 the reference load.
+
+### D-18. `HELLO` answers `server: kesh`, `version: 7.2.0` — *new, B-02*
+
+The brief does not say what `HELLO 2` reports. Redis sends `server: redis` and its own version.
+Decision: `server` is `kesh`, so nobody mistakes what they are talking to; `version` is `7.2.0`, the
+Redis kesh is held to by the oracle (D-16), because clients that gate features on a version expect
+a Redis one. The same constant will feed `INFO`'s `redis_version` (B-15).
+Rejected: `server: redis` (a claim kesh is not entitled to make) and kesh's own `0.1.0` as the
+version (a Redis client would read it as a Redis older than RESP2 handshakes).
 
 ---
 
