@@ -42,6 +42,15 @@ the backlog items of that feature, and removes the document from the drafts bran
 When the last document has moved, the drafts branch — and the brief in it — is closed without
 merging.
 
+## The backlog loop merges its own branches
+
+Decided by the owner on 2026-09-24. There is no remote yet, so an item's "pull request" is its local
+branch `feat/b-<nn>-<slug>`. When the item is `done`, the gate is green on the branch and the
+acceptance was walked, the loop fast-forwards `main` to it (rebasing first if `main` moved), runs
+`make gate` and `docs_check.py --on-main` on `main`, and then rebuilds *docs/layer-drafts* on top of
+`main` without the documents the item moved. Once a remote exists, this becomes: push, open the pull
+request, merge when green.
+
 ## Where things run
 
 Builds, tests and the conformance oracle run on the Linux build machine (see the global agent
