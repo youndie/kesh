@@ -12,10 +12,11 @@ import platform.posix.fgets
 import platform.posix.fopen
 import platform.posix.fputs
 import platform.posix.stdout
+import platform.posix.usleep
 import kotlin.time.TimeSource
 
 /**
- * `kesh-heap-probe --encoding naive|packed [--scale F] [--seed N] [--seconds S]`
+ * `kesh-heap-probe --encoding naive|packed [--scale F] [--seed N] [--seconds S] [--rate OPS_PER_SECOND]`
  *
  * Builds the reference dataset in-process, then runs the write churn for S seconds. Prints marks the
  * reader (`bench/heap-probe/pauses.py`) uses to cut the runtime's GC log to the churn window, and the
@@ -29,6 +30,9 @@ fun main(args: Array<String>) {
     val scale = options["scale"]?.toDouble() ?: 1.0
     val seed = options["seed"]?.toLong() ?: 42L
     val seconds = options["seconds"]?.toLong() ?: 60L
+    // Unset: as fast as one thread goes. Set: the churn is held to this many commands a second, which
+    // moves the garbage made during a concurrent mark while the heap stays the same (B-19).
+    val rate = options["rate"]?.toLong()
     val start = TimeSource.Monotonic.markNow()
 
     fun mark(label: String) {
@@ -36,7 +40,7 @@ fun main(args: Array<String>) {
         fflush(stdout)
     }
 
-    mark("start encoding=${encoding.name} scale=$scale seed=$seed")
+    mark("start encoding=${encoding.name} scale=$scale seed=$seed rate=${rate ?: "max"}")
     val probe = HeapProbe(ReferenceDataset(seed, scale), encoding, seed)
     probe.load()
     mark("loaded keys=${probe.keys}")
@@ -44,7 +48,14 @@ fun main(args: Array<String>) {
     val window = TimeSource.Monotonic.markNow()
     mark("window-start")
     var operations = 0L
-    while (window.elapsedNow().inWholeSeconds < seconds) operations += probe.churn(10_000)
+    while (window.elapsedNow().inWholeSeconds < seconds) {
+        operations += probe.churn(if (rate == null) 10_000 else 1_000)
+        if (rate != null) {
+            val due = operations * 1_000_000 / rate
+            val now = window.elapsedNow().inWholeMicroseconds
+            if (due > now) usleep((due - now).toUInt())
+        }
+    }
     val elapsed = window.elapsedNow().inWholeMilliseconds / 1000.0
     mark("window-end operations=$operations ops_per_s=${(operations / elapsed).toLong()}")
 }
