@@ -31,6 +31,9 @@ include(":resp")
 // The binary: listener, connections, the store thread, kore's shutdown plan.
 include(":server")
 
-// `store`, `snapshot`, `conformance`, `bench` and `deploy/` arrive with the items that give them
-// code (B-05, B-14, B-04, B-03, B-16). A module with no code has no build to verify, and the shape of
+// Measurement: the reference dataset generator (B-03), and later the heap probe and load profiles.
+include(":bench")
+
+// `store`, `snapshot`, `conformance` and `deploy/` arrive with the items that give them code (B-05,
+// B-14, B-04, B-16). A module with no code has no build to verify, and the shape of
 // each one — `conformance` on the JVM, `bench` partly shell — is decided by the item that needs it.
