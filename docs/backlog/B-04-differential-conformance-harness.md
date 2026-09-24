@@ -1,7 +1,7 @@
 ---
 id: B-04
 title: "conformance: the differential harness against Redis 7.2, raw bytes with declared normalisers"
-status: open
+status: wip
 priority: P0
 size: M
 stage: stage-1-protocol
