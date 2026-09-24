@@ -46,10 +46,15 @@ class Script(
             text.lines().forEachIndexed { index, raw ->
                 val line = raw.trim()
                 when {
-                    line.isEmpty() -> Unit
-                    line.startsWith("#") ->
+                    line.isEmpty() -> {}
+
+                    line.startsWith("#") -> {
                         if (line.removePrefix("#").trim() == "requires: password") requiresPassword = true
-                    else -> steps += step(index + 1, line)
+                    }
+
+                    else -> {
+                        steps += step(index + 1, line)
+                    }
                 }
             }
             return Script(name, requiresPassword, steps)
@@ -64,9 +69,18 @@ class Script(
             val tag = Regex("""^\[(\w+)]\s*""").find(line)
             val body = if (tag == null) line else line.substring(tag.range.last + 1)
             return when (val name = tag?.groupValues?.get(1)) {
-                null -> Step(number, line, command(body, number), Kind.COMMAND, Normaliser.EXACT)
-                "closes" -> Step(number, line, command(body, number), Kind.CLOSES, Normaliser.EXACT)
-                "raw" -> Step(number, line, unescape(body), Kind.RAW, Normaliser.EXACT)
+                null -> {
+                    Step(number, line, command(body, number), Kind.COMMAND, Normaliser.EXACT)
+                }
+
+                "closes" -> {
+                    Step(number, line, command(body, number), Kind.CLOSES, Normaliser.EXACT)
+                }
+
+                "raw" -> {
+                    Step(number, line, unescape(body), Kind.RAW, Normaliser.EXACT)
+                }
+
                 else -> {
                     val normaliser =
                         Normaliser.entries.firstOrNull { it.name.equals(name, ignoreCase = true) }
@@ -93,14 +107,27 @@ class Script(
                 val c = text[i]
                 if (c == '\\' && i + 1 < text.length) {
                     when (text[i + 1]) {
-                        'r' -> out.write('\r'.code)
-                        'n' -> out.write('\n'.code)
-                        't' -> out.write('\t'.code)
-                        '\\' -> out.write('\\'.code)
+                        'r' -> {
+                            out.write('\r'.code)
+                        }
+
+                        'n' -> {
+                            out.write('\n'.code)
+                        }
+
+                        't' -> {
+                            out.write('\t'.code)
+                        }
+
+                        '\\' -> {
+                            out.write('\\'.code)
+                        }
+
                         'x' -> {
                             out.write(text.substring(i + 2, i + 4).toInt(16))
                             i += 2
                         }
+
                         else -> {
                             out.write(c.code)
                             out.write(text[i + 1].code)

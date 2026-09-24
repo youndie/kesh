@@ -33,14 +33,30 @@ fun main(args: Array<String>) {
             .sortedBy { it.path }
             .map(Script::load)
             .toList()
-    check(scripts.isNotEmpty()) { "no scripts under ${options.getValue("scripts")} — a run that compares nothing is not a pass" }
+    check(scripts.isNotEmpty()) {
+        "no scripts under ${options.getValue("scripts")} — a run that compares nothing is not a pass"
+    }
 
     val outcomes = scripts.flatMap { (if (it.requiresPassword) locked else open).run(it) }
     outcomes.filterNot { it.agree }.forEach { println(Runner.describe(it)) }
 
-    val byKind = outcomes.groupingBy { if (it.step.kind == Script.Kind.RAW) "raw" else it.step.normaliser.name.lowercase() }.eachCount()
+    val byKind =
+        outcomes
+            .groupingBy {
+                if (it.step.kind ==
+                    Script.Kind.RAW
+                ) {
+                    "raw"
+                } else {
+                    it.step.normaliser.name
+                        .lowercase()
+                }
+            }.eachCount()
     val failed = outcomes.count { !it.agree }
-    println("${scripts.size} scripts, ${outcomes.size} comparisons: " + byKind.entries.joinToString(", ") { "${it.value} ${it.key}" })
+    println(
+        "${scripts.size} scripts, ${outcomes.size} comparisons: " +
+            byKind.entries.joinToString(", ") { "${it.value} ${it.key}" },
+    )
     println(if (failed == 0) "all agree" else "$failed disagree")
 
     val lettuce = lettuceSmoke(Endpoint.parse(options.getValue("kesh")))

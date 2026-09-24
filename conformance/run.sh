@@ -20,11 +20,19 @@ IMAGE=redis:7.2
 BINARY=server/build/bin/linuxX64/releaseExecutable/kesh.kexe
 
 pids=()
+# kesh stops through kore's plan, whose announce stage keeps the port open for five seconds (see
+# services/server.md). Returning before it exits made the next run's kesh die on EADDRINUSE while the
+# old one answered the port check — so cleanup waits, and startup refuses a port already taken.
 cleanup() {
   for pid in "${pids[@]}"; do kill "$pid" 2>/dev/null || true; done
+  for pid in "${pids[@]}"; do wait "$pid" 2>/dev/null || true; done
   docker rm -f kesh-oracle kesh-oracle-locked >/dev/null 2>&1 || true
 }
 trap cleanup EXIT
+
+for port in $ORACLE $ORACLE_LOCKED $KESH $KESH_LOCKED; do
+  if nc -z 127.0.0.1 "$port" 2>/dev/null; then echo "port $port is already taken; is another run still stopping?"; exit 1; fi
+done
 
 # The configuration file is the one source; it is passed as arguments rather than mounted, because
 # the image's entrypoint runs Redis as its own user, which cannot read a file synced with mode 0600.
@@ -48,7 +56,8 @@ KESH_PORT=$KESH_LOCKED KESH_BIND=127.0.0.1 KESH_PASSWORD=$PASSWORD "$BINARY" >/t
 
 for port in $ORACLE $ORACLE_LOCKED $KESH $KESH_LOCKED; do
   for _ in $(seq 1 50); do nc -z 127.0.0.1 "$port" 2>/dev/null && break; sleep 0.2; done
-  nc -z 127.0.0.1 "$port" || { echo "nothing listens on $port"; exit 1; }
+  sleep 0.1
+  nc -z 127.0.0.1 "$port" 2>/dev/null || { echo "nothing listens on $port"; exit 1; }
 done
 
 ./gradlew --console=plain -q :conformance:runJvm --args="\

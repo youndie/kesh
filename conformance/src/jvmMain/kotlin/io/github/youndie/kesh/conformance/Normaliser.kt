@@ -26,14 +26,20 @@ enum class Normaliser {
         oracle: RespFrame,
     ): Boolean =
         when (this) {
-            EXACT -> kesh.bytes.contentEquals(oracle.bytes)
+            EXACT -> {
+                kesh.bytes.contentEquals(oracle.bytes)
+            }
+
             UNORDERED -> {
                 val a = kesh.elements
                 val b = oracle.elements
                 kesh.type == '*' && oracle.type == '*' && a != null && b != null &&
                     a.map { it.bytes.toList() }.sortedWith(BYTES) == b.map { it.bytes.toList() }.sortedWith(BYTES)
             }
-            SHAPE -> sameShape(kesh, oracle)
+
+            SHAPE -> {
+                sameShape(kesh, oracle)
+            }
         }
 
     private fun sameShape(

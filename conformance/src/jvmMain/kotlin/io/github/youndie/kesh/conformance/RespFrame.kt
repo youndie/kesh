@@ -34,17 +34,24 @@ class RespFrame(
             val line = input.readLine(out)
             val elements: List<RespFrame>? =
                 when (type) {
-                    '+', '-', ':' -> emptyList()
+                    '+', '-', ':' -> {
+                        emptyList()
+                    }
+
                     '$' -> {
                         val length = line.toInt()
                         if (length >= 0) repeat(length + 2) { input.readByte(out) }
                         emptyList()
                     }
+
                     '*' -> {
                         val count = line.toInt()
                         if (count < 0) null else List(count) { readInto(input, out) }
                     }
-                    else -> error("not a RESP2 reply type: '$type'")
+
+                    else -> {
+                        error("not a RESP2 reply type: '$type'")
+                    }
                 }
             return RespFrame(out.toByteArray().copyOfRange(start, out.size()), type, elements)
         }

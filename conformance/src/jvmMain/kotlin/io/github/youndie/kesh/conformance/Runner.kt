@@ -50,16 +50,27 @@ class Runner(
             for (step in script.steps) {
                 val (kReply, kClosed) = k.safely(step)
                 val (oReply, oClosed) = o.safely(step)
+                // `[closes]` is a claim about both servers, not only that they behave alike: two servers
+                // that both stay open would otherwise agree on a line that says they close.
+                val closesAsClaimed = step.kind != Script.Kind.CLOSES || (kClosed && oClosed)
                 val agree =
-                    kClosed == oClosed &&
+                    kClosed == oClosed && closesAsClaimed &&
                         when (step.kind) {
-                            Script.Kind.RAW -> kReply.contentEquals(oReply)
-                            else ->
+                            Script.Kind.RAW -> {
+                                kReply.contentEquals(oReply)
+                            }
+
+                            else -> {
                                 runCatching {
-                                    step.normaliser.agree(RespFrame.read(kReply.inputStream()), RespFrame.read(oReply.inputStream()))
+                                    step.normaliser.agree(
+                                        RespFrame.read(kReply.inputStream()),
+                                        RespFrame.read(oReply.inputStream()),
+                                    )
                                 }.getOrDefault(false)
+                            }
                         }
-                outcomes += Outcome(script.name, step, kReply + closedMark(kClosed), oReply + closedMark(oClosed), agree)
+                outcomes +=
+                    Outcome(script.name, step, kReply + closedMark(kClosed), oReply + closedMark(oClosed), agree)
                 if (kClosed || oClosed) {
                     k.close()
                     o.close()
@@ -161,10 +172,13 @@ class Runner(
             var offset = 0
             while (offset < a.size && offset < b.size && a[offset] == b[offset]) offset++
             val from = maxOf(0, offset - 16)
+
             fun tail(x: ByteArray) = RespFrame.escape(x.copyOfRange(minOf(from, x.size), minOf(x.size, offset + 160)))
             return buildString {
                 appendLine("${outcome.script}:${outcome.step.line}  ${outcome.step.source}")
-                appendLine("  first difference at byte $offset (${outcome.step.normaliser.name.lowercase()} comparison)")
+                appendLine(
+                    "  first difference at byte $offset (${outcome.step.normaliser.name.lowercase()} comparison)",
+                )
                 appendLine("  kesh:   ${if (from > 0) "…" else ""}${tail(a)}")
                 append("  oracle: ${if (from > 0) "…" else ""}${tail(b)}")
             }
