@@ -258,7 +258,11 @@ class CommandDispatcherTest {
 
     @Test
     fun `CONFIG answers maxmemory in Redis's words`() {
-        assertEquals("*2\r\n$9\r\nmaxmemory\r\n$1\r\n0\r\n", open.reply(me, "CONFIG", "GET", "MAXMEMORY"))
+        assertEquals(
+            "*2\r\n$9\r\nMAXMEMORY\r\n$1\r\n0\r\n",
+            open.reply(me, "CONFIG", "GET", "MAXMEMORY"),
+            "the name as written",
+        )
         assertEquals("*0\r\n", open.reply(me, "CONFIG", "GET", "nothing"))
         assertEquals("+OK\r\n", open.reply(me, "CONFIG", "SET", "maxmemory", "1mb"))
         assertEquals("*2\r\n$9\r\nmaxmemory\r\n$7\r\n1048576\r\n", open.reply(me, "CONFIG", "GET", "maxmemory"))
