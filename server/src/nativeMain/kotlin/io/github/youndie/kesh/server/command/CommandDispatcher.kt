@@ -5,6 +5,7 @@ import io.github.youndie.kesh.resp.parseRedisLong
 import io.github.youndie.kesh.server.client.ClientState
 import io.github.youndie.kesh.server.client.Clients
 import io.github.youndie.kesh.server.config.MemoryConfig
+import io.github.youndie.kesh.server.persistence.Persistence
 import io.github.youndie.kesh.store.Db
 import io.github.youndie.kesh.store.commands.StoreCommands
 import io.github.youndie.kesh.store.expiry.ActiveExpiry
@@ -26,6 +27,8 @@ class CommandDispatcher(
     private val clock: () -> Long = ::epochMillis,
     /** The active expiry cycle, for `INFO stats`; the server runs it (B-13). */
     private val expiry: ActiveExpiry? = null,
+    /** `SAVE` and `LASTSAVE`; none in tests that do not save (B-14). */
+    private val persistence: Persistence? = null,
 ) {
     private val memoryConfig = MemoryConfig(db)
 
@@ -47,6 +50,8 @@ class CommandDispatcher(
                     ),
             ),
             CommandSpec("info", -1) { _, a -> info(a.drop(1).map { it.decodeToString().lowercase() }) },
+            CommandSpec("save", 1) { _, _ -> persistence?.save(db) ?: Reply.Error("ERR") },
+            CommandSpec("lastsave", 1) { _, _ -> Reply.Integer(persistence?.lastSave ?: 0) },
             CommandSpec(
                 "client",
                 -2,

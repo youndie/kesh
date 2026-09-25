@@ -28,6 +28,7 @@ kotlin {
         nativeMain.dependencies {
             implementation(project(":resp"))
             implementation(project(":store"))
+            implementation(project(":snapshot"))
             implementation(libs.kore.core)
             implementation(wip.kotlinx.coroutines.core)
             // The version is the shared catalog's `ktor` (3.6.0), read rather than repeated: the

@@ -6,6 +6,10 @@ import io.github.youndie.kesh.server.client.DescriptorCeiling
 import io.github.youndie.kesh.server.command.CommandDispatcher
 import io.github.youndie.kesh.server.command.epochMillis
 import io.github.youndie.kesh.server.connection.Connection
+import io.github.youndie.kesh.server.persistence.Persistence
+import io.github.youndie.kesh.server.persistence.SnapshotFile
+import io.github.youndie.kesh.server.persistence.SnapshotIOException
+import io.github.youndie.kesh.snapshot.SnapshotException
 import io.github.youndie.kesh.store.Db
 import io.github.youndie.kesh.store.expiry.ActiveExpiry
 import io.github.youndie.kore.lifecycle.ShutdownParticipant
@@ -80,6 +84,22 @@ class KeshServer(
 
     suspend fun start() {
         check(listener == null) { "already started" }
+        // The snapshot is loaded before the listener exists (B-14): until loading ends, a client is
+        // refused at connect, as the brief says — not answered `-LOADING` as Redis answers it. A
+        // snapshot that is not whole stops the start; nothing it held is served.
+        val db = Db(seed = Random.nextInt()).apply { maxMemory = config.maxMemory }
+        val file = SnapshotFile(config.dir, config.dbFilename)
+        db.now = epochMillis()
+        val loaded =
+            try {
+                file.load(db)
+            } catch (e: SnapshotException) {
+                throw StartupFailure("the snapshot ${file.path} cannot be loaded: ${e.message}")
+            } catch (e: SnapshotIOException) {
+                throw StartupFailure("the snapshot ${file.path} cannot be read: ${e.message}")
+            }
+        loaded?.let { println("kesh: loaded ${it.keys} keys, ${it.bytes} bytes, from ${file.path} in ${it.millis} ms") }
+
         // SO_REUSEADDR, as Redis sets it (`redis/redis@7.2!/src/anet.c` — `anetSetReuseAddr`). A
         // connection the server closed leaves the server's port in TIME-WAIT, and without the flag a
         // restart inside that window dies at startup with EADDRINUSE. ktor's default is off.
@@ -104,10 +124,10 @@ class KeshServer(
         val clients = Clients(maxClients, passwordRequired = config.password != null)
         registry = clients
         // One keyspace, seeded per process so that keys chosen from outside cannot be made to collide.
-        val db = Db(seed = Random.nextInt()).apply { maxMemory = config.maxMemory }
         val started = TimeSource.Monotonic.markNow()
         val expiry = ActiveExpiry { started.elapsedNow().inWholeMicroseconds }
-        val commands = CommandDispatcher(clients, config.password, db, expiry = expiry)
+        val persistence = Persistence(file, ::epochMillis)
+        val commands = CommandDispatcher(clients, config.password, db, expiry = expiry, persistence = persistence)
 
         // Redis's `serverCron` work for the data (B-13): the slow active expiry cycle and the tables'
         // resizing, HZ times a second, on the store thread between commands — never inside one.

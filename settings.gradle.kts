@@ -30,6 +30,7 @@ include(":resp")
 
 // The keyspace and the commands on it: kesh's own hash table, expiry, strings (B-05 onwards).
 include(":store")
+include(":snapshot")
 
 // The binary: listener, connections, the store thread, kore's shutdown plan.
 include(":server")

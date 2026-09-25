@@ -19,6 +19,13 @@ kotlin {
         // D-19) and the default collector — plus the GC log, which is a compiler flag rather than a
         // switch: the pauses it measures are read from that log. B-19's series before D-19 ran with
         // 16 KiB pages; the `page16` arm of `series.sh` rebuilds that.
+        // The fork probe (B-14, research R-6): can a forked child of this runtime write a snapshot?
+        binaries.executable("forkProbe") {
+            entryPoint = "io.github.youndie.kesh.bench.fork.main"
+            baseName = "kesh-fork-probe"
+            binaryOption("fixedBlockPageSize", "256")
+            freeCompilerArgs += "-Xruntime-logs=gc=info"
+        }
         binaries.executable("heapProbe") {
             entryPoint = "io.github.youndie.kesh.bench.heap.main"
             baseName = "kesh-heap-probe"
@@ -37,10 +44,9 @@ kotlin {
     sourceSets {
         commonMain.dependencies {
             implementation(project(":resp"))
-        }
-        // B-13's second criterion runs the reference dataset's TTL keys through the store's expiry.
-        commonTest.dependencies {
+            // The dataset loaded into a store in-process: B-13's expiry test and B-14's fork probe.
             implementation(project(":store"))
+            implementation(project(":snapshot"))
         }
     }
 }

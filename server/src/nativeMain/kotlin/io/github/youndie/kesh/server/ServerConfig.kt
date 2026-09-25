@@ -26,11 +26,14 @@ data class ServerConfig(
     val queryBufferLimit: Long = 1L shl 30,
     /** `maxmemory`, `memtoull`'s syntax (`100mb`); 0 for no limit (B-11). */
     val maxMemory: Long = 0,
+    /** Where the snapshot lives (`dir`, `dbfilename`; B-14). */
+    val dir: String = ".",
+    val dbFilename: String = "dump.kesh",
 ) {
     override fun toString(): String =
         "ServerConfig(host=$host, port=$port, password=${if (password == null) "none" else "set"}, " +
             "maxClients=${maxClients ?: "derived"}, limits=$limits, queryBufferLimit=$queryBufferLimit, " +
-            "maxMemory=$maxMemory)"
+            "maxMemory=$maxMemory, snapshot=$dir/$dbFilename)"
 
     companion object {
         fun fromEnvironment(read: (String) -> String? = ::environmentVariable): ServerConfig {
@@ -62,6 +65,8 @@ data class ServerConfig(
                     read("KESH_MAXMEMORY")?.let { raw ->
                         requireNotNull(MemoryConfig.memtoull(raw)) { "KESH_MAXMEMORY is not a memory value: $raw" }
                     } ?: defaults.maxMemory,
+                dir = read("KESH_DIR")?.takeIf { it.isNotEmpty() } ?: defaults.dir,
+                dbFilename = read("KESH_DBFILENAME")?.takeIf { it.isNotEmpty() } ?: defaults.dbFilename,
             )
         }
     }
