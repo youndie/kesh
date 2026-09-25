@@ -38,7 +38,7 @@ A stage is a field on the item, not a directory.
 
 <!-- BEGIN INDEX -->
 
-## Open (9)
+## Open (8)
 
 | Task | | Priority | Size | Blocked by |
 |---|---|---|---|---|
@@ -47,12 +47,11 @@ A stage is a field on the item, not a directory.
 | [B-15](docs/backlog/B-15-info-probes-metrics.md) `[ ]` | INFO, HTTP probes and Prometheus metrics | P1 | M | B-11 |
 | [B-16](docs/backlog/B-16-image-chart-graceful-stop.md) `[ ]` | Image, chart, and a graceful stop that survives being repeated | P1 | M | B-14, B-15 |
 | [B-17](docs/backlog/B-17-reference-load-report.md) `[ ]` | Reference load report on the reference host | P1 | M | B-03, B-12, B-14, B-22 |
-| [B-22](docs/backlog/B-22-reference-host.md) `[?]` | Choose the reference host for the load report and the soak | P1 | XS | - |
 | [B-18](docs/backlog/B-18-soak-24h.md) `[ ]` | 24 h soak with TTL churn | P2 | S | B-17 |
 | [B-25](docs/backlog/B-25-bgsave-through-fork.md) `[ ]` | BGSAVE through fork, with the child's collector assists off | P2 | M | B-14 |
 | [B-26](docs/backlog/B-26-maxmemory-container-check.md) `[?]` | Refuse a maxmemory above the container's memory budget | P2 | S | B-11 |
 
-## Closed (17)
+## Closed (18)
 
 **Protocol and core**
 
@@ -85,6 +84,10 @@ A stage is a field on the item, not a directory.
 **Operations**
 
 - [B-24](docs/backlog/B-24-taken-port-aborts.md) `[x]` - A taken port aborts the server with a core dump instead of exiting cleanly
+
+**Capacity and soak**
+
+- [B-22](docs/backlog/B-22-reference-host.md) `[x]` - Choose the reference host for the load report and the soak
 
 <!-- END INDEX -->
 

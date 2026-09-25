@@ -333,7 +333,8 @@ and the binary is shipped. This is the same arrangement other native services in
 
 **Consequence** — the brief's own floor for the reference host ("at least an 8 GB host", §10) is
 above the measurement hosts, and the build machine is neither idle nor alone (§1.2, consequence 5).
-The reference host is an open question with a concrete constraint (Q-3).
+The reference host is an open question with a concrete constraint (Q-3). *Answered 2026-09-25:* the
+build machine in a quiet window, reported as not a reference host (Q-3).
 
 ---
 
@@ -772,6 +773,13 @@ The precise reading is under D-3.
 
 **Q-3. The reference host.** (B-22, owner.) §1.9: the measurement hosts are below the brief's own
 8 GB floor, and the build machine is shared. Blocks B-17 and B-18.
+*Answered by the owner on 2026-09-25:* **the build machine, in a quiet window** — 20 cores, 16 GB
+(a WSL2 virtual machine on a Windows host). It is **not a reference host**, and every number taken
+there says so: the machine is shared, so a run counts only inside a window where neither the Linux
+side nor the Windows side has other work — load and resident processes read before and after the
+run and committed with it; a run with a second resident process is discarded, not corrected
+(§1.2, consequence 5). Its monotonic clock runs about 10 % slow, so latency is read on the load
+generator, which runs on another machine; which one is settled when B-17 starts.
 
 **Answered by research** (brief §10): question 3, the oracle pin — proposed in D-16, owner to
 confirm; question 5, command coverage in use — §1.1.

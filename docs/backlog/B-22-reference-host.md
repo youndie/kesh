@@ -1,7 +1,7 @@
 ---
 id: B-22
 title: "Choose the reference host for the load report and the soak"
-status: question
+status: done
 priority: P1
 size: XS
 stage: stage-6-capacity
@@ -25,5 +25,13 @@ next to a second resident process is not a measurement of kesh (research §1.2).
 | Module | Path |
 |---|---|
 | docs | `docs/research/research-architecture.md` |
+
+## Decision (owner, 2026-09-25)
+
+**The build machine, in a quiet window** (research Q-3): 20 cores and 16 GB in a WSL2 virtual
+machine. It is not a reference host and the reports say so; a run counts only when neither the
+Linux nor the Windows side has other work, checked before and after and committed with the run.
+The load generator runs on another machine, which also keeps latency off the build machine's slow
+monotonic clock. B-17 is unblocked.
 
 Research: [research-architecture](../research/research-architecture.md).
