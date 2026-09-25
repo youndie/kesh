@@ -51,8 +51,10 @@ oracle() { # name port [extra args]
 }
 oracle kesh-oracle "$ORACLE"
 oracle kesh-oracle-locked "$ORACLE_LOCKED" --requirepass "$PASSWORD"
-KESH_PORT=$KESH KESH_HTTP_PORT=off KESH_BIND=127.0.0.1 "$BINARY" >/tmp/kesh-conformance.log 2>&1 & pids+=($!)
-KESH_PORT=$KESH_LOCKED KESH_HTTP_PORT=off KESH_BIND=127.0.0.1 KESH_PASSWORD=$PASSWORD "$BINARY" >/tmp/kesh-conformance-locked.log 2>&1 & pids+=($!)
+# Snapshots (BGSAVE, B-25) go to a directory of the run's own, not into the synced tree.
+SNAPSHOTS=$(mktemp -d /tmp/kesh-conformance-XXXXXX)
+KESH_PORT=$KESH KESH_HTTP_PORT=off KESH_BIND=127.0.0.1 KESH_DIR=$SNAPSHOTS "$BINARY" >/tmp/kesh-conformance.log 2>&1 & pids+=($!)
+KESH_PORT=$KESH_LOCKED KESH_HTTP_PORT=off KESH_BIND=127.0.0.1 KESH_PASSWORD=$PASSWORD KESH_DIR=$SNAPSHOTS "$BINARY" >/tmp/kesh-conformance-locked.log 2>&1 & pids+=($!)
 
 for port in $ORACLE $ORACLE_LOCKED $KESH $KESH_LOCKED; do
   for _ in $(seq 1 50); do nc -z 127.0.0.1 "$port" 2>/dev/null && break; sleep 0.2; done

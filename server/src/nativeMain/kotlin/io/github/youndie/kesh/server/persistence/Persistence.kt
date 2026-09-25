@@ -180,6 +180,8 @@ class Persistence(
      * to the rename, as Redis's `prepareForShutdown` does.
      */
     fun killChild() {
+        // One that has already exited is collected as a finished save, not reported as killed.
+        reap()
         if (child == 0) return
         kill(child, SIGKILL)
         memScoped {

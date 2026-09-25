@@ -22,7 +22,6 @@ import kotlinx.coroutines.IO
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withTimeout
-import platform.posix.access
 import platform.posix.closedir
 import platform.posix.mkdtemp
 import platform.posix.opendir
@@ -65,6 +64,22 @@ class BackgroundSaveTest {
             text.append(buffer.decodeToString(0, n))
         }
         return text.split("\r\n").dropLast(1)
+    }
+
+    /** Sends [command] and reads until [last] — the reply's last field — has arrived. */
+    private suspend fun Connection.askUntil(
+        last: String,
+        command: List<String>,
+    ): String {
+        output.writeFully(command(*command.toTypedArray()).encodeToByteArray())
+        val text = StringBuilder()
+        val buffer = ByteArray(64 * 1024)
+        while (!text.toString().substringAfter(last, "").contains("\r\n")) {
+            val n = input.readAvailable(buffer)
+            check(n > 0) { "the server closed after: $text" }
+            text.append(buffer.decodeToString(0, n))
+        }
+        return text.toString()
     }
 
     private fun temporaryDirectory(): String = memScoped { mkdtemp("/tmp/kesh-bgsave-XXXXXX".cstr.ptr)!!.toKString() }
@@ -127,7 +142,7 @@ class BackgroundSaveTest {
                 withTimeout(30.seconds) {
                     while (client.ask(1, listOf("LASTSAVE")).single() == before) delay(20)
                 }
-                val info = client.ask(20, listOf("INFO", "persistence")).joinToString("\n")
+                val info = client.askUntil("aof_enabled:", listOf("INFO", "persistence"))
                 assertTrue("rdb_bgsave_in_progress:0" in info, info)
                 assertTrue("rdb_last_bgsave_status:ok" in info, info)
                 client.socket.close()
@@ -193,8 +208,13 @@ class BackgroundSaveTest {
                 )
                 assertEquals(listOf("+Background saving started"), client.ask(1, listOf("BGSAVE", "schedule")))
                 withTimeout(10.seconds) {
-                    while (access("$directory/dump.kesh", 0) != 0) delay(10)
+                    while ("rdb_bgsave_in_progress:0" !in
+                        client.askUntil("aof_enabled:", listOf("INFO", "persistence"))
+                    ) {
+                        delay(10)
+                    }
                 }
+                assertEquals(listOf("dump.kesh"), filesIn(directory))
                 client.socket.close()
             } finally {
                 server.stop()

@@ -1,0 +1,7 @@
+# BGSAVE (B-25): the replies, not the file — the file is BackgroundSaveTest's and bench/fork/bgsave.sh's.
+# A second BGSAVE while the first runs would race each server's child against the next command, so
+# "already in progress" is held by BackgroundSaveTest, which sends both in one pipeline.
+BGSAVE now
+BGSAVE SCHEDULE x
+BGSAVE a b
+BGSAVE
