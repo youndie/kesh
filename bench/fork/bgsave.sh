@@ -6,7 +6,8 @@
 # (the count and the CRC, research D-24).
 #
 # kesh runs in a scope of its own with a ceiling on tasks and memory, so a fork that ran away could
-# not take the host with it.
+# not take the host with it; and a watchdog kills it if the host's available memory falls under
+# MIN_AVAILABLE_MB (1500) for another reason — a host that swaps measures nothing, and can freeze.
 #   bench/fork/bgsave.sh [scale] [count] [memory limit, e.g. 12G]      (from the repository's root)
 set -u
 SCALE=${1:-0.015625}
@@ -28,6 +29,15 @@ start_kesh() {
 }
 start_kesh
 echo "kesh pid $pid, snapshots in $DIR"
+( while kill -0 "$pid" 2>/dev/null; do
+    available=$(awk '/MemAvailable/ {print int($2 / 1024)}' /proc/meminfo)
+    if [ "$available" -lt "${MIN_AVAILABLE_MB:-1500}" ]; then
+      echo "WATCHDOG: the host has $available MB available; killed kesh" | tee -a "$LOG"
+      kill -9 "$pid"
+    fi
+    sleep 1
+  done ) &
+watchdog=$!
 "$LOAD" --port $PORT --scale "$SCALE" --load
 "$LOAD" --port $PORT --scale "$SCALE" --run --pipeline 16 --warmup 0 --duration 86400 > "$DIR/load.txt" 2>&1 &
 load=$!
@@ -36,6 +46,7 @@ python3 bench/fork/bgsave.py "$pid" $PORT "$COUNT"
 result=$?
 kill $load 2>/dev/null
 wait $load 2>/dev/null
+kill $watchdog 2>/dev/null
 grep -c 'terminated with success' "$LOG" | sed 's/^/children that ended with success, by the log: /'
 grep -aE 'background saving (error|terminated by signal)|child failed' "$LOG" | head
 awk '/fork\(\) took/ {gsub("µs;?","",$NF); print $(NF-1)}' "$LOG" | sort -n |
