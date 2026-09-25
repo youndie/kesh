@@ -1,7 +1,7 @@
 ---
 id: B-26
 title: "Refuse a maxmemory above the container's memory budget"
-status: question
+status: open
 priority: P2
 size: S
 stage: stage-3-memory
@@ -15,8 +15,8 @@ Split out of [B-11](B-11-memory-accounting-and-noeviction.md) by the owner on 20
 runtime does not see its container's limit (research §1.2), so a `maxmemory` set above it ends in
 an OOM kill rather than in `-OOM` replies. B-11 measured the ratio this check needs — resident
 memory 2.8 × `used_memory` at peak (research D-10) — but the budget itself comes from kore's
-`containerMemoryBudget()`, which is in kore's `main` (kore #77) and in **no published release**:
-kesh pins kore 0.1.4, whose linuxX64 klib has no `MemoryBudget`.
+`containerMemoryBudget()`, which is in kore's `main` (kore #77) and in no release until 0.1.5
+(below); kesh pins kore 0.1.4, whose linuxX64 klib has no `MemoryBudget`.
 
 - **The decision and its reason.** Read the budget through kore, not through kesh's own cgroup
   parsing: kore exists so that each service does not carry its own copy of that code. The item
@@ -33,10 +33,10 @@ kesh pins kore 0.1.4, whose linuxX64 klib has no `MemoryBudget`.
 |---|---|
 | server | `server/src/nativeMain/kotlin/io/github/youndie/kesh/server/config/` |
 
-## Question (for the owner)
+## Unblocked (2026-09-25)
 
-The item cannot start until kore publishes a release with `containerMemoryBudget()`; that publish
-is the owner's to make, so the item is a `question` rather than `open` — the loop does not pick
-it. When the release exists: bump kore in kesh, set the item `open`, and the loop takes it.
+kore 0.1.5 was released on 2026-09-25 to the portfolio's repository, not to Maven Central, with
+`containerMemoryBudget()` in its `kore-core-linuxx64` klib. The owner's condition for this item is
+met, so it is `open`; the bump from 0.1.4 (`gradle/libs.versions.toml`) is its first step.
 
 Research: [research-architecture](../research/research-architecture.md) §1.2, D-10.
