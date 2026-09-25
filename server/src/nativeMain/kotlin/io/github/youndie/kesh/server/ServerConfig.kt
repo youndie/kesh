@@ -62,6 +62,11 @@ data class ServerConfig(
      * sizes the limit with, so the two cannot disagree.
      */
     val residentPeakRatioTenths: Int = MemoryBudgetCheck.DEFAULT_PEAK_RATIO_TENTHS,
+    /**
+     * `KESH_GC_LOG`: one line per collection exported to `/metrics` (B-31) — for a control against the
+     * runtime's own log, not for production. Off by default.
+     */
+    val gcLog: Boolean = false,
 ) {
     override fun toString(): String {
         val grace = terminationGraceSeconds?.let { "${it}s" } ?: "undeclared"
@@ -70,7 +75,7 @@ data class ServerConfig(
             "maxMemory=$maxMemory, policy=${maxMemoryPolicy.configName}/$maxMemorySamples, " +
             "snapshot=$dir/$dbFilename, gcAssists=$gcAssists, httpPort=${httpPort ?: "off"}, " +
             "saveOnShutdown=$saveOnShutdown, drain=${shutdownDrainSeconds}s, grace=$grace, " +
-            "residentPeak=${residentPeakRatioTenths / 10}.${residentPeakRatioTenths % 10}x)"
+            "residentPeak=${residentPeakRatioTenths / 10}.${residentPeakRatioTenths % 10}x, gcLog=$gcLog)"
     }
 
     companion object {
@@ -138,6 +143,7 @@ data class ServerConfig(
                 shutdownDrainSeconds =
                     number("KESH_SHUTDOWN_DRAIN_SECONDS", 1L..3_600L)?.toInt() ?: defaults.shutdownDrainSeconds,
                 terminationGraceSeconds = number("KESH_TERMINATION_GRACE_SECONDS", 1L..86_400L)?.toInt(),
+                gcLog = onOff("KESH_GC_LOG", defaults.gcLog),
                 residentPeakRatioTenths =
                     number("KESH_RESIDENT_PEAK_RATIO_TENTHS", 10L..1_000L)?.toInt() ?: defaults.residentPeakRatioTenths,
                 httpPort =

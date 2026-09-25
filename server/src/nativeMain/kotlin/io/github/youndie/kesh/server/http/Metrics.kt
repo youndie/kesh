@@ -2,6 +2,7 @@ package io.github.youndie.kesh.server.http
 
 import io.github.youndie.kesh.server.BuildInfo
 import io.github.youndie.kesh.server.info.CommandStats
+import io.github.youndie.kesh.server.info.GcStats
 import io.github.youndie.kesh.server.info.ProcessFacts
 
 /**
@@ -27,6 +28,8 @@ object Metrics {
         val pubsubChannels: Long,
         val pubsubPatterns: Long,
         val commands: List<Pair<String, CommandStats.Command>>,
+        /** The collector's collections (B-31). */
+        val gc: GcStats.Snapshot,
     )
 
     const val CONTENT_TYPE = "text/plain; version=0.0.4; charset=utf-8"
@@ -57,8 +60,40 @@ object Metrics {
             )
             gauge("kesh_pubsub_channels", "Channels with at least one subscriber.", store.pubsubChannels)
             gauge("kesh_pubsub_patterns", "Patterns with at least one subscriber.", store.pubsubPatterns)
-            histogram(store.commands)
+            histogram(
+                "kesh_command_duration_seconds",
+                "Time each command took on the store thread, by command.",
+                "command",
+                store.commands,
+            )
+            gc(store.gc)
         }
+
+    /**
+     * The collector's collections (B-31), from `GC.lastGCInfo` — an experimental runtime API. A pause
+     * is the runtime's "Mutators pause time": from the request to suspend to the resumption.
+     */
+    private fun StringBuilder.gc(gc: GcStats.Snapshot) {
+        histogram(
+            "kesh_gc_pause_seconds",
+            "The collector's stop-the-world pauses, per collection, by pause (first or second).",
+            "pause",
+            listOf("first" to gc.firstPause, "second" to gc.secondPause),
+        )
+        histogram(
+            "kesh_gc_duration_seconds",
+            "The collector's collections, start to end.",
+            null,
+            listOf("" to gc.duration),
+        )
+        counter("kesh_gc_collections_total", "Collections exported to these metrics.", gc.collections)
+        counter(
+            "kesh_gc_epochs_missed_total",
+            "Collections that finished and were not exported: two between polls, or before the first.",
+            gc.missed,
+        )
+        gauge("kesh_gc_marked_objects", "Objects the last exported collection marked.", gc.markedObjects)
+    }
 
     private fun StringBuilder.gauge(
         name: String,
@@ -91,26 +126,45 @@ object Metrics {
         append(name).append(' ').append(value).append('\n')
     }
 
-    private fun StringBuilder.histogram(commands: List<Pair<String, CommandStats.Command>>) {
-        val name = "kesh_command_duration_seconds"
-        append("# HELP ").append(name).append(" Time each command took on the store thread, by command.\n")
+    /** A histogram family in seconds, one series per entry, labelled by [label] unless it is `null`. */
+    private fun StringBuilder.histogram(
+        name: String,
+        help: String,
+        label: String?,
+        series: List<Pair<String, CommandStats.Command>>,
+    ) {
+        append("# HELP ")
+            .append(name)
+            .append(' ')
+            .append(help)
+            .append('\n')
         append("# TYPE ").append(name).append(" histogram\n")
-        for ((command, stats) in commands) {
+        for ((value, stats) in series) {
+            val labels = if (label == null) "" else "$label=\"$value\","
+            val only = if (label == null) "" else "{$label=\"$value\"}"
             var cumulative = 0L
             for (i in CommandStats.BOUNDS.indices) {
                 cumulative += stats.buckets[i]
-                append(name).append("_bucket{command=\"").append(command).append("\",le=\"")
+                append(name).append("_bucket{").append(labels).append("le=\"")
                 append(seconds(CommandStats.BOUNDS[i])).append("\"} ").append(cumulative).append('\n')
             }
             cumulative += stats.buckets[CommandStats.BOUNDS.size]
-            append(name).append("_bucket{command=\"").append(command).append("\",le=\"+Inf\"} ")
-            append(cumulative).append('\n')
-            append(name).append("_sum{command=\"").append(command).append("\"} ")
-            append(seconds(stats.totalMicros)).append('\n')
             append(name)
-                .append("_count{command=\"")
-                .append(command)
-                .append("\"} ")
+                .append("_bucket{")
+                .append(labels)
+                .append("le=\"+Inf\"} ")
+                .append(cumulative)
+                .append('\n')
+            append(name)
+                .append("_sum")
+                .append(only)
+                .append(' ')
+                .append(seconds(stats.totalMicros))
+                .append('\n')
+            append(name)
+                .append("_count")
+                .append(only)
+                .append(' ')
                 .append(stats.count)
                 .append('\n')
         }

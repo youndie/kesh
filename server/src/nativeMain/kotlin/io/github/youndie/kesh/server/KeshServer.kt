@@ -7,6 +7,7 @@ import io.github.youndie.kesh.server.command.epochMillis
 import io.github.youndie.kesh.server.config.MemoryBudgetCheck
 import io.github.youndie.kesh.server.http.HttpResponse
 import io.github.youndie.kesh.server.http.Metrics
+import io.github.youndie.kesh.server.info.GcStats
 import io.github.youndie.kesh.server.net.EventLoop
 import io.github.youndie.kesh.server.net.HttpConnection
 import io.github.youndie.kesh.server.net.RespConnection
@@ -85,6 +86,9 @@ class KeshServer(
         }
     private val background = CoroutineScope(SupervisorJob() + loop + failureReport)
     private val periodic = ArrayList<Job>()
+
+    // The collector's collections for `/metrics` (B-31); polled by the periodic work, on the loop.
+    private val gcStats = GcStats()
 
     private var listener = -1
     private var httpListener = -1
@@ -224,6 +228,7 @@ class KeshServer(
                     pubsubChannels = commands.pubsub.channelCount.toLong(),
                     pubsubPatterns = commands.pubsub.patternCount.toLong(),
                     commands = commands.stats.snapshot(),
+                    gc = gcStats.snapshot(),
                 )
             }
         }
@@ -239,6 +244,14 @@ class KeshServer(
                     expiry.cycle(db)
                     db.resizeAndRehash()
                     persistence.reap()
+                    gcStats.poll()?.let { c ->
+                        if (config.gcLog) {
+                            println(
+                                "kesh: gc epoch ${c.epoch}: pause #1 ${c.firstPauseMicros} µs, " +
+                                    "pause #2 ${c.secondPauseMicros?.let { "$it µs" } ?: "none"}",
+                            )
+                        }
+                    }
                     httpConnections.filter { it.expired }.forEach { it.close() }
                 }
             }

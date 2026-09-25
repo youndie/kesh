@@ -1,0 +1,201 @@
+kesh: built with 256 KiB allocator pages
+[INFO][gc][tid#1666386][0.201s] Epoch #1: Mutators pause time #1: 471 microseconds.
+[INFO][gc][tid#1666386][0.201s] Epoch #1: Mutators pause time #2: 248 microseconds.
+kesh: gc epoch 1: pause #1 471 µs, pause #2 248 µs
+[INFO][gc][tid#1666386][0.277s] Epoch #2: Mutators pause time #1: 60 microseconds.
+[INFO][gc][tid#1666386][0.277s] Epoch #2: Mutators pause time #2: 1777 microseconds.
+kesh: gc epoch 2: pause #1 60 µs, pause #2 1777 µs
+[INFO][gc][tid#1666386][0.379s] Epoch #3: Mutators pause time #1: 32 microseconds.
+[INFO][gc][tid#1666386][0.379s] Epoch #3: Mutators pause time #2: 80 microseconds.
+kesh: gc epoch 3: pause #1 32 µs, pause #2 80 µs
+[INFO][gc][tid#1666386][0.499s] Epoch #4: Mutators pause time #1: 26 microseconds.
+[INFO][gc][tid#1666386][0.499s] Epoch #4: Mutators pause time #2: 96 microseconds.
+kesh: gc epoch 4: pause #1 26 µs, pause #2 96 µs
+[INFO][gc][tid#1666386][0.718s] Epoch #5: Mutators pause time #1: 696 microseconds.
+[INFO][gc][tid#1666386][0.718s] Epoch #5: Mutators pause time #2: 10 microseconds.
+kesh: gc epoch 5: pause #1 696 µs, pause #2 10 µs
+[INFO][gc][tid#1666386][0.966s] Epoch #6: Mutators pause time #1: 434 microseconds.
+[INFO][gc][tid#1666386][0.966s] Epoch #6: Mutators pause time #2: 7 microseconds.
+kesh: gc epoch 6: pause #1 434 µs, pause #2 7 µs
+[INFO][gc][tid#1666386][1.353s] Epoch #7: Mutators pause time #1: 251 microseconds.
+[INFO][gc][tid#1666386][1.353s] Epoch #7: Mutators pause time #2: 9 microseconds.
+kesh: gc epoch 7: pause #1 251 µs, pause #2 9 µs
+[INFO][gc][tid#1666386][1.614s] Epoch #8: Mutators pause time #1: 73 microseconds.
+[INFO][gc][tid#1666386][1.614s] Epoch #8: Mutators pause time #2: 444 microseconds.
+kesh: gc epoch 8: pause #1 73 µs, pause #2 444 µs
+[INFO][gc][tid#1666386][1.865s] Epoch #9: Mutators pause time #1: 60 microseconds.
+[INFO][gc][tid#1666386][1.865s] Epoch #9: Mutators pause time #2: 8 microseconds.
+kesh: gc epoch 9: pause #1 60 µs, pause #2 8 µs
+[INFO][gc][tid#1666386][2.138s] Epoch #10: Mutators pause time #1: 65 microseconds.
+[INFO][gc][tid#1666386][2.138s] Epoch #10: Mutators pause time #2: 10 microseconds.
+kesh: gc epoch 10: pause #1 65 µs, pause #2 10 µs
+[INFO][gc][tid#1666386][2.428s] Epoch #11: Mutators pause time #1: 73 microseconds.
+[INFO][gc][tid#1666386][2.428s] Epoch #11: Mutators pause time #2: 128 microseconds.
+kesh: gc epoch 11: pause #1 73 µs, pause #2 128 µs
+[INFO][gc][tid#1666386][2.969s] Epoch #12: Mutators pause time #1: 129 microseconds.
+[INFO][gc][tid#1666386][2.969s] Epoch #12: Mutators pause time #2: 1197 microseconds.
+kesh: gc epoch 12: pause #1 129 µs, pause #2 1197 µs
+[INFO][gc][tid#1666386][3.321s] Epoch #13: Mutators pause time #1: 34 microseconds.
+[INFO][gc][tid#1666386][3.321s] Epoch #13: Mutators pause time #2: 1223 microseconds.
+kesh: gc epoch 13: pause #1 34 µs, pause #2 1223 µs
+[INFO][gc][tid#1666386][3.868s] Epoch #14: Mutators pause time #1: 61 microseconds.
+[INFO][gc][tid#1666386][3.868s] Epoch #14: Mutators pause time #2: 246 microseconds.
+kesh: gc epoch 14: pause #1 61 µs, pause #2 246 µs
+[INFO][gc][tid#1666386][4.677s] Epoch #15: Mutators pause time #1: 1698 microseconds.
+[INFO][gc][tid#1666386][4.677s] Epoch #15: Mutators pause time #2: 266 microseconds.
+kesh: gc epoch 15: pause #1 1698 µs, pause #2 266 µs
+[INFO][gc][tid#1666386][8.424s] Epoch #16: Mutators pause time #1: 151 microseconds.
+[INFO][gc][tid#1666386][8.424s] Epoch #16: Mutators pause time #2: 412 microseconds.
+kesh: gc epoch 16: pause #1 151 µs, pause #2 412 µs
+[INFO][gc][tid#1666386][10.442s] Epoch #17: Mutators pause time #1: 99 microseconds.
+[INFO][gc][tid#1666386][10.442s] Epoch #17: Mutators pause time #2: 977 microseconds.
+kesh: gc epoch 17: pause #1 99 µs, pause #2 977 µs
+[INFO][gc][tid#1666386][12.415s] Epoch #18: Mutators pause time #1: 33 microseconds.
+[INFO][gc][tid#1666386][12.415s] Epoch #18: Mutators pause time #2: 182 microseconds.
+kesh: gc epoch 18: pause #1 33 µs, pause #2 182 µs
+[INFO][gc][tid#1666386][14.448s] Epoch #19: Mutators pause time #1: 62 microseconds.
+[INFO][gc][tid#1666386][14.448s] Epoch #19: Mutators pause time #2: 26 microseconds.
+kesh: gc epoch 19: pause #1 62 µs, pause #2 26 µs
+[INFO][gc][tid#1666386][16.288s] Epoch #20: Mutators pause time #1: 47 microseconds.
+[INFO][gc][tid#1666386][16.288s] Epoch #20: Mutators pause time #2: 488 microseconds.
+kesh: gc epoch 20: pause #1 47 µs, pause #2 488 µs
+[INFO][gc][tid#1666386][18.280s] Epoch #21: Mutators pause time #1: 125 microseconds.
+[INFO][gc][tid#1666386][18.280s] Epoch #21: Mutators pause time #2: 1115 microseconds.
+kesh: gc epoch 21: pause #1 125 µs, pause #2 1115 µs
+[INFO][gc][tid#1666386][20.124s] Epoch #22: Mutators pause time #1: 163 microseconds.
+[INFO][gc][tid#1666386][20.124s] Epoch #22: Mutators pause time #2: 24 microseconds.
+kesh: gc epoch 22: pause #1 163 µs, pause #2 24 µs
+[INFO][gc][tid#1666386][21.997s] Epoch #23: Mutators pause time #1: 41 microseconds.
+[INFO][gc][tid#1666386][21.997s] Epoch #23: Mutators pause time #2: 158 microseconds.
+kesh: gc epoch 23: pause #1 41 µs, pause #2 158 µs
+[INFO][gc][tid#1666386][23.782s] Epoch #24: Mutators pause time #1: 58 microseconds.
+[INFO][gc][tid#1666386][23.782s] Epoch #24: Mutators pause time #2: 144 microseconds.
+kesh: gc epoch 24: pause #1 58 µs, pause #2 144 µs
+[INFO][gc][tid#1666386][25.565s] Epoch #25: Mutators pause time #1: 182 microseconds.
+[INFO][gc][tid#1666386][25.565s] Epoch #25: Mutators pause time #2: 390 microseconds.
+kesh: gc epoch 25: pause #1 182 µs, pause #2 390 µs
+[INFO][gc][tid#1666386][27.572s] Epoch #26: Mutators pause time #1: 1723 microseconds.
+[INFO][gc][tid#1666386][27.572s] Epoch #26: Mutators pause time #2: 482 microseconds.
+kesh: gc epoch 26: pause #1 1723 µs, pause #2 482 µs
+[INFO][gc][tid#1666386][29.467s] Epoch #27: Mutators pause time #1: 71 microseconds.
+[INFO][gc][tid#1666386][29.467s] Epoch #27: Mutators pause time #2: 986 microseconds.
+kesh: gc epoch 27: pause #1 71 µs, pause #2 986 µs
+[INFO][gc][tid#1666386][31.494s] Epoch #28: Mutators pause time #1: 191 microseconds.
+[INFO][gc][tid#1666386][31.494s] Epoch #28: Mutators pause time #2: 487 microseconds.
+kesh: gc epoch 28: pause #1 191 µs, pause #2 487 µs
+[INFO][gc][tid#1666386][33.652s] Epoch #29: Mutators pause time #1: 55 microseconds.
+[INFO][gc][tid#1666386][33.652s] Epoch #29: Mutators pause time #2: 300 microseconds.
+kesh: gc epoch 29: pause #1 55 µs, pause #2 300 µs
+[INFO][gc][tid#1666386][35.725s] Epoch #30: Mutators pause time #1: 937 microseconds.
+[INFO][gc][tid#1666386][35.725s] Epoch #30: Mutators pause time #2: 156 microseconds.
+kesh: gc epoch 30: pause #1 937 µs, pause #2 156 µs
+[INFO][gc][tid#1666386][37.719s] Epoch #31: Mutators pause time #1: 344 microseconds.
+[INFO][gc][tid#1666386][37.719s] Epoch #31: Mutators pause time #2: 382 microseconds.
+kesh: gc epoch 31: pause #1 344 µs, pause #2 382 µs
+[INFO][gc][tid#1666386][39.872s] Epoch #32: Mutators pause time #1: 34 microseconds.
+[INFO][gc][tid#1666386][39.872s] Epoch #32: Mutators pause time #2: 289 microseconds.
+kesh: gc epoch 32: pause #1 34 µs, pause #2 289 µs
+[INFO][gc][tid#1666386][41.888s] Epoch #33: Mutators pause time #1: 196 microseconds.
+[INFO][gc][tid#1666386][41.888s] Epoch #33: Mutators pause time #2: 464 microseconds.
+kesh: gc epoch 33: pause #1 196 µs, pause #2 464 µs
+[INFO][gc][tid#1666386][44.021s] Epoch #34: Mutators pause time #1: 77 microseconds.
+[INFO][gc][tid#1666386][44.021s] Epoch #34: Mutators pause time #2: 212 microseconds.
+kesh: gc epoch 34: pause #1 77 µs, pause #2 212 µs
+[INFO][gc][tid#1666386][46.636s] Epoch #35: Mutators pause time #1: 197 microseconds.
+[INFO][gc][tid#1666386][46.636s] Epoch #35: Mutators pause time #2: 274 microseconds.
+kesh: gc epoch 35: pause #1 197 µs, pause #2 274 µs
+[INFO][gc][tid#1666386][48.657s] Epoch #36: Mutators pause time #1: 195 microseconds.
+[INFO][gc][tid#1666386][48.657s] Epoch #36: Mutators pause time #2: 310 microseconds.
+kesh: gc epoch 36: pause #1 195 µs, pause #2 310 µs
+[INFO][gc][tid#1666386][50.792s] Epoch #37: Mutators pause time #1: 40 microseconds.
+[INFO][gc][tid#1666386][50.792s] Epoch #37: Mutators pause time #2: 294 microseconds.
+kesh: gc epoch 37: pause #1 40 µs, pause #2 294 µs
+[INFO][gc][tid#1666386][52.964s] Epoch #38: Mutators pause time #1: 41 microseconds.
+[INFO][gc][tid#1666386][52.964s] Epoch #38: Mutators pause time #2: 209 microseconds.
+kesh: gc epoch 38: pause #1 41 µs, pause #2 209 µs
+[INFO][gc][tid#1666386][54.940s] Epoch #39: Mutators pause time #1: 38 microseconds.
+[INFO][gc][tid#1666386][54.940s] Epoch #39: Mutators pause time #2: 195 microseconds.
+kesh: gc epoch 39: pause #1 38 µs, pause #2 195 µs
+[INFO][gc][tid#1666386][56.735s] Epoch #40: Mutators pause time #1: 48 microseconds.
+[INFO][gc][tid#1666386][56.735s] Epoch #40: Mutators pause time #2: 371 microseconds.
+kesh: gc epoch 40: pause #1 48 µs, pause #2 371 µs
+[INFO][gc][tid#1666386][58.545s] Epoch #41: Mutators pause time #1: 333 microseconds.
+[INFO][gc][tid#1666386][58.545s] Epoch #41: Mutators pause time #2: 1596 microseconds.
+kesh: gc epoch 41: pause #1 333 µs, pause #2 1596 µs
+[INFO][gc][tid#1666386][60.448s] Epoch #42: Mutators pause time #1: 24 microseconds.
+[INFO][gc][tid#1666386][60.448s] Epoch #42: Mutators pause time #2: 189 microseconds.
+kesh: gc epoch 42: pause #1 24 µs, pause #2 189 µs
+[INFO][gc][tid#1666386][62.331s] Epoch #43: Mutators pause time #1: 57 microseconds.
+[INFO][gc][tid#1666386][62.331s] Epoch #43: Mutators pause time #2: 181 microseconds.
+kesh: gc epoch 43: pause #1 57 µs, pause #2 181 µs
+[INFO][gc][tid#1666386][64.632s] Epoch #44: Mutators pause time #1: 113 microseconds.
+[INFO][gc][tid#1666386][64.632s] Epoch #44: Mutators pause time #2: 254 microseconds.
+kesh: gc epoch 44: pause #1 113 µs, pause #2 254 µs
+[INFO][gc][tid#1666386][66.501s] Epoch #45: Mutators pause time #1: 22 microseconds.
+[INFO][gc][tid#1666386][66.501s] Epoch #45: Mutators pause time #2: 598 microseconds.
+kesh: gc epoch 45: pause #1 22 µs, pause #2 598 µs
+----
+kesh_gc_pause_seconds_bucket{pause="first",le="0.00005"} 13
+kesh_gc_pause_seconds_bucket{pause="first",le="0.0001"} 26
+kesh_gc_pause_seconds_bucket{pause="first",le="0.00025"} 36
+kesh_gc_pause_seconds_bucket{pause="first",le="0.0005"} 41
+kesh_gc_pause_seconds_bucket{pause="first",le="0.001"} 43
+kesh_gc_pause_seconds_bucket{pause="first",le="0.0025"} 45
+kesh_gc_pause_seconds_bucket{pause="first",le="0.005"} 45
+kesh_gc_pause_seconds_bucket{pause="first",le="0.01"} 45
+kesh_gc_pause_seconds_bucket{pause="first",le="0.025"} 45
+kesh_gc_pause_seconds_bucket{pause="first",le="0.05"} 45
+kesh_gc_pause_seconds_bucket{pause="first",le="0.1"} 45
+kesh_gc_pause_seconds_bucket{pause="first",le="0.25"} 45
+kesh_gc_pause_seconds_bucket{pause="first",le="1"} 45
+kesh_gc_pause_seconds_bucket{pause="first",le="+Inf"} 45
+kesh_gc_pause_seconds_sum{pause="first"} 0.00986
+kesh_gc_pause_seconds_count{pause="first"} 45
+kesh_gc_pause_seconds_bucket{pause="second",le="0.00005"} 7
+kesh_gc_pause_seconds_bucket{pause="second",le="0.0001"} 9
+kesh_gc_pause_seconds_bucket{pause="second",le="0.00025"} 21
+kesh_gc_pause_seconds_bucket{pause="second",le="0.0005"} 37
+kesh_gc_pause_seconds_bucket{pause="second",le="0.001"} 40
+kesh_gc_pause_seconds_bucket{pause="second",le="0.0025"} 45
+kesh_gc_pause_seconds_bucket{pause="second",le="0.005"} 45
+kesh_gc_pause_seconds_bucket{pause="second",le="0.01"} 45
+kesh_gc_pause_seconds_bucket{pause="second",le="0.025"} 45
+kesh_gc_pause_seconds_bucket{pause="second",le="0.05"} 45
+kesh_gc_pause_seconds_bucket{pause="second",le="0.1"} 45
+kesh_gc_pause_seconds_bucket{pause="second",le="0.25"} 45
+kesh_gc_pause_seconds_bucket{pause="second",le="1"} 45
+kesh_gc_pause_seconds_bucket{pause="second",le="+Inf"} 45
+kesh_gc_pause_seconds_sum{pause="second"} 0.017894
+kesh_gc_pause_seconds_count{pause="second"} 45
+kesh_gc_duration_seconds_bucket{le="0.00005"} 0
+kesh_gc_duration_seconds_bucket{le="0.0001"} 0
+kesh_gc_duration_seconds_bucket{le="0.00025"} 0
+kesh_gc_duration_seconds_bucket{le="0.0005"} 0
+kesh_gc_duration_seconds_bucket{le="0.001"} 0
+kesh_gc_duration_seconds_bucket{le="0.0025"} 0
+kesh_gc_duration_seconds_bucket{le="0.005"} 0
+kesh_gc_duration_seconds_bucket{le="0.01"} 1
+kesh_gc_duration_seconds_bucket{le="0.025"} 3
+kesh_gc_duration_seconds_bucket{le="0.05"} 4
+kesh_gc_duration_seconds_bucket{le="0.1"} 6
+kesh_gc_duration_seconds_bucket{le="0.25"} 11
+kesh_gc_duration_seconds_bucket{le="1"} 45
+kesh_gc_duration_seconds_bucket{le="+Inf"} 45
+kesh_gc_duration_seconds_sum 21.541086
+kesh_gc_duration_seconds_count 45
+kesh_gc_collections_total 45
+kesh_gc_epochs_missed_total 0
+kesh_gc_marked_objects 3285854
+----
+GET  40  1504220  9727  38911  352255  432249
+HGET  15  562653  9727  37887  360447  432249
+HGETALL  5  187799  9727  39935  360447  432249
+LRANGE  10  375436  9727  37887  352255  432249
+SISMEMBER  5  188174  9727  36863  352255  432249
+ZREVRANGE  5  188032  9727  39935  352255  432249
+SET  8  301220  9727  38911  352255  410855
+HSET  4  150964  9727  36863  352255  411146
+INCR  4  150659  9727  41983  360447  411146
+LPUSH  2  75307  9727  35839  352255  410855
+ZINCRBY  2  75392  9727  38911  352255  432249
+ALL  100  3759856  9727  37887  352255  432249
