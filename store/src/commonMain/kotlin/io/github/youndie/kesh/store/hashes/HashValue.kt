@@ -1,6 +1,7 @@
 package io.github.youndie.kesh.store.hashes
 
 import io.github.youndie.kesh.store.keyspace.Keyspace
+import io.github.youndie.kesh.store.packed.Packed
 
 /**
  * A hash: field → value, both bytes. Two encodings, as Redis has (`redis/redis@7.2!/src/t_hash.c`):
@@ -20,7 +21,7 @@ import io.github.youndie.kesh.store.keyspace.Keyspace
 class HashValue(
     private val seed: Int,
 ) {
-    private var packed: ByteArray = EMPTY
+    private var packed: ByteArray = Packed.EMPTY
     private var packedCount = 0
     private var table: Keyspace? = null
 
@@ -32,7 +33,7 @@ class HashValue(
     fun get(field: ByteArray): ByteArray? {
         table?.let { return it.get(field)?.value as ByteArray? }
         val at = find(field)
-        return if (at < 0) null else readBytes(packed, skip(packed, at))
+        return if (at < 0) null else Packed.read(packed, Packed.skip(packed, at))
     }
 
     fun contains(field: ByteArray): Boolean = table?.get(field) != null || (table == null && find(field) >= 0)
@@ -53,12 +54,11 @@ class HashValue(
         }
         val at = find(field)
         if (at >= 0) {
-            val valueAt = skip(packed, at)
-            val valueEnd = skip(packed, valueAt)
-            packed = packed.copyOfRange(0, valueAt) + encode(value) + packed.copyOfRange(valueEnd, packed.size)
+            val valueAt = Packed.skip(packed, at)
+            packed = Packed.splice(packed, valueAt, Packed.skip(packed, valueAt), Packed.encode(value))
             return false
         }
-        packed = packed + encode(field) + encode(value)
+        packed = packed + Packed.encode(field) + Packed.encode(value)
         packedCount++
         if (packedCount > maxPackedEntries) convert()
         return true
@@ -69,8 +69,7 @@ class HashValue(
         table?.let { return it.remove(field) != null }
         val at = find(field)
         if (at < 0) return false
-        val end = skip(packed, skip(packed, at))
-        packed = packed.copyOfRange(0, at) + packed.copyOfRange(end, packed.size)
+        packed = Packed.splice(packed, at, Packed.skip(packed, at, 2))
         packedCount--
         return true
     }
@@ -96,9 +95,9 @@ class HashValue(
         }
         var at = 0
         while (at < packed.size) {
-            val valueAt = skip(packed, at)
-            action(readBytes(packed, at), readBytes(packed, valueAt))
-            at = skip(packed, valueAt)
+            val valueAt = Packed.skip(packed, at)
+            action(Packed.read(packed, at), Packed.read(packed, valueAt))
+            at = Packed.skip(packed, valueAt)
         }
     }
 
@@ -106,7 +105,7 @@ class HashValue(
         val converted = Keyspace(seed)
         forEach { field, value -> converted.put(field, value) }
         table = converted
-        packed = EMPTY
+        packed = Packed.EMPTY
         packedCount = 0
     }
 
@@ -114,8 +113,8 @@ class HashValue(
     private fun find(field: ByteArray): Int {
         var at = 0
         while (at < packed.size) {
-            if (matches(packed, at, field)) return at
-            at = skip(packed, skip(packed, at))
+            if (Packed.matches(packed, at, field)) return at
+            at = Packed.skip(packed, at, 2)
         }
         return -1
     }
@@ -126,63 +125,5 @@ class HashValue(
 
         /** `hash-max-listpack-value`, Redis 7.2's default. */
         var maxPackedValue: Int = 64
-
-        private val EMPTY = ByteArray(0)
-
-        /** A length as an unsigned LEB128 varint, then the bytes. */
-        private fun encode(bytes: ByteArray): ByteArray {
-            var length = bytes.size
-            val prefix = ArrayList<Byte>(2)
-            do {
-                var b = length and 0x7f
-                length = length ushr 7
-                if (length != 0) b = b or 0x80
-                prefix.add(b.toByte())
-            } while (length != 0)
-            return prefix.toByteArray() + bytes
-        }
-
-        /** The length at [at] and the offset its bytes start at, packed into one `Long`. */
-        private fun header(
-            data: ByteArray,
-            at: Int,
-        ): Long {
-            var length = 0
-            var shift = 0
-            var i = at
-            while (true) {
-                val b = data[i++].toInt() and 0xff
-                length = length or ((b and 0x7f) shl shift)
-                if (b and 0x80 == 0) break
-                shift += 7
-            }
-            return (length.toLong() shl 32) or i.toLong()
-        }
-
-        private fun skip(
-            data: ByteArray,
-            at: Int,
-        ): Int = header(data, at).let { (it and 0xffffffffL).toInt() + (it ushr 32).toInt() }
-
-        private fun readBytes(
-            data: ByteArray,
-            at: Int,
-        ): ByteArray =
-            header(data, at).let {
-                val start = (it and 0xffffffffL).toInt()
-                data.copyOfRange(start, start + (it ushr 32).toInt())
-            }
-
-        private fun matches(
-            data: ByteArray,
-            at: Int,
-            field: ByteArray,
-        ): Boolean {
-            val h = header(data, at)
-            if ((h ushr 32).toInt() != field.size) return false
-            val start = (h and 0xffffffffL).toInt()
-            for (i in field.indices) if (data[start + i] != field[i]) return false
-            return true
-        }
     }
 }

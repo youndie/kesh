@@ -12,6 +12,7 @@ import io.github.youndie.kesh.store.commands.Replies.invalidExpireTime
 import io.github.youndie.kesh.store.commands.Replies.long
 import io.github.youndie.kesh.store.hashes.HashValue
 import io.github.youndie.kesh.store.keyspace.Entry
+import io.github.youndie.kesh.store.lists.ListValue
 import kotlin.random.Random
 
 /**
@@ -70,12 +71,13 @@ object KeyCommands {
         a: List<ByteArray>,
     ): Reply = Reply.Integer((1 until a.size).count { db.delete(a[it]) }.toLong())
 
-    /** `getObjectTypeName`. Lists, sets and sorted sets arrive with B-07 to B-09. */
+    /** `getObjectTypeName`. Sets and sorted sets arrive with B-08 and B-09. */
     private fun typeName(value: Any?): String =
         when (value) {
             null -> "none"
             is ByteArray -> "string"
             is HashValue -> "hash"
+            is ListValue -> "list"
             else -> "unknown"
         }
 
