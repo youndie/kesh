@@ -1,7 +1,7 @@
 ---
 id: B-12
 title: "Eviction policies with sampled LRU"
-status: open
+status: wip
 priority: P1
 size: M
 stage: stage-3-memory

@@ -42,7 +42,7 @@ A stage is a field on the item, not a directory.
 
 | Task | | Priority | Size | Blocked by |
 |---|---|---|---|---|
-| [B-12](docs/backlog/B-12-eviction-policies.md) `[ ]` | Eviction policies with sampled LRU | P1 | M | B-11 |
+| [B-12](docs/backlog/B-12-eviction-policies.md) `[~]` | Eviction policies with sampled LRU | P1 | M | B-11 |
 | [B-15](docs/backlog/B-15-info-probes-metrics.md) `[ ]` | INFO, HTTP probes and Prometheus metrics | P1 | M | B-11 |
 | [B-16](docs/backlog/B-16-image-chart-graceful-stop.md) `[ ]` | Image, chart, and a graceful stop that survives being repeated | P1 | M | B-14, B-15 |
 | [B-17](docs/backlog/B-17-reference-load-report.md) `[ ]` | Reference load report on the reference host | P1 | M | B-03, B-12, B-14, B-22 |
