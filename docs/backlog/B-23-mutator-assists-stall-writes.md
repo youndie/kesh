@@ -1,7 +1,7 @@
 ---
 id: B-23
 title: "Writes stall for seconds while the keyspace grows: decide on the collector's mutator assists"
-status: open
+status: wip
 priority: P1
 size: S
 stage: stage-3-memory
