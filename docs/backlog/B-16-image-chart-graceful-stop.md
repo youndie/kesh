@@ -33,4 +33,8 @@ StatefulSet replica and a persistent volume for snapshots.
 | deploy | `deploy/Dockerfile` |
 | deploy | `deploy/chart/` |
 
+**From B-14 (research R-5):** `SAVE` ≈ 2.3 s per million keys of the reference dataset and loading
+≈ 6 s per million, linear — at full scale some 36 s and 98 s. The grace period and the startup probe
+budget start from those, on B-22's host.
+
 Research: [research-architecture](../research/research-architecture.md).

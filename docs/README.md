@@ -31,7 +31,7 @@ live code anchors, and whatever is not built yet marked *target*. The rest are d
 `feature-resp-connection`, `endpoint-connection` (B-01, B-02), `bench` (B-03), `conformance` (B-04), `store`, `feature-strings`, `feature-keyspace`,
 `endpoint-strings`, `endpoint-keyspace` (B-05), `feature-hashes`, `endpoint-hashes` (B-06),
 `feature-lists`, `endpoint-lists` (B-07), `feature-sets`, `endpoint-sets` (B-08), `feature-sorted-sets`,
-`endpoint-sorted-sets` (B-09), `feature-memory-limit` (B-11).
+`endpoint-sorted-sets` (B-09), `feature-memory-limit` (B-11), `snapshot`, `feature-snapshots` (B-14).
 
 **Backlog** — [backlog.md](../backlog.md): the index and the decisions; the items themselves are
 one file each in [`backlog/`](backlog/), cited as `[B-12](backlog/B-12-some-slug.md)`.
@@ -68,17 +68,18 @@ no file behind it, fails `coverage_map.py`.
 
 ### Research (1)
 
-- [x] [research-architecture](research/research-architecture.md) — verified facts, the deviations from the brief, decisions D-1…D-23, risks, the reference dataset
+- [x] [research-architecture](research/research-architecture.md) — verified facts, the deviations from the brief, decisions D-1…D-24, risks, the reference dataset
 
-### Services (5)
+### Services (6)
 
 - [x] [resp](services/resp.md) — the RESP2 parser and writer
 - [x] [store](services/store.md) — the keyspace, strings and the four collection kinds, keys, lazy expiry
 - [x] [server](services/server.md) — the binary: listener, connections, the store thread, ordered stop
 - [x] [bench](services/bench.md) — the reference dataset generator; heap probe, load profiles and soak *target*
 - [x] [conformance](services/conformance.md) — the differential harness against Redis 7.2, and the Lettuce smoke
+- [x] [snapshot](services/snapshot.md) — kesh's snapshot format, `SAVE`, load at startup
 
-### Features (8)
+### Features (9)
 
 - [x] [feature-strings](features/feature-strings.md) — strings and counters
 - [x] [feature-hashes](features/feature-hashes.md) — hashes, packed where Redis packs them
@@ -86,6 +87,7 @@ no file behind it, fails `coverage_map.py`.
 - [x] [feature-sets](features/feature-sets.md) — sets, packed where small
 - [x] [feature-sorted-sets](features/feature-sorted-sets.md) — sorted sets on a skiplist with spans
 - [x] [feature-memory-limit](features/feature-memory-limit.md) — `used_memory`, `maxmemory`, `noeviction`; eviction *target*
+- [x] [feature-snapshots](features/feature-snapshots.md) — `SAVE`, load at startup, torn-save safety
 - [x] [feature-keyspace](features/feature-keyspace.md) — keys, `SCAN` and lazy expiry; active expiry *target*
 - [x] [feature-resp-connection](features/feature-resp-connection.md) — RESP2 and inline, pipelining, auth, Redis's request limits, the connection ceiling
 

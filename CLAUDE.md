@@ -2,8 +2,8 @@
 
 A Redis-compatible (RESP2) in-memory store on Kotlin/Native, `linuxX64`, built with the portfolio's
 sborka conventions and kore. **State: connection commands, strings, the four collection kinds, keys and the `SCAN` family
-(B-01…B-10), `used_memory` and `maxmemory` under `noeviction` (B-11), active expiry (B-13); eviction, persistence and
-operations are ahead.** Read before writing code — the obvious design is wrong in several documented ways.
+(B-01…B-10), `used_memory` and `maxmemory` under `noeviction` (B-11), active expiry (B-13), snapshots
+with `SAVE` (B-14); eviction and operations are ahead.** Read before writing code — the obvious design is wrong in several documented ways.
 
 ## Where to start a session
 
@@ -57,7 +57,7 @@ request, merge when green.
 Builds, tests and the conformance oracle run on the Linux build machine (see the global agent
 instructions for the wrapper), not on the Mac; the repository has a sync session there named
 `kesh`. What CI will run for the code: `./gradlew ktlintCheck :resp:jvmTest :resp:linuxX64Test
-:store:jvmTest :store:linuxX64Test :server:linuxX64Test :bench:jvmTest :bench:linuxX64Test
+:store:jvmTest :store:linuxX64Test :snapshot:jvmTest :snapshot:linuxX64Test :server:linuxX64Test :bench:jvmTest :bench:linuxX64Test
 :conformance:jvmTest`. **The oracle** is
 `conformance/run.sh` (needs Docker): it builds kesh, compares every script with Redis 7.2 and must
 end with "all agree" — run it for any change to a command's reply. A mutation made with `sed` must be checked with `git diff` before its run is read: after the

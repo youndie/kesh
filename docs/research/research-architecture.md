@@ -629,6 +629,20 @@ collector instead of up to 200 (research §1.2).
 Rejected: `ArrayDeque<ByteArray>` — one object per item, the brief's own objection; and one packed
 array per list — a push to the head of a long list would copy all of it.
 
+### D-24. Snapshots: kesh's own format, written beside and renamed, loaded before the listener — *new, B-14*
+
+The file is one stream: a header (`KESHSNAP`, version 1, the time), a record per live key with its
+absolute expiry, and an end with the record count and a CRC-32 of every byte before it. `SAVE` writes
+to `temp-<pid>.kesh`, `fsync`s, renames over the snapshot and `fsync`s the directory — `rdbSave`'s
+order — so a kill mid-save leaves the previous snapshot; the count and the CRC refuse a cut or
+damaged file whole, and such a file stops the start (exit 1), never half-served.
+The load happens before the listener binds: a client is refused at connect until it ends, as the
+brief says. Redis instead accepts and answers `-LOADING`, which Lettuce waits on; behind a
+Kubernetes service both look the same (readiness is false), and refusing needs no command-level
+state. Rejected: `-LOADING` — a mode every command would have to check, for a difference only a
+client connecting straight to the pod could see.
+`SAVE` is the only save in v1 (R-6).
+
 ### D-20. Hashes pack under Redis 7.2's listpack limits: 512 fields, 64-byte fields and values — *new, B-06*
 
 B-06 was to take its threshold from B-19's measurement. B-19 gave none: it packed every hash and
@@ -688,13 +702,36 @@ refuses cleanly, `connected_clients` and `rejected_connections` are in `INFO` an
 with save-on-shutdown must finish inside `terminationGracePeriodSeconds`; startup must finish before
 the startup probe gives up. Mitigation: B-14 measures `SAVE` and load time on §5a; B-16 derives the
 grace period and the startup probe budget from them and writes the arithmetic next to the values.
+*Measured in B-14* (`bench/snapshot/check.py`, the build machine, a snapshot on its local disk):
+
+| scale | keys | `SAVE` | snapshot | load at startup |
+|---|---|---|---|---|
+| 1/16 | 987 625 | 2.3 s (two runs: 2 308, 2 323 ms) | 271 MB | 5.8–6.1 s |
+| 1/8 | 1 975 250 | 4.5 s (4 457 ms) | 542 MB | 12.2 s |
+
+Linear in the dataset. At full scale that is *some 36 s to save, 4.3 GB, and 98 s to load* —
+arithmetic, not measured: B-22's host. Loading runs three times slower than saving because the heap
+grows as it loads and the mutator assists hold it (R-7); B-23 may change the load time.
 
 **R-6. `BGSAVE` without fork** (the brief's §10 question 1). Carried unchanged, with two facts added:
 a forked child of a multi-threaded Kotlin/Native process has one thread and a runtime whose other
 threads — the collector's included — no longer exist (*hypothesis* that anything but raw writes is
 unsafe there), and reaping it with a `SIGCHLD` handler is R-3. Decided in B-14 with its cost
 measured.
-
+*Decided in B-14 — no `BGSAVE` in v1* (D-24). Measured with `kesh-fork-probe`
+(`bench/src/nativeMain/kotlin/io/github/youndie/kesh/bench/fork/Main.kt`): `fork()` held the parent
+27–46 ms at 1/16 of the dataset and 94 ms at 1/8. **The forked child hangs** — at 1/64, 1/16, every
+run: its first mutator assist waits for a collection epoch, and the collector's thread does not exist
+in a child (the log's last line is the child's `Pausing the mutators until epoch 18 is done`). **With
+the assists off** (a finite `GC.maxHeapBytes`, set first thing in the child) the child writes the
+same snapshot at `SAVE`'s speed — 271 MB in 1.6 s, 542 MB in 4.7 s — whole by its CRC, and is reaped
+by polling `waitpid(WNOHANG)`, no `SIGCHLD` handler (R-3).
+Why not ship it: the probe's parent had no other threads; the server has ktor's selector and IO
+threads, and a fork taken while one of them holds an allocator or a stdio lock deadlocks the child —
+the classic hazard, not exercised here. And the child, with no collector, grows its heap by whatever
+it allocates while writing. Both are testable; neither is tested. B-25 carries the fork design with
+those two checks. Rejected for v1 also: a pause-and-copy (the whole dataset twice in memory, which
+the 2.8 × resident ratio of B-11 cannot afford) — not measured.
 **R-7. Writes stall for seconds whenever the keyspace grows.** *Found in B-05.* Mechanism: the
 collector's mutator assists (§1.2, correction found in B-05) hold every thread for the length of a
 mark once allocation outruns it — a bulk load, a restore, a cache warming after a restart. Mitigation:

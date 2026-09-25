@@ -66,6 +66,9 @@ can watch (research D-13, from B-02).
 * **A start that cannot go on says why and exits 1** (`StartupFailure`, B-24): a port another
   process listens on stops the start with `kesh: could not listen on <host>:<port>: …` — not an
   uncaught exception and a core dump.
+* **The snapshot is loaded before the listener binds** (research D-24): a client is refused at
+  connect until the load ends; a snapshot that cannot be read stops the start with one line and exit
+  status 1 (the same `StartupFailure`). `SAVE` and `LASTSAVE` run on the store thread (`persistence/`).
 * **Periodic work runs on the store thread too, ten times a second** — Redis's `serverCron` for the
   data (B-13): the active expiry cycle, then the tables' resizing. It is a coroutine in the
   connection scope that hops to the store thread, so it runs between commands, never inside one, and
