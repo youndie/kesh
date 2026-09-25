@@ -1,7 +1,7 @@
 ---
 id: B-11
 title: "Memory accounting, maxmemory and noeviction, checked against the container's limit"
-status: open
+status: wip
 priority: P1
 size: M
 stage: stage-3-memory
