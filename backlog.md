@@ -42,7 +42,7 @@ A stage is a field on the item, not a directory.
 
 | Task | | Priority | Size | Blocked by |
 |---|---|---|---|---|
-| [B-17](docs/backlog/B-17-reference-load-report.md) `[?]` | Reference load report on the reference host | P1 | M | B-03, B-12, B-14, B-22 |
+| [B-17](docs/backlog/B-17-reference-load-report.md) `[~]` | Reference load report on the reference host | P1 | M | B-03, B-12, B-14, B-22 |
 | [B-27](docs/backlog/B-27-pubsub.md) `[ ]` | Pub/Sub: PUBLISH, SUBSCRIBE and PSUBSCRIBE in RESP2 subscribe mode | P1 | M | B-21 |
 | [B-18](docs/backlog/B-18-soak-24h.md) `[ ]` | 24 h soak with TTL churn | P2 | S | B-17 |
 | [B-25](docs/backlog/B-25-bgsave-through-fork.md) `[ ]` | BGSAVE through fork, with the child's collector assists off | P2 | M | B-14 |

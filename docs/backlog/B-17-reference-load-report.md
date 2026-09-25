@@ -1,7 +1,7 @@
 ---
 id: B-17
 title: "Reference load report on the reference host"
-status: question
+status: wip
 priority: P1
 size: M
 stage: stage-6-capacity
@@ -20,7 +20,7 @@ served at the reference load on the reference host.
   and no second resident process shares the subject's host — a co-resident process was measured to
   inflate pause p99 several-fold on this platform.
 - Throughput, p50/p99/p99.9 per command, resident memory, `used_memory` and thread count, with the
-  raw `memtier_benchmark` output committed. Pipelines 1 and 16, 50 connections, Zipf keys.
+  raw generator output committed (`kesh-load`, below). Pipelines 1 and 16, 50 connections, Zipf keys.
 - **The host** (B-22, research Q-3): the build machine in a quiet window — not a reference host,
   and the report says so in its first line. Load and resident processes on both the Linux and the
   Windows side are read before and after each run and committed with it; a run with other work
@@ -37,20 +37,18 @@ served at the reference load on the reference host.
 | bench | `bench/profiles/` |
 | bench | `bench/reports/` |
 
-## Question (for the owner, 2026-09-25)
+## Decisions (owner, 2026-09-25)
 
-The subject is decided (B-22: the build machine in a quiet window). The load generator must run on
-another machine — one subject per host (research §1.2, consequence 5), and the build machine's slow
-monotonic clock must not time the latency. The machines there are:
-
-1. **bench-a or bench-b** — 4 cores, 7.7 GB, on the same network as the build machine; memtier and
-   the generator's pipelines fit easily. They carry other measurements, and using them was to be
-   asked (the owner, 2026-09-24: "defer to the last stage" — this is the last stage).
-2. **The Mac** — no other host needed, but a laptop's network path and power management are in the
-   latency it reports; the report would have to say so.
-3. **Wait** for a host that is neither.
-
-Research's recommendation: **1**, one of the two for the length of the runs (about an hour for the
-profiles at pipeline 1 and 16), with nothing else of the other measurements scheduled on it meanwhile.
+- **Hosts: kesh on bench-a, the generator on bench-b** — the portfolio's two-host stand (4 cores,
+  7.7 GB each, a private network between them). The owner offered it, or the build machine loading
+  itself; two hosts keep one subject per host (research §1.2, consequence 5) and keep latency off the
+  build machine's slow monotonic clock. The cost: 7.7 GB holds a fraction of §5a (B-11's peak ratio
+  2.8), so the report is at a stated scale, not the reference dataset's.
+- **bench-a's other resident process, `bench-pg` (postgres), is stopped for the runs** and started
+  again after.
+- **The load comes from kesh's own generator, not `memtier_benchmark`** — a deviation from this item's
+  text. memtier derives keys from a number; 10 M of §5a's 15.8 M keys are `session:<uuid>` and the
+  counters are `rate:<id>:<minute>`, so memtier could not produce §5a's mix against this dataset.
+  `kesh-load` rebuilds the dataset's keys from the seed instead. Its raw output is what is committed.
 
 Research: [research-architecture](../research/research-architecture.md).
