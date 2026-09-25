@@ -20,7 +20,7 @@ D-12) — it is what makes growth free of stalls and `SCAN` complete.
 
 ## 2. Business rules
 
-Built in B-05: everything but `SCAN` (B-10), active expiry (B-13) and `used_memory` (B-11).
+Built in B-05, `SCAN` in B-10: everything but active expiry (B-13) and `used_memory` (B-11).
 
 * **`DEL`, `UNLINK` and `FLUSHALL`/`FLUSHDB` with or without `ASYNC` behave the same** (research
   D-15, amending the brief): the keys are gone from the keyspace — and, from B-11, from `used_memory`
@@ -35,7 +35,9 @@ Built in B-05: everything but `SCAN` (B-10), active expiry (B-13) and `used_memo
   expired, within **25 % of CPU** time (research §1.5, D-11 as corrected — the brief's "25 %" was the
   CPU budget, not the repeat threshold).
 * `SCAN` is a cursor iteration with Redis's guarantee: every key present for the whole iteration is
-  returned at least once, across resizes. `COUNT`, `MATCH` and `TYPE` are supported.
+  returned at least once, across resizes — Redis's reverse-binary cursor over the power-of-two table
+  (`Keyspace.scan`, a port of `dictScan`). `COUNT`, `MATCH` and `TYPE` are supported; `HSCAN`,
+  `SSCAN` and `ZSCAN` walk a collection's table the same way.
 * `KEYS pattern` is supported and documented as unsuitable for production, as in Redis.
 * `TTL` answers `-1` for a key without expiry and `-2` for a missing key.
 
@@ -46,13 +48,15 @@ Built in B-05: everything but `SCAN` (B-10), active expiry (B-13) and `used_memo
 | store | `store/src/commonMain/kotlin/io/github/youndie/kesh/store/keyspace/Keyspace.kt` — the table, incremental rehash |
 | store | `store/src/commonMain/kotlin/io/github/youndie/kesh/store/Db.kt` — lazy expiry |
 | store | `store/src/commonMain/kotlin/io/github/youndie/kesh/store/commands/KeyCommands.kt` — the commands |
+| store | `store/src/commonMain/kotlin/io/github/youndie/kesh/store/commands/ScanCommands.kt` — `SCAN`, `HSCAN`, `SSCAN`, `ZSCAN` |
+| conformance | `conformance/scripts/scan/` — full iterations compared with Redis 7.2 as unions |
 | conformance | `conformance/scripts/keyspace/` — every command and refusal here against Redis 7.2 |
 
-The `SCAN` cursor (B-10) and the active expiry cycle (B-13) will live beside these.
+The active expiry cycle (B-13) will live beside these.
 
 ## 5. Scenarios
 
-Built in B-05: *TTL*, *Growth without a stall*. *Target*: *Scan completeness* (B-10), *Active expiry*
+Built in B-05: *TTL*, *Growth without a stall*; in B-10: *Scan completeness*. *Target*: *Active expiry*
 (B-13), *DEL and UNLINK account the same* (B-11, which brings `used_memory`).
 
 ### Scenario: TTL
@@ -66,6 +70,7 @@ Built in B-05: *TTL*, *Growth without a stall*. *Target*: *Scan completeness* (B
 * **Given:** 1 000 000 keys, with keys being added and deleted concurrently
 * **When:** a client iterates `SCAN 0 COUNT 1000` until the cursor returns to 0, across at least one resize
 * **Then:** every key present for the whole iteration is seen at least once
+* **Automated:** `store/src/linuxX64Test/kotlin/io/github/youndie/kesh/store/ScanScaleTest.kt::a million-key scan sees every stable key while keys come and go across a resize` — on the table, in steps of about a hundred entries, 150 000 keys added and 50 000 deleted in between; the same at 100 000 keys in `ScanTest` on both targets
 
 ### Scenario: Active expiry
 * **Given:** 100 000 keys set with `PX 50` that are never read again
@@ -93,7 +98,12 @@ Built in B-05: *TTL*, *Growth without a stall*. *Target*: *Scan completeness* (B
 * **Resident memory does not follow `used_memory` down** after a large delete: the collector
   reclaims later, and a non-moving heap may keep partly used pages (research R-2).
 * **Small collections are returned whole by the first `HSCAN`/`SSCAN`/`ZSCAN` call** with cursor 0,
-  as Redis does for its packed encodings.
+  whatever cursor was asked for, as Redis does for its packed encodings. A set of 129–512 integers
+  is whole in Redis (an intset) and walked by cursor in kesh (a table, research D-22): the same
+  union, over more calls.
+* **`ZSCAN` prints a large sorted set's scores differently from every other command**: `%.17Lg`,
+  so `0.1` is `0.10000000000000001` — Redis's `scanCallback` does, and kesh follows it. A packed
+  sorted set's scores print as `ZSCORE` prints them, as Redis's listpack stores them.
 
 ---
 

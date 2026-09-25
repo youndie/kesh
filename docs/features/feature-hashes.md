@@ -22,7 +22,7 @@ becomes a table where Redis 7.2 would make it one (research D-20).
 ## 2. Business rules
 
 * `HSET` (several field–value pairs, answering how many were new), `HGET`, `HMGET`, `HDEL`,
-  `HGETALL`, `HLEN`, `HEXISTS`, `HINCRBY`, `HINCRBYFLOAT`, `HKEYS`, `HVALS`. *Target* (B-10): `HSCAN`.
+  `HGETALL`, `HLEN`, `HEXISTS`, `HINCRBY`, `HINCRBYFLOAT`, `HKEYS`, `HVALS`. `HSCAN` since B-10.
 * A hash with no fields left is deleted; `HDEL` stops at the field that emptied it.
 * `HINCRBY` on a field that is not an integer answers `-ERR hash value is not an integer`;
   `HINCRBYFLOAT` on one that is not a float answers `-ERR hash value is not a float`. The increment

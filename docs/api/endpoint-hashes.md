@@ -29,7 +29,7 @@ read from `redis/redis@7.2.5!/src/t_hash.c` unless the row says otherwise.
 | `HDEL` | -3 | password | 2.0.0; several fields 2.4.0 | the key goes with its last field |
 | `HGETALL`, `HKEYS`, `HVALS`, `HLEN` | 2 | password | 2.0.0 | insertion order while packed, table order after (research D-20) |
 | `HINCRBY`, `HINCRBYFLOAT` | 4 | password | 2.0.0 / 2.6.0 | |
-| `HSCAN` | — | — | 2.8.0 | *target*, B-10 |
+| `HSCAN key cursor [MATCH] [COUNT]` | -3 | password | 2.8.0 | a packed collection comes back whole with cursor 0; `ScanCommands.kt` (B-10) |
 
 Auth tier `password` means: answered only after `AUTH` when `requirepass` is set, otherwise to anyone.
 

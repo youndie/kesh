@@ -25,7 +25,7 @@ a design input, not only the complexity: 3.5 objects a member on average (resear
   `ZADD … INCR` and `ZINCRBY` answer the new score, or null when a condition stopped the write.
 * Also `ZREM`, `ZSCORE`, `ZMSCORE`, `ZINCRBY`, `ZCARD`, `ZRANK` and `ZREVRANK` (with 7.2's
   `WITHSCORE`), `ZCOUNT`, `ZRANGE` (with `BYSCORE`, `BYLEX`, `REV`, `LIMIT` and `WITHSCORES`),
-  `ZREVRANGE`, `ZREMRANGEBYSCORE`, `ZREMRANGEBYRANK`, `ZPOPMIN`, `ZPOPMAX`. *Target* (B-10): `ZSCAN`.
+  `ZREVRANGE`, `ZREMRANGEBYSCORE`, `ZREMRANGEBYRANK`, `ZPOPMIN`, `ZPOPMAX`. `ZSCAN` since B-10.
 * Ordering is by score, then by member bytes, unsigned.
 * Rank and range queries are logarithmic in the set's size.
 * An empty sorted set is deleted — by `ZREM`, a `ZREMRANGE…` or a pop.

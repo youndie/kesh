@@ -35,7 +35,7 @@ read from `redis/redis@7.2.5!/src/t_zset.c`, `object.c` and `server.c`; arities 
 | `ZREVRANGE [WITHSCORES]` | -4 | password | 1.2.0 | deprecated in Redis, served; `REV`, `BYSCORE`, `BYLEX` are syntax errors here |
 | `ZREMRANGEBYSCORE`, `ZREMRANGEBYRANK` | 4 | password | 1.2.0 / 2.0.0 | |
 | `ZPOPMIN`, `ZPOPMAX [count]` | -2 | password | 5.0.0 | a missing key is an empty array |
-| `ZSCAN` | — | — | 2.8.0 | *target*, B-10 |
+| `ZSCAN key cursor [MATCH] [COUNT]` | -3 | password | 2.8.0 | a packed collection comes back whole with cursor 0; `ScanCommands.kt` (B-10) |
 
 Auth tier `password` means: answered only after `AUTH` when `requirepass` is set, otherwise to anyone.
 

@@ -428,7 +428,10 @@ reviewer sees, and B-04's acceptance includes a deliberately wrong reply that th
 arrive with `SPOP` (B-08) and `SCAN` (B-10). *B-08:* `random` names its population on the line —
 `[random a b c] SRANDMEMBER s 2` — and holds **both** replies to it, so a population written wrong
 fails against Redis; a planted `SRANDMEMBER` one member short failed it. B-06 added `pairs`, for a
-converted hash's `HGETALL`. The planted wrong reply (`SELECT 1` → `DB index out of
+converted hash's `HGETALL`. *B-10:* `cursor` iterates each server to cursor 0 and compares the unions. Two facts it
+surfaced, both read back into the source afterwards: Redis 7.2 **refuses no `SCAN … TYPE` name** —
+the refusal is commented out "until Redis 8.0" — and **`ZSCAN` prints a skiplist's scores as
+`%.17Lg`** (`scanCallback`), not as `ZSCORE`'s `d2string`: `0.1` is `0.10000000000000001` there. The planted wrong reply (`SELECT 1` → `DB index out of
 range`) failed the run at byte 14 of both `SELECT` lines and passed once removed. Two things the
 design above did not foresee:
 - **`HELLO 3` cannot be compared at all**: Redis switches to RESP3 and kesh refuses it (D-1). It is

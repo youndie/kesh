@@ -29,7 +29,7 @@ read from `redis/redis@7.2.5!/src/t_set.c`, `object.c` and `server.c`.
 | `SMEMBERS`, `SCARD` | 2 | password | 1.0.0 | `SMEMBERS` is `sinterCommand` over one key in 7.2 |
 | `SPOP`, `SRANDMEMBER` | -2 | password | 1.0.0; count 3.2.0 / 2.6.0 | random: conformance checks membership and count |
 | `SINTER`, `SUNION`, `SDIFF` | -2 | password | 1.0.0 | unordered: conformance compares multisets |
-| `SSCAN` | — | — | 2.8.0 | *target*, B-10 |
+| `SSCAN key cursor [MATCH] [COUNT]` | -3 | password | 2.8.0 | a packed collection comes back whole with cursor 0; `ScanCommands.kt` (B-10) |
 
 Auth tier `password` means: answered only after `AUTH` when `requirepass` is set, otherwise to anyone.
 

@@ -18,9 +18,8 @@ Owns all data: the keyspace, the value kinds, key expiry, and — later — memo
 eviction. Every data command's semantics lives here; `server` checks existence, arity and
 authentication and dispatches to it.
 
-**Built (B-05 to B-09):** kesh's own hash table (research D-12), strings and the four collection
-kinds, the keyspace commands except `SCAN`, and lazy expiry. ***Target*:** `SCAN` and its kin
-(B-10), memory accounting and `maxmemory` (B-11), eviction (B-12), active expiry (B-13).
+**Built (B-05 to B-10):** kesh's own hash table (research D-12), strings and the four collection
+kinds, the keyspace commands with `SCAN` and its kin, and lazy expiry. ***Target*:** memory accounting and `maxmemory` (B-11), eviction (B-12), active expiry (B-13).
 
 **Deliberately does not:** do I/O, parse or write the wire, persist anything (that is `snapshot`), or
 free memory — under a tracing collector nothing does (research D-15).
@@ -58,7 +57,8 @@ free memory — under a tracing collector nothing does (research D-15).
 | `store/src/commonMain/kotlin/io/github/youndie/kesh/store/zsets/ZSetValue.kt` | a sorted set: packed and sorted, then skiplist and index |
 | `store/src/commonMain/kotlin/io/github/youndie/kesh/store/packed/Packed.kt` | the length-prefixed layout both packed kinds use |
 | `store/src/commonMain/kotlin/io/github/youndie/kesh/store/commands/KeyCommands.kt` | the keyspace commands (`db.c`, `expire.c`) |
-| `store/src/commonMain/kotlin/io/github/youndie/kesh/store/Glob.kt` | `stringmatchlen`, for `KEYS` and later `SCAN … MATCH` |
+| `store/src/commonMain/kotlin/io/github/youndie/kesh/store/Glob.kt` | `stringmatchlen`, for `KEYS` and `SCAN … MATCH` |
+| `store/src/commonMain/kotlin/io/github/youndie/kesh/store/commands/ScanCommands.kt` | `SCAN`, `HSCAN`, `SSCAN`, `ZSCAN` over `Keyspace.scan` |
 | `store/src/commonMain/kotlin/io/github/youndie/kesh/store/RedisFloat.kt` | float parsing and printing — and its known divergence |
 | `store/src/commonTest/kotlin/io/github/youndie/kesh/store/` | tests on the JVM and linuxX64, time moved by hand |
 | `store/src/linuxX64Test/kotlin/io/github/youndie/kesh/store/KeyspaceGrowthTest.kt` | the rehash bound at sixteen million keys, on linuxX64 only (~2 GB) |
@@ -69,7 +69,8 @@ free memory — under a tracing collector nothing does (research D-15).
   operation moves at most one bucket (and visits at most ten empty ones), so no command pays for the
   whole table. `KeyspaceTest` grows a table to a million keys and asserts the bound on every step;
   `KeyspaceGrowthTest` does the same to sixteen million on linuxX64.
-  The power-of-two table is also what `SCAN`'s guarantee needs (B-10).
+  The power-of-two table is also what `SCAN`'s guarantee needs: `Keyspace.scan` is Redis's
+  `dictScan`, a reverse-binary cursor that covers both tables during a resize (B-10).
 * **Keys hash by content, with a seed.** A `ByteArray` compares by identity, so the table hashes its
   bytes — FNV-1a finished like MurmurHash3's `fmix32` — with a seed the server draws per process, so
   keys chosen from outside cannot be made to collide on purpose.
@@ -82,7 +83,7 @@ free memory — under a tracing collector nothing does (research D-15).
   class answers `WRONGTYPE` (`stringOf`, `hashOf`, `listValueOf`, `setValueOf`, `zsetOf`).
 * **Hashes are packed where Redis packs them** (research D-20): one `ByteArray` of length-prefixed
   pairs in insertion order up to 512 fields of at most 64 bytes, then a `Keyspace` table — the
-  keyspace's own, so `HSCAN` inherits `SCAN`'s guarantee (B-10). Packed for memory, not for the
+  keyspace's own, so `HSCAN` inherits `SCAN`'s guarantee. Packed for memory, not for the
   collector's pause, which follows the allocator's pages (research §1.2, correction found in B-19);
   the limits are Redis's so that reply order is Redis's too.
 * **Lists are chunks of packed items** (research D-21): a deque of `ByteArray`s of up to 8 KiB each,

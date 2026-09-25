@@ -20,7 +20,7 @@ members; a small set is one packed `ByteArray`, as a small hash is (research D-2
 ## 2. Business rules
 
 * `SADD`, `SREM`, `SISMEMBER`, `SMISMEMBER`, `SMEMBERS`, `SCARD`, `SRANDMEMBER`, `SPOP`, `SINTER`,
-  `SUNION`, `SDIFF`. *Target* (B-10): `SSCAN`.
+  `SUNION`, `SDIFF`. `SSCAN` since B-10.
 * An empty set is deleted — by `SREM` or `SPOP`; `SREM` stops at the member that emptied it.
 * Replies of several members come in no promised order, and kesh's differs from Redis's (Redis keeps
   small integer sets sorted; kesh does not). Conformance compares them as multisets.

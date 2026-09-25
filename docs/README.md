@@ -85,15 +85,15 @@ no file behind it, fails `coverage_map.py`.
 - [x] [feature-lists](features/feature-lists.md) — lists of packed chunks
 - [x] [feature-sets](features/feature-sets.md) — sets, packed where small
 - [x] [feature-sorted-sets](features/feature-sorted-sets.md) — sorted sets on a skiplist with spans
-- [x] [feature-keyspace](features/feature-keyspace.md) — keys and lazy expiry; `SCAN` and active expiry *target*
+- [x] [feature-keyspace](features/feature-keyspace.md) — keys, `SCAN` and lazy expiry; active expiry *target*
 - [x] [feature-resp-connection](features/feature-resp-connection.md) — RESP2 and inline, pipelining, auth, Redis's request limits, the connection ceiling
 
 ### API (7)
 
 - [x] [endpoint-strings](api/endpoint-strings.md) — the twenty string commands
-- [x] [endpoint-hashes](api/endpoint-hashes.md) — the eleven hash commands; `HSCAN` *target*
+- [x] [endpoint-hashes](api/endpoint-hashes.md) — the eleven hash commands and `HSCAN`
 - [x] [endpoint-lists](api/endpoint-lists.md) — the ten list commands
-- [x] [endpoint-sets](api/endpoint-sets.md) — the eleven set commands; `SSCAN` *target*
-- [x] [endpoint-sorted-sets](api/endpoint-sorted-sets.md) — the fifteen sorted set commands; `ZSCAN` *target*
-- [x] [endpoint-keyspace](api/endpoint-keyspace.md) — key commands and expiry; `SCAN` *target*
+- [x] [endpoint-sets](api/endpoint-sets.md) — the eleven set commands and `SSCAN`
+- [x] [endpoint-sorted-sets](api/endpoint-sorted-sets.md) — the fifteen sorted set commands and `ZSCAN`
+- [x] [endpoint-keyspace](api/endpoint-keyspace.md) — key commands, expiry and `SCAN`
 - [x] [endpoint-connection](api/endpoint-connection.md) — `PING`, `ECHO`, `QUIT`, `AUTH`, `HELLO`, `SELECT`, `CLIENT`, `COMMAND`; protocol errors
