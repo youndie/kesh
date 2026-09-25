@@ -80,7 +80,16 @@ class KeshServer(
         // SO_REUSEADDR, as Redis sets it (`redis/redis@7.2!/src/anet.c` — `anetSetReuseAddr`). A
         // connection the server closed leaves the server's port in TIME-WAIT, and without the flag a
         // restart inside that window dies at startup with EADDRINUSE. ktor's default is off.
-        val socket = aSocket(selector).tcp().bind(config.host, config.port) { reuseAddress = true }
+        // A port another process listens on is a start that cannot go on, not a crash (B-24): Redis
+        // logs "Could not create server TCP listening socket" and exits 1, and so does kesh.
+        val socket =
+            try {
+                aSocket(selector).tcp().bind(config.host, config.port) { reuseAddress = true }
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                throw StartupFailure("could not listen on ${config.host}:${config.port}: ${e.message}")
+            }
         listener = socket
 
         val ceiling = DescriptorCeiling.connectionCeiling()
@@ -173,3 +182,8 @@ class KeshServer(
             (this as? InetSocketAddress)?.let { "${it.hostname}:${it.port}" } ?: toString()
     }
 }
+
+/** A start that cannot go on — a taken port, a damaged snapshot: the server says why and exits 1. */
+class StartupFailure(
+    message: String,
+) : Exception(message)

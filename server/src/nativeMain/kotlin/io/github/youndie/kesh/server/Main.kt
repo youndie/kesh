@@ -2,12 +2,18 @@ package io.github.youndie.kesh.server
 
 import io.github.youndie.kore.lifecycle.runUntilSignal
 import kotlinx.coroutines.runBlocking
+import kotlin.system.exitProcess
 
 fun main() {
     val config = ServerConfig.fromEnvironment()
     runBlocking {
         val server = KeshServer(config)
-        server.start()
+        try {
+            server.start()
+        } catch (e: StartupFailure) {
+            println("kesh: ${e.message}")
+            exitProcess(1)
+        }
         println("kesh: listening on ${config.host}:${server.port}, maxclients ${server.maxClients}")
 
         // After the listener is serving, as kore requires: a signal that arrived earlier would run a

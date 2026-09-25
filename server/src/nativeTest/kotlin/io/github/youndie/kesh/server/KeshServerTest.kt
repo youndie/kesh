@@ -14,6 +14,8 @@ import kotlinx.coroutines.withTimeout
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFails
+import kotlin.test.assertFailsWith
+import kotlin.test.assertTrue
 import kotlin.time.Duration.Companion.seconds
 
 /** Through a real socket, the way `redis-cli` reaches the server. */
@@ -40,6 +42,19 @@ class KeshServerTest {
                 server.stop()
                 server.close()
                 selector.close()
+            }
+        }
+
+    @Test
+    fun `a port another server listens on stops the start with the address and no crash`() =
+        withServer { port, _ ->
+            val second = KeshServer(ServerConfig(host = "127.0.0.1", port = port))
+            try {
+                val failure = assertFailsWith<StartupFailure> { second.start() }
+                assertTrue("127.0.0.1:$port" in failure.message!!, failure.message)
+                assertTrue("in use" in failure.message!!, failure.message)
+            } finally {
+                second.close()
             }
         }
 
