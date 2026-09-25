@@ -124,8 +124,9 @@ for i in range(1, count + 1):
     for k, v in save_peak.items():
         peaks[k] = max(peaks[k], v)
     if count <= 20 or i % 50 == 0:
+        used = ask("INFO", "memory").split("used_memory:")[1].split("\r\n")[0]
         print(
-            f"save {i}: {seconds:.2f} s; parent rss {save_peak['parent_rss']} MB, private dirty "
+            f"save {i}: {seconds:.2f} s; used_memory {int(used) // 1048576} MB; parent rss {save_peak['parent_rss']} MB, private dirty "
             f"{save_peak['parent_private_dirty']} MB; child rss {save_peak['child_rss']} MB, private dirty "
             f"{save_peak['child_private_dirty']} MB; pss of both {save_peak['pss_sum']} MB",
             flush=True,
