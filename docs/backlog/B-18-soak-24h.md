@@ -48,3 +48,14 @@ report says it was there.
   one. The next step: fetch `hours.tsv`, `rss.txt`, the hourly outputs; write the report and R-2.
 
 Research: [research-architecture](../research/research-architecture.md).
+
+### Iteration 2 — 2026-09-25: stopped by the owner
+
+The soak was stopped at the owner's request at about 19:55 UTC, 6 h 46 min in, during its seventh hour:
+**six whole hours** are in `hours.tsv`; the seventh's `kesh-load` was killed mid-hour, so `hour-7.*` is
+partial and not a data point. kesh was stopped with `SIGTERM`; nothing of the soak runs on either host.
+The owner asked that the hosts not be touched until they return to it, so nothing has been collected:
+the data stays on the generator host (`~/kesh-soak/soak/`: `hours.tsv`, `hour-N.txt/.raw`,
+`metrics-N.txt`) and the subject host (`~/kesh-soak/rss.txt`, sampled each minute). Next: collect those,
+decide with the owner whether six hours answer research R-2 or a new 24 h run is needed — a new run
+would take the binary with B-31's collector metrics, which the stopped one did not have.
