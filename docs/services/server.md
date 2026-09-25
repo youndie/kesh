@@ -63,6 +63,9 @@ can watch (research D-13, from B-02).
   not yet report itself closed, and an uncaught coroutine exception terminates a Kotlin/Native
   process — 4 of 8 test runs before the fix, 0 of 20 after. Letting in-flight commands finish and
   their replies flush first is B-16's graceful stop.
+* **A start that cannot go on says why and exits 1** (`StartupFailure`, B-24): a port another
+  process listens on stops the start with `kesh: could not listen on <host>:<port>: …` — not an
+  uncaught exception and a core dump.
 * **Clients live on the store thread too.** Registration, `CLIENT LIST` and `CLIENT KILL` all run
   there, so the `maxclients` count and the registry are exact without a lock: an accepted socket is
   registered in one hand-off, or told `-ERR max number of clients reached` and closed.

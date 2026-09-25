@@ -38,7 +38,7 @@ A stage is a field on the item, not a directory.
 
 <!-- BEGIN INDEX -->
 
-## Open (12)
+## Open (11)
 
 | Task | | Priority | Size | Blocked by |
 |---|---|---|---|---|
@@ -53,9 +53,8 @@ A stage is a field on the item, not a directory.
 | [B-22](docs/backlog/B-22-reference-host.md) `[?]` | Choose the reference host for the load report and the soak | P1 | XS | - |
 | [B-23](docs/backlog/B-23-mutator-assists-stall-writes.md) `[ ]` | Writes stall for seconds while the keyspace grows: decide on the collector's mutator assists | P1 | S | - |
 | [B-18](docs/backlog/B-18-soak-24h.md) `[ ]` | 24 h soak with TTL churn | P2 | S | B-17 |
-| [B-24](docs/backlog/B-24-taken-port-aborts.md) `[~]` | A taken port aborts the server with a core dump instead of exiting cleanly | P2 | XS | - |
 
-## Closed (12)
+## Closed (13)
 
 **Protocol and core**
 
@@ -74,6 +73,10 @@ A stage is a field on the item, not a directory.
 - [B-08](docs/backlog/B-08-sets.md) `[x]` - Sets
 - [B-09](docs/backlog/B-09-sorted-sets.md) `[x]` - Sorted sets with logarithmic rank and range
 - [B-10](docs/backlog/B-10-scan-family.md) `[x]` - SCAN, HSCAN, SSCAN, ZSCAN with the completeness guarantee
+
+**Operations**
+
+- [B-24](docs/backlog/B-24-taken-port-aborts.md) `[x]` - A taken port aborts the server with a core dump instead of exiting cleanly
 
 <!-- END INDEX -->
 

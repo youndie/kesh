@@ -1,7 +1,7 @@
 ---
 id: B-24
 title: "A taken port aborts the server with a core dump instead of exiting cleanly"
-status: wip
+status: done
 priority: P2
 size: XS
 stage: stage-5-operations
@@ -28,5 +28,14 @@ Under an orchestrator the difference is a crash-loop with dumps against an ordin
 |---|---|
 | server | `server/src/nativeMain/kotlin/io/github/youndie/kesh/server/KeshServer.kt` |
 | server | `server/src/nativeMain/kotlin/io/github/youndie/kesh/server/Main.kt` |
+
+## Findings (2026-09-25)
+
+- **Done from `main`**: found in B-13 and filed on its branch, fixed here; the same `StartupFailure`
+  B-14 uses for a damaged snapshot, so the two meet cleanly when B-14 merges.
+- **Acceptance.** `KeshServerTest` starts a second server on a port the first listens on and requires
+  `StartupFailure` naming the address; through the binaries, the second prints
+  `kesh: could not listen on 0.0.0.0:16395: EADDRINUSE (98): Address already in use` and exits 1, no
+  core dump, the first stops normally. A mutant throwing another exception fails the test.
 
 Research: [research-architecture](../research/research-architecture.md).
