@@ -14,12 +14,13 @@ publishes: []
 
 ## 1. Responsibility
 
-Owns all data: the keyspace, the value kinds, key expiry, and — later — memory accounting and
+Owns all data: the keyspace, the value kinds, key expiry, memory accounting, and — later —
 eviction. Every data command's semantics lives here; `server` checks existence, arity and
 authentication and dispatches to it.
 
-**Built (B-05 to B-10):** kesh's own hash table (research D-12), strings and the four collection
-kinds, the keyspace commands with `SCAN` and its kin, and lazy expiry. ***Target*:** memory accounting and `maxmemory` (B-11), eviction (B-12), active expiry (B-13).
+**Built (B-05 to B-11):** kesh's own hash table (research D-12), strings and the four collection
+kinds, the keyspace commands with `SCAN` and its kin, lazy expiry, and `used_memory` with `maxmemory`
+under `noeviction`. ***Target*:** eviction (B-12), active expiry (B-13).
 
 **Deliberately does not:** do I/O, parse or write the wire, persist anything (that is `snapshot`), or
 free memory — under a tracing collector nothing does (research D-15).
@@ -113,8 +114,8 @@ A module of this build; not published.
 `hash-max-listpack-entries` and `hash-max-listpack-value` are `HashValue.maxPackedEntries` and
 `maxPackedValue`, `list-max-listpack-size` is `ListValue.maxChunkBytes`, and the set limits are
 `SetValue.maxPackedEntries` and `maxPackedValue`, the sorted set limits `ZSetValue`'s — all at Redis 7.2's
-defaults and not settable yet (`CONFIG`, B-15). `maxmemory`,
-its policy and samples arrive with B-11 and B-12.
+defaults and not settable yet (`CONFIG`, B-15). `maxmemory` is `Db.maxMemory` (B-11), set by the
+server from `KESH_MAXMEMORY` and `CONFIG SET`; its policy and samples arrive with B-12.
 
 ## 8. Quirks
 

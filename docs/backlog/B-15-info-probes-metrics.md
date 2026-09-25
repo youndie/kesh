@@ -33,4 +33,8 @@ Operators see what the instance is doing through `INFO`, the HTTP port and the m
 | server | `server/src/nativeMain/kotlin/io/github/youndie/kesh/server/http/` |
 | server | `server/src/nativeMain/kotlin/io/github/youndie/kesh/server/info/` |
 
+**Already there (B-11):** `INFO memory` (`used_memory`, `maxmemory`, the policy) and `CONFIG GET`/`SET`
+for `maxmemory` — `server/src/nativeMain/kotlin/io/github/youndie/kesh/server/config/MemoryConfig.kt`.
+This item builds the rest around them.
+
 Research: [research-architecture](../research/research-architecture.md).

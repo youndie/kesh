@@ -459,12 +459,26 @@ catalog versions but does not list — and `gradle/libs.versions.toml` pins neit
 D-9 governs throughput and latency *as release numbers*. It does not stop B-19 from having a
 verdict: B-19 answers whether D-3 holds, which is a design question, not a performance gate.
 
-### D-10. `used_memory` is kesh's own estimate — *hypothesis, measured in B-11*
+### D-10. `used_memory` is kesh's own estimate — *measured in B-11 at 1/16 and 1/8 of §5a*
 
 Sharpened by §1.2: the gap between `used_memory` and resident memory contains the runtime, the
 per-thread allocator pages, the garbage not yet swept, and the free space a non-moving collector
 cannot compact. Only a measurement on §5a says how large it is and whether it is stable over a day
 (B-18).
+
+**Built in B-11.** `used_memory` is `MemoryModel`'s sum — each key's entry, key and value at the
+64-bit runtime's object and array sizes, and the bucket arrays — kept as a running total: a write
+command settles the entries it touched, and every collection keeps its own count, so nothing is
+stored per key. `MemoryAccountingTest` holds the total to a recount after every step of a random
+workload over all five types.
+
+**Measured** (`bench/reports/b-11/README.md`; the reference dataset loaded through the protocol, the
+server idle 45 s): **resident memory is 2.4 × `used_memory` idle and 2.8 × at the load's peak**, at
+1/16 and at 1/8 alike, and `used_memory` is 2.3 × the dataset's user bytes. On the build machine, not
+a measurement host; full scale needs B-22's host. *Hypothesis*: most of the 2.4 is the collector's
+target of twice the live set (§1.2), which holds only if `used_memory` tracks the live heap — the GC
+log's `alive` is the check. *Consequence*: a container limit has to hold the peak — `maxmemory` × 2.8
+and the process's base — which is the ratio B-11's container check uses.
 
 ### D-11. Active expiry samples keys with a TTL on a timer — *corrected*
 
