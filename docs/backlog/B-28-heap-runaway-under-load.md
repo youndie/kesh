@@ -1,7 +1,7 @@
 ---
 id: B-28
 title: "The heap runs away under the reference load: an epoch that sweeps nothing doubles the target"
-status: open
+status: wip
 priority: P0
 size: M
 stage: stage-6-capacity
