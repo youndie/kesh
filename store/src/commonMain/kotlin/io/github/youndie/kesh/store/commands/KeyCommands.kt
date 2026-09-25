@@ -14,6 +14,7 @@ import io.github.youndie.kesh.store.hashes.HashValue
 import io.github.youndie.kesh.store.keyspace.Entry
 import io.github.youndie.kesh.store.lists.ListValue
 import io.github.youndie.kesh.store.sets.SetValue
+import io.github.youndie.kesh.store.zsets.ZSetValue
 import kotlin.random.Random
 
 /**
@@ -72,7 +73,7 @@ object KeyCommands {
         a: List<ByteArray>,
     ): Reply = Reply.Integer((1 until a.size).count { db.delete(a[it]) }.toLong())
 
-    /** `getObjectTypeName`. Sorted sets arrive with B-09. */
+    /** `getObjectTypeName`. */
     private fun typeName(value: Any?): String =
         when (value) {
             null -> "none"
@@ -80,6 +81,7 @@ object KeyCommands {
             is HashValue -> "hash"
             is ListValue -> "list"
             is SetValue -> "set"
+            is ZSetValue -> "zset"
             else -> "unknown"
         }
 

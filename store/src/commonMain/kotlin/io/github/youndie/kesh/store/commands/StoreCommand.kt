@@ -63,5 +63,6 @@ internal inline fun answering(block: () -> Reply): Reply =
 /** Every data command, group by group — what the server's dispatcher and the store's tests register. */
 object StoreCommands {
     val all: List<StoreCommand> =
-        StringCommands.all + KeyCommands.all + HashCommands.all + ListCommands.all + SetCommands.all
+        StringCommands.all + KeyCommands.all + HashCommands.all + ListCommands.all + SetCommands.all +
+            SortedSetCommands.all
 }
