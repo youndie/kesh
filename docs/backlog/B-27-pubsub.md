@@ -1,7 +1,7 @@
 ---
 id: B-27
 title: "Pub/Sub: PUBLISH, SUBSCRIBE and PSUBSCRIBE in RESP2 subscribe mode"
-status: open
+status: wip
 priority: P1
 size: M
 stage: stage-1-protocol
