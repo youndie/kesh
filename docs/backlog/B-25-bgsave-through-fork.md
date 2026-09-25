@@ -1,7 +1,7 @@
 ---
 id: B-25
 title: "BGSAVE through fork, with the child's collector assists off"
-status: open
+status: wip
 priority: P2
 size: M
 stage: stage-4-persistence
