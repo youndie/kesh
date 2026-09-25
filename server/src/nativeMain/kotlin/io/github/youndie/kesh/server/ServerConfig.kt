@@ -46,17 +46,41 @@ data class ServerConfig(
      * so tests do not fight over a fixed port.
      */
     val httpPort: Int? = null,
+    /** `KESH_SAVE_ON_SHUTDOWN`: whether the drain ends with a `SAVE` (B-16). Off, as the brief's "if configured". */
+    val saveOnShutdown: Boolean = false,
+    /**
+     * `KESH_SHUTDOWN_DRAIN_SECONDS`: kore's drain stage — the connections' 5 s, then the save. The chart
+     * derives it from the measured `SAVE` time (research R-5).
+     */
+    val shutdownDrainSeconds: Int = 15,
+    /** `KESH_TERMINATION_GRACE_SECONDS`: the pod's grace period, so kore can refuse a plan that does not fit it. */
+    val terminationGraceSeconds: Int? = null,
 ) {
-    override fun toString(): String =
-        "ServerConfig(host=$host, port=$port, password=${if (password == null) "none" else "set"}, " +
+    override fun toString(): String {
+        val grace = terminationGraceSeconds?.let { "${it}s" } ?: "undeclared"
+        return "ServerConfig(host=$host, port=$port, password=${if (password == null) "none" else "set"}, " +
             "maxClients=${maxClients ?: "derived"}, limits=$limits, queryBufferLimit=$queryBufferLimit, " +
-            "maxMemory=$maxMemory, policy=${maxMemoryPolicy.configName}/$maxMemorySamples, snapshot=$dir/$dbFilename, gcAssists=$gcAssists, httpPort=${httpPort ?: "off"})"
+            "maxMemory=$maxMemory, policy=${maxMemoryPolicy.configName}/$maxMemorySamples, " +
+            "snapshot=$dir/$dbFilename, gcAssists=$gcAssists, httpPort=${httpPort ?: "off"}, " +
+            "saveOnShutdown=$saveOnShutdown, drain=${shutdownDrainSeconds}s, grace=$grace)"
+    }
 
     companion object {
         const val DEFAULT_HTTP_PORT = 8080
 
         fun fromEnvironment(read: (String) -> String? = ::environmentVariable): ServerConfig {
             val defaults = ServerConfig()
+
+            fun onOff(
+                name: String,
+                default: Boolean,
+            ): Boolean =
+                when (val raw = read(name)) {
+                    null -> default
+                    "on" -> true
+                    "off" -> false
+                    else -> throw IllegalArgumentException("$name is on or off: $raw")
+                }
 
             fun number(
                 name: String,
@@ -102,6 +126,10 @@ data class ServerConfig(
                         "off" -> false
                         else -> throw IllegalArgumentException("KESH_GC_ASSISTS is on or off: $raw")
                     },
+                saveOnShutdown = onOff("KESH_SAVE_ON_SHUTDOWN", defaults.saveOnShutdown),
+                shutdownDrainSeconds =
+                    number("KESH_SHUTDOWN_DRAIN_SECONDS", 1L..3_600L)?.toInt() ?: defaults.shutdownDrainSeconds,
+                terminationGraceSeconds = number("KESH_TERMINATION_GRACE_SECONDS", 1L..86_400L)?.toInt(),
                 httpPort =
                     when (read("KESH_HTTP_PORT")) {
                         "off" -> null

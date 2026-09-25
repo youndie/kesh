@@ -37,18 +37,22 @@ import kotlinx.coroutines.DelicateCoroutinesApi
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.IO
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.cancelAndJoin
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.job
+import kotlinx.coroutines.joinAll
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.newSingleThreadContext
 import kotlinx.coroutines.withContext
+import kotlinx.coroutines.withTimeoutOrNull
 import kotlinx.coroutines.yield
 import kotlin.random.Random
 import kotlin.time.Duration.Companion.milliseconds
+import kotlin.time.Duration.Companion.seconds
 import kotlin.time.TimeSource
 
 /**
@@ -103,6 +107,15 @@ class KeshServer(
 
     /** The store's numbers for `/metrics`, copied on the store thread; set once the server has started. */
     private var storeMetrics: (suspend () -> Metrics.Store)? = null
+
+    // The RESP connections, apart from the rest of the connection scope, so the drain can wait for
+    // them alone (B-16).
+    private val serving = SupervisorJob(connections.coroutineContext.job)
+    private val clientScope = CoroutineScope(connections.coroutineContext + serving)
+    private var accepting: Job? = null
+
+    /** The save the drain ends with when `KESH_SAVE_ON_SHUTDOWN` is on; set once the server has started. */
+    private var saveOnStop: (suspend () -> Unit)? = null
 
     /** The bound port — the configured one, or the one the OS chose for port 0. */
     val port: Int
@@ -174,6 +187,7 @@ class KeshServer(
                 samples = config.maxMemorySamples
             }
         val persistence = Persistence(file, ::epochMillis, loadedKeys = loaded?.keys ?: 0)
+        if (config.saveOnShutdown) saveOnStop = { withContext(storeThread) { persistence.save(db) } }
         val commands =
             CommandDispatcher(
                 clients,
@@ -230,24 +244,25 @@ class KeshServer(
             }
         }
 
-        connections.launch {
-            while (true) {
-                val accepted =
-                    try {
-                        socket.accept()
-                    } catch (e: CancellationException) {
-                        throw e
-                    } catch (e: Exception) {
-                        // Out of descriptors (EMFILE) or a connection reset before it was accepted:
-                        // Redis logs it and keeps listening, and so does kesh. The pause keeps a
-                        // persistent condition from spinning.
-                        println("kesh: accept failed: $e")
-                        delay(ACCEPT_RETRY)
-                        continue
-                    }
-                connections.launch { serve(accepted, clients, commands) }
+        accepting =
+            connections.launch {
+                while (true) {
+                    val accepted =
+                        try {
+                            socket.accept()
+                        } catch (e: CancellationException) {
+                            throw e
+                        } catch (e: Exception) {
+                            // Out of descriptors (EMFILE) or a connection reset before it was accepted:
+                            // Redis logs it and keeps listening, and so does kesh. The pause keeps a
+                            // persistent condition from spinning.
+                            println("kesh: accept failed: $e")
+                            delay(ACCEPT_RETRY)
+                            continue
+                        }
+                    clientScope.launch { serve(accepted, clients, commands) }
+                }
             }
-        }
         startup.completed(GATE_LISTENER)
     }
 
@@ -292,8 +307,30 @@ class KeshServer(
      * closed, and that exception escaping the loop killed the process in 4 of 8 test runs (B-01).
      */
     override suspend fun stop() {
-        connections.coroutineContext.job.cancelAndJoin()
+        // Stop accepting first: nothing new arrives while the rest winds down.
+        accepting?.cancelAndJoin()
         listener?.close()
+        // Then the connections: a connection waiting for its next command is interrupted; one with a
+        // batch read is not — `Connection` executes it and writes every reply whole, which is what
+        // "no client receives a truncated reply" means (research R-3, B-16). A client that stops reading
+        // its replies would hold that write for ever, so after [CONNECTION_DRAIN] its socket is closed.
+        serving.children.forEach { it.cancel() }
+        if (withTimeoutOrNull(CONNECTION_DRAIN) { serving.children.toList().joinAll() } == null) {
+            val stuck =
+                withContext(storeThread) {
+                    registry
+                        ?.all()
+                        ?.toList()
+                        .orEmpty()
+                        .onEach { it.kill() }
+                        .size
+                }
+            println("kesh: drain: $stuck connections still writing after $CONNECTION_DRAIN; closed them")
+            serving.children.toList().joinAll()
+        }
+        // The snapshot last, when no command can change the data any more (KESH_SAVE_ON_SHUTDOWN).
+        saveOnStop?.invoke()
+        connections.coroutineContext.job.cancelAndJoin()
     }
 
     /** `GET` on the HTTP port: kore's three probes and the metrics. */
@@ -343,6 +380,9 @@ class KeshServer(
     private companion object {
         val MAX_CLIENTS_REACHED = "-ERR max number of clients reached\r\n".encodeToByteArray()
         const val GATE_SNAPSHOT = "snapshot"
+
+        /** What the drain gives connections to finish the batches they have read; the save gets the rest. */
+        val CONNECTION_DRAIN = 5.seconds
         const val GATE_LISTENER = "listener"
         val ACCEPT_RETRY = 100.milliseconds
 

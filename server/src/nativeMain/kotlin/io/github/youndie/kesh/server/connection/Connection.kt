@@ -12,6 +12,7 @@ import io.ktor.utils.io.readAvailable
 import io.ktor.utils.io.writeFully
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineDispatcher
+import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.withContext
 import kotlinx.io.IOException
 
@@ -76,37 +77,48 @@ internal class Connection(
             }
             if (batch.isEmpty() && refusal == null) return true
 
-            var keepOpen = true
-            if (batch.isNotEmpty()) {
-                val replies =
-                    withContext(storeThread) {
-                        val out = ArrayList<Reply>(batch.size)
-                        for (command in batch) {
-                            if (client.killed) break
-                            val reply = commands.execute(client, command)
-                            if (reply == null) {
-                                keepOpen = false
-                                break
-                            }
-                            out += reply
-                            if (client.closeAfterReply) break
-                        }
-                        out
-                    }
-                replies.forEach(writer::write)
-                if (client.closeAfterReply || client.killed) keepOpen = false
-            }
-            refusal?.let {
-                writer.write(Reply.Error("ERR ${it.message}"))
-                keepOpen = false
-            }
-            if (writer.length > 0) {
-                output.writeFully(writer.toByteArray())
-                output.flush()
-                writer.clear()
-            }
-            if (!keepOpen) return false
+            // From here the batch is executed and every reply written whole, whatever cancels the
+            // connection meanwhile: a drain interrupts only the wait for the next read (B-16).
+            if (!withContext(NonCancellable) { answer(batch, refusal, writer) }) return false
         }
+    }
+
+    /** Executes [batch] and writes its replies and the [refusal]; `false` when the connection must close. */
+    private suspend fun answer(
+        batch: List<List<ByteArray>>,
+        refusal: ProtocolException?,
+        writer: ReplyWriter,
+    ): Boolean {
+        var keepOpen = true
+        if (batch.isNotEmpty()) {
+            val replies =
+                withContext(storeThread) {
+                    val out = ArrayList<Reply>(batch.size)
+                    for (command in batch) {
+                        if (client.killed) break
+                        val reply = commands.execute(client, command)
+                        if (reply == null) {
+                            keepOpen = false
+                            break
+                        }
+                        out += reply
+                        if (client.closeAfterReply) break
+                    }
+                    out
+                }
+            replies.forEach(writer::write)
+            if (client.closeAfterReply || client.killed) keepOpen = false
+        }
+        refusal?.let {
+            writer.write(Reply.Error("ERR ${it.message}"))
+            keepOpen = false
+        }
+        if (writer.length > 0) {
+            output.writeFully(writer.toByteArray())
+            output.flush()
+            writer.clear()
+        }
+        return keepOpen
     }
 
     private companion object {
