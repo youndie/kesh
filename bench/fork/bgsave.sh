@@ -21,7 +21,8 @@ LOG=$DIR/kesh.log
 start_kesh() {
   KESH_PORT=$PORT KESH_HTTP_PORT=off KESH_DIR=$DIR systemd-run --user --scope --quiet \
     -p TasksMax=64 -p MemoryMax="$LIMIT" -p MemorySwapMax=0 "$KESH" >> "$LOG" 2>&1 < /dev/null &
-  for _ in $(seq 100); do
+  # Up to two minutes: kesh listens only once its snapshot has loaded (research D-24) — 12 s at 1/8.
+  for _ in $(seq 1200); do
     pid=$(pgrep -nx kesh.kexe) && [ -n "$pid" ] && nc -z 127.0.0.1 $PORT 2>/dev/null && return
     sleep 0.1
   done
