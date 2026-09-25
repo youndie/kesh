@@ -1,5 +1,5 @@
-// The binary. linuxX64 only: it is the target that ships (research D-2), `ktor-network`'s Native
-// transport is what is being built on (research §1.4), and nothing here is meant to run on the JVM.
+// The binary. linuxX64 only: it is the target that ships (research D-2), its transport is kesh's own
+// `epoll` loop (research D-31), and nothing here is meant to run on the JVM.
 plugins {
     alias(wip.plugins.kotlinMultiplatform)
     alias(libs.plugins.sborkaKmp)
@@ -37,9 +37,11 @@ kotlin {
             implementation(project(":snapshot"))
             implementation(libs.kore.core)
             implementation(wip.kotlinx.coroutines.core)
-            // The version is the shared catalog's `ktor` (3.6.0), read rather than repeated: the
-            // catalog carries the version but no `ktor-network` entry, and a second number here is a
-            // number that drifts from it (research D-6).
+        }
+        // The tests talk to the server as a client would, through `ktor-network`'s client sockets; the
+        // server itself no longer uses it (research D-31). The version is the shared catalog's `ktor`
+        // (3.6.0), read rather than repeated (research D-6).
+        nativeTest.dependencies {
             implementation("io.ktor:ktor-network:${wip.versions.ktor.get()}")
         }
     }
