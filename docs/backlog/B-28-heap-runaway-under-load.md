@@ -45,4 +45,36 @@ allocation rate (fixable in kesh) or the scheduler's rule (`GC.targetHeapUtiliza
 | bench | `bench/load/stand.sh` |
 | deploy | `deploy/chart/values.yaml` |
 
+## Iteration 1 (2026-09-25)
+
+- **Reproduced on the build machine with kesh pinned to 4 cores** (`bench/load/runaway.sh`, pipeline
+  1, an eighth): peak resident 5.45 GB; alive 1.28 → 1.87 GB in one epoch that swept 3.4 M objects;
+  an epoch of 14 s. **Not reproduced on 20 cores at pipeline 16**: alive steady at 1.6 GB, target 3.2 GB,
+  peak 4.2 GB for 180 s. So the runaway needs a slow mark — few cores, many live objects — *and* a high
+  allocation rate at once.
+- **The allocation is per round trip, not per command**: 264 objects a command at pipeline 1, 52 at
+  pipeline 16 — some 226 per read-and-write cycle and 38 per command. A `SET` alone at pipeline 1
+  (`redis-benchmark`, 300 000 requests, 32-byte values) allocated **8.4 GB: 28 KB a request**.
+- **Where: kotlinx-io on Native does not pool its 8 KB segments.** kesh's transport is `ktor-network`,
+  whose channels are kotlinx-io buffers; in kotlinx-io 0.9.1 (the version kesh resolves),
+  `core/native/src/SegmentPool.kt` has `MAX_SIZE = 0`, `take()` = `Segment.new()`, and `recycle()` empty.
+  Every read and every write takes fresh 8 KB segments, garbage by the next one.
+
+## Question (for the owner)
+
+The allocation that feeds the runaway is in the transport, not in kesh's commands. Options:
+
+1. **kesh's own transport on `epoll`** — non-blocking sockets, buffers reused per connection, and the
+   commands run on the event loop's own thread, as Redis runs them. Removes the 8 KB segments, the
+   hand-off to the store thread and back (B-17's limit), the 1 024-descriptor ceiling (D-13) and the
+   `EINTR` hazard (R-3) at once. Reverses D-6/D-13's choice of `ktor-network`; the largest change (L).
+2. **Keep ktor, and make the garbage cheaper to collect**: fewer live objects (leaderboards as packed
+   runs instead of a skiplist node per member — a third of the 15.7 M objects at an eighth), and the
+   collector's knobs. Leaves 28 KB a request; narrows the window rather than closing it.
+3. **Upstream**: a segment pool for kotlinx-io on Native (an issue or a pull request to Kotlin's
+   repository — the owner's call to file). Nothing changes in kesh until it ships.
+
+Research's recommendation: **1**, with 3 filed alongside — the transport is also what B-17 found
+limiting throughput, and the descriptor ceiling and the signal hazard are documented costs of it.
+
 Research: [research-architecture](../research/research-architecture.md) R-7, D-25.
