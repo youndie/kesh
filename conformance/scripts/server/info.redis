@@ -1,0 +1,25 @@
+# INFO (B-15): the shape of the report, not its values. [fields] holds every section and field kesh
+# prints to exist in Redis 7.2's report, in the same section and order, and requires the fields the
+# line names in both — kesh prints fewer fields than Redis, never other ones.
+FLUSHALL
+[fields redis_version redis_mode os arch_bits multiplexing_api process_id run_id tcp_port server_time_usec uptime_in_seconds uptime_in_days hz configured_hz lru_clock executable config_file] INFO server
+[fields connected_clients maxclients blocked_clients] INFO clients
+[fields used_memory used_memory_human used_memory_rss used_memory_rss_human used_memory_peak used_memory_peak_human maxmemory maxmemory_human maxmemory_policy] INFO memory
+[fields loading rdb_bgsave_in_progress rdb_last_save_time rdb_saves rdb_last_load_keys_loaded aof_enabled] INFO persistence
+[fields total_connections_received total_commands_processed rejected_connections expired_keys expired_stale_perc expired_time_cap_reached_count expire_cycle_cpu_milliseconds evicted_keys] INFO stats
+# An empty keyspace prints its header alone, in both.
+INFO keyspace
+SET a 1
+SET b 2 EX 100
+[fields db0] INFO keyspace
+# Every section kesh has, in Redis's order, however they are asked for.
+[fields redis_version connected_clients used_memory loading total_commands_processed db0] INFO
+[fields redis_version connected_clients used_memory loading total_commands_processed db0] INFO default
+[fields redis_version connected_clients used_memory loading total_commands_processed db0] INFO all
+[fields redis_version connected_clients used_memory loading total_commands_processed db0] INFO everything
+[fields used_memory connected_clients] INFO memory clients
+[fields used_memory] INFO MEMORY
+[fields used_memory] INFO memory nothing
+INFO nothing
+FLUSHALL
+INFO keyspace

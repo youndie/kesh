@@ -20,6 +20,9 @@ class Clients(
 
     val size: Int get() = byId.size
 
+    /** Connections accepted, the refused ones not counted — Redis's `total_connections_received`. */
+    val registered: Long get() = nextId - 1
+
     fun register(
         address: String,
         localAddress: String,

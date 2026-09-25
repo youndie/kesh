@@ -26,7 +26,7 @@ if [ "$free_mb" -lt "$MIN_FREE_MB" ]; then
 fi
 echo "host: ${free_mb} MB available, load $(cut -d' ' -f1 /proc/loadavg); kesh $(md5sum "$KESH" | cut -c1-8)"
 for run in $(seq 1 "$RUNS"); do
-  KESH_PORT=$PORT "$KESH" > /tmp/ratio-kesh.log 2>&1 &
+  KESH_PORT=$PORT KESH_HTTP_PORT=off "$KESH" > /tmp/ratio-kesh.log 2>&1 &
   pid=$!
   sleep 1
   started=$(date +%s)

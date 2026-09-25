@@ -24,7 +24,7 @@ for run in $(seq 1 "$RUNS"); do
     if [ "$free_mb" -lt "$MIN_FREE_MB" ]; then echo "skip $arm run $run: ${free_mb} MB available"; continue; fi
     host="${free_mb} MB available, load $(cut -d' ' -f1 /proc/loadavg)"
     log=/tmp/assists-$arm-$run.log
-    KESH_PORT=$PORT KESH_GC_ASSISTS=$arm "$KESH" > "$log" 2>&1 &
+    KESH_PORT=$PORT KESH_HTTP_PORT=off KESH_GC_ASSISTS=$arm "$KESH" > "$log" 2>&1 &
     pid=$!
     sleep 1
     clock0=$(python3 -c 'import time; print(time.time(), time.monotonic())')

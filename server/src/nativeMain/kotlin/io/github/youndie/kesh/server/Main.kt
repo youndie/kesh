@@ -1,5 +1,6 @@
 package io.github.youndie.kesh.server
 
+import io.github.youndie.kore.lifecycle.AnnounceNotReady
 import io.github.youndie.kore.lifecycle.runUntilSignal
 import kotlinx.coroutines.runBlocking
 import kotlin.native.runtime.GC
@@ -22,9 +23,12 @@ fun main() {
         }
         println("kesh: listening on ${config.host}:${server.port}, maxclients ${server.maxClients}")
 
+        config.httpPort?.let { println("kesh: probes and metrics on ${config.host}:${server.httpPort}") }
+
         // After the listener is serving, as kore requires: a signal that arrived earlier would run a
-        // plan with nothing to drain. The plan grows as the items land — announce (B-15), save (B-14).
+        // plan with nothing to drain. Readiness goes false first (B-15), then the RESP listener drains.
         runUntilSignal(onFinished = { run -> println(run.transcript) }) {
+            announce(AnnounceNotReady(server.readiness))
             drain(server)
         }
         server.close()

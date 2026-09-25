@@ -40,13 +40,21 @@ data class ServerConfig(
      * them off with a finite `GC.maxHeapBytes`, the one lever the runtime offers.
      */
     val gcAssists: Boolean = true,
+    /**
+     * The HTTP port for probes and metrics (B-15); `null` for none. The environment's default is
+     * 8080 (`KESH_HTTP_PORT`, `off` for none); a configuration built in code has none unless given one,
+     * so tests do not fight over a fixed port.
+     */
+    val httpPort: Int? = null,
 ) {
     override fun toString(): String =
         "ServerConfig(host=$host, port=$port, password=${if (password == null) "none" else "set"}, " +
             "maxClients=${maxClients ?: "derived"}, limits=$limits, queryBufferLimit=$queryBufferLimit, " +
-            "maxMemory=$maxMemory, policy=${maxMemoryPolicy.configName}/$maxMemorySamples, snapshot=$dir/$dbFilename, gcAssists=$gcAssists)"
+            "maxMemory=$maxMemory, policy=${maxMemoryPolicy.configName}/$maxMemorySamples, snapshot=$dir/$dbFilename, gcAssists=$gcAssists, httpPort=${httpPort ?: "off"})"
 
     companion object {
+        const val DEFAULT_HTTP_PORT = 8080
+
         fun fromEnvironment(read: (String) -> String? = ::environmentVariable): ServerConfig {
             val defaults = ServerConfig()
 
@@ -93,6 +101,11 @@ data class ServerConfig(
                         null, "on" -> true
                         "off" -> false
                         else -> throw IllegalArgumentException("KESH_GC_ASSISTS is on or off: $raw")
+                    },
+                httpPort =
+                    when (read("KESH_HTTP_PORT")) {
+                        "off" -> null
+                        else -> number("KESH_HTTP_PORT", 0L..65_535L)?.toInt() ?: DEFAULT_HTTP_PORT
                     },
             )
         }

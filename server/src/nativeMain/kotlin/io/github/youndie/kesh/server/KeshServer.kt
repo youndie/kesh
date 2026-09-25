@@ -6,6 +6,9 @@ import io.github.youndie.kesh.server.client.DescriptorCeiling
 import io.github.youndie.kesh.server.command.CommandDispatcher
 import io.github.youndie.kesh.server.command.epochMillis
 import io.github.youndie.kesh.server.connection.Connection
+import io.github.youndie.kesh.server.http.HttpPort
+import io.github.youndie.kesh.server.http.HttpResponse
+import io.github.youndie.kesh.server.http.Metrics
 import io.github.youndie.kesh.server.persistence.Persistence
 import io.github.youndie.kesh.server.persistence.SnapshotFile
 import io.github.youndie.kesh.server.persistence.SnapshotIOException
@@ -13,6 +16,9 @@ import io.github.youndie.kesh.snapshot.SnapshotException
 import io.github.youndie.kesh.store.Db
 import io.github.youndie.kesh.store.eviction.Eviction
 import io.github.youndie.kesh.store.expiry.ActiveExpiry
+import io.github.youndie.kore.health.LivenessGate
+import io.github.youndie.kore.health.ReadinessGate
+import io.github.youndie.kore.health.StartupGate
 import io.github.youndie.kore.lifecycle.ShutdownParticipant
 import io.ktor.network.selector.SelectorManager
 import io.ktor.network.sockets.InetSocketAddress
@@ -33,6 +39,7 @@ import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.IO
 import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.cancel
 import kotlinx.coroutines.cancelAndJoin
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.job
@@ -77,6 +84,26 @@ class KeshServer(
     private var listener: ServerSocket? = null
     private var registry: Clients? = null
 
+    // The probes answer from before the snapshot load to after the drain, so they live in a scope of
+    // their own that [stop] leaves alone (B-15).
+    private val probes = CoroutineScope(SupervisorJob() + Dispatchers.IO + failureReport)
+    private var http: HttpPort? = null
+
+    /** Traffic wanted? False until the start completes, and again from the announce stage on (kore). */
+    val readiness = ReadinessGate()
+
+    /** Wedged? Nothing in kesh declares itself so yet; the probe is there for when something can. */
+    val liveness = LivenessGate()
+
+    /** Started? The snapshot loaded and the RESP listener bound — a latch, as kore's startup probe is. */
+    val startup = StartupGate(setOf(GATE_SNAPSHOT, GATE_LISTENER))
+
+    /** The HTTP port once bound, the configured one or the one the OS chose for 0; `null` if disabled. */
+    val httpPort: Int? get() = http?.port
+
+    /** The store's numbers for `/metrics`, copied on the store thread; set once the server has started. */
+    private var storeMetrics: (suspend () -> Metrics.Store)? = null
+
     /** The bound port — the configured one, or the one the OS chose for port 0. */
     val port: Int
         get() = (checkNotNull(listener) { "not started" }.localAddress as InetSocketAddress).port
@@ -86,6 +113,18 @@ class KeshServer(
 
     suspend fun start() {
         check(listener == null) { "already started" }
+        // The HTTP port first, so the probes answer — not ready — while the snapshot loads (B-15).
+        config.httpPort?.let { httpPort ->
+            val port = HttpPort(selector, probes, config.host, httpPort, ::route)
+            try {
+                port.start()
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                throw StartupFailure("could not listen on ${config.host}:$httpPort for HTTP: ${e.message}")
+            }
+            http = port
+        }
         // The snapshot is loaded before the listener exists (B-14): until loading ends, a client is
         // refused at connect, as the brief says — not answered `-LOADING` as Redis answers it. A
         // snapshot that is not whole stops the start; nothing it held is served.
@@ -101,6 +140,7 @@ class KeshServer(
                 throw StartupFailure("the snapshot ${file.path} cannot be read: ${e.message}")
             }
         loaded?.let { println("kesh: loaded ${it.keys} keys, ${it.bytes} bytes, from ${file.path} in ${it.millis} ms") }
+        startup.completed(GATE_SNAPSHOT)
 
         // SO_REUSEADDR, as Redis sets it (`redis/redis@7.2!/src/anet.c` — `anetSetReuseAddr`). A
         // connection the server closed leaves the server's port in TIME-WAIT, and without the flag a
@@ -133,7 +173,7 @@ class KeshServer(
                 policy = config.maxMemoryPolicy
                 samples = config.maxMemorySamples
             }
-        val persistence = Persistence(file, ::epochMillis)
+        val persistence = Persistence(file, ::epochMillis, loadedKeys = loaded?.keys ?: 0)
         val commands =
             CommandDispatcher(
                 clients,
@@ -142,7 +182,24 @@ class KeshServer(
                 expiry = expiry,
                 persistence = persistence,
                 eviction = eviction,
+                port = { port },
             )
+        storeMetrics = {
+            withContext(storeThread) {
+                Metrics.Store(
+                    usedMemory = db.usedMemory,
+                    maxMemory = db.maxMemory,
+                    keys = db.size.toLong(),
+                    expires = db.expires.size.toLong(),
+                    expiredKeys = db.expiredKeys,
+                    evictedKeys = eviction.evictedKeys,
+                    connectedClients = clients.size.toLong(),
+                    connectionsReceived = clients.registered,
+                    rejectedConnections = clients.rejected,
+                    commands = commands.stats.snapshot(),
+                )
+            }
+        }
 
         // Redis's `serverCron` work for the data (B-13): the slow active expiry cycle and the tables'
         // resizing, HZ times a second, on the store thread between commands — never inside one.
@@ -191,6 +248,7 @@ class KeshServer(
                 connections.launch { serve(accepted, clients, commands) }
             }
         }
+        startup.completed(GATE_LISTENER)
     }
 
     private suspend fun serve(
@@ -238,14 +296,54 @@ class KeshServer(
         listener?.close()
     }
 
-    /** Releases the threads. After [stop]; the process is about to end anyway. */
+    /** `GET` on the HTTP port: kore's three probes and the metrics. */
+    private suspend fun route(
+        method: String,
+        path: String,
+    ): HttpResponse =
+        when (path) {
+            "/health/live" -> {
+                liveness.wedgedReason?.let { HttpResponse(503, "wedged: $it\n") } ?: HttpResponse(200, "alive\n")
+            }
+
+            "/health/started" -> {
+                if (startup.hasStarted) {
+                    HttpResponse(200, "started\n")
+                } else {
+                    HttpResponse(503, "starting: ${startup.pending.sorted().joinToString(", ")}\n")
+                }
+            }
+
+            "/health/ready" -> {
+                if (!startup.hasStarted) {
+                    HttpResponse(503, "not ready: starting: ${startup.pending.sorted().joinToString(", ")}\n")
+                } else {
+                    val verdict = readiness.verdict()
+                    HttpResponse(if (verdict.ready) 200 else 503, "$verdict\n")
+                }
+            }
+
+            "/metrics" -> {
+                HttpResponse(200, Metrics.render(storeMetrics?.invoke()), Metrics.CONTENT_TYPE)
+            }
+
+            else -> {
+                HttpResponse(404, "no such path: $method $path\n")
+            }
+        }
+
+    /** Releases the threads and the HTTP port. After [stop]; the process is about to end anyway. */
     fun close() {
+        probes.cancel()
+        http?.close()
         selector.close()
         storeThread.close()
     }
 
     private companion object {
         val MAX_CLIENTS_REACHED = "-ERR max number of clients reached\r\n".encodeToByteArray()
+        const val GATE_SNAPSHOT = "snapshot"
+        const val GATE_LISTENER = "listener"
         val ACCEPT_RETRY = 100.milliseconds
 
         fun SocketAddress.text(): String =

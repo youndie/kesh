@@ -97,17 +97,6 @@ class MemoryConfig(
         return Reply.OK
     }
 
-    /** `INFO memory`, as far as kesh has it: `used_memory`, `maxmemory` and the policy. */
-    fun info(): String =
-        buildString {
-            append("# Memory\r\n")
-            append("used_memory:${db.usedMemory}\r\n")
-            append("used_memory_human:${bytesToHuman(db.usedMemory)}\r\n")
-            append("maxmemory:${db.maxMemory}\r\n")
-            append("maxmemory_human:${bytesToHuman(db.maxMemory)}\r\n")
-            append("maxmemory_policy:${eviction.policy.configName}\r\n")
-        }
-
     private fun failed(
         name: String,
         reason: String,

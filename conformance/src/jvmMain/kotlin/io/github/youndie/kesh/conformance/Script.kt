@@ -16,6 +16,7 @@ import java.io.File
  * [shape] CLIENT ID
  * [random a b c] SPOP s 2     a random reply: members of the population named, as many as Redis's
  * [info evicted_keys] INFO     only these fields' lines of the report are compared
+ * [fields used_memory] INFO    the report's sections and field names, which Redis must have too
  * [cursor] SCAN 0 COUNT 5     iterated to cursor 0 on each server; the unions are compared
  * [closes] QUIT               one reply, then both servers must close the connection
  * [raw] *1\r\n$x\r\n          these bytes as they are; everything until the server closes (or goes
@@ -87,12 +88,13 @@ class Script(
                     ?.filter { it.isNotEmpty() }
                     .orEmpty()
             val name = tag?.groupValues?.get(1)
-            require(arguments.isEmpty() || name == "random" || name == "info") {
-                "line $number: only [random] and [info] take arguments"
+            require(arguments.isEmpty() || name == "random" || name == "info" || name == "fields") {
+                "line $number: only [random], [info] and [fields] take arguments"
             }
-            if (name == "info") {
-                require(arguments.isNotEmpty()) { "line $number: [info] needs the fields it compares" }
-                return Step(number, line, command(body, number), Kind.COMMAND, Normaliser.INFO, fields = arguments)
+            if (name == "info" || name == "fields") {
+                require(arguments.isNotEmpty()) { "line $number: [$name] needs the fields it compares" }
+                val normaliser = if (name == "info") Normaliser.INFO else Normaliser.FIELDS
+                return Step(number, line, command(body, number), Kind.COMMAND, normaliser, fields = arguments)
             }
             if (name == "cursor") {
                 val args = splitInlineArguments(body.encodeToByteArray()) ?: error("line $number: unbalanced quotes")

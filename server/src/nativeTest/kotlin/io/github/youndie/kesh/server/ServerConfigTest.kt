@@ -8,7 +8,17 @@ import kotlin.test.assertFalse
 class ServerConfigTest {
     @Test
     fun `defaults are Redis's port on every interface with no password and a derived ceiling`() {
-        assertEquals(ServerConfig("0.0.0.0", 6379), ServerConfig.fromEnvironment { null })
+        // The environment adds the HTTP port for probes and metrics; a configuration built in code has none.
+        assertEquals(ServerConfig("0.0.0.0", 6379, httpPort = 8080), ServerConfig.fromEnvironment { null })
+    }
+
+    @Test
+    fun `the HTTP port is set or turned off from the environment`() {
+        assertEquals(9090, ServerConfig.fromEnvironment { if (it == "KESH_HTTP_PORT") "9090" else null }.httpPort)
+        assertEquals(null, ServerConfig.fromEnvironment { if (it == "KESH_HTTP_PORT") "off" else null }.httpPort)
+        assertFailsWith<IllegalArgumentException> {
+            ServerConfig.fromEnvironment { if (it == "KESH_HTTP_PORT") "http" else null }
+        }
     }
 
     @Test
@@ -23,7 +33,7 @@ class ServerConfigTest {
                 "KESH_CLIENT_QUERY_BUFFER_LIMIT" to "4096",
             )
         val config = ServerConfig.fromEnvironment(env::get)
-        assertEquals(ServerConfig("127.0.0.1", 7000, "secret", 50, config.limits, 4096), config)
+        assertEquals(ServerConfig("127.0.0.1", 7000, "secret", 50, config.limits, 4096, httpPort = 8080), config)
         assertEquals(1024, config.limits.protoMaxBulkLen)
     }
 

@@ -50,6 +50,14 @@ enum class Normaliser {
      */
     INFO,
 
+    /**
+     * The shape of an `INFO` report, not its values: every section header and every field kesh prints
+     * must be in Redis's report, under the same section and in the same order — kesh prints fewer
+     * fields, never other ones — and each field the line names (`[fields connected_clients] INFO`)
+     * must be in both, so a report that printed nothing does not pass.
+     */
+    FIELDS,
+
     ;
 
     fun agree(
@@ -89,12 +97,51 @@ enum class Normaliser {
                 kesh.bytes.contentEquals(oracle.bytes)
             }
 
+            FIELDS -> {
+                val a = sections(kesh)
+                val b = sections(oracle)
+                a != null && b != null && isSubsequence(a.keys.toList(), b.keys.toList()) &&
+                    a.all { (title, names) -> isSubsequence(names, b.getValue(title)) } &&
+                    fields.all { field -> a.values.any { field in it } && b.values.any { field in it } }
+            }
+
             INFO -> {
                 val a = infoLines(kesh, fields)
                 val b = infoLines(oracle, fields)
                 a != null && b != null && b.size == fields.size && a == b
             }
         }
+
+    /** An `INFO` report as its sections' field names, in order; `null` if not a report. */
+    private fun sections(frame: RespFrame): Map<String, List<String>>? {
+        if (frame.type != '$') return null
+        val text = frame.bulkPayload()?.decodeToString() ?: return null
+        val out = LinkedHashMap<String, MutableList<String>>()
+        var current: MutableList<String>? = null
+        for (line in text.split("\r\n")) {
+            when {
+                line.startsWith("# ") -> {
+                    current = out.getOrPut(line.removePrefix("# ")) { ArrayList() }
+                }
+
+                line.isEmpty() -> {}
+
+                else -> {
+                    (current ?: return null) += line.substringBefore(':')
+                }
+            }
+        }
+        return out
+    }
+
+    private fun isSubsequence(
+        part: List<String>,
+        whole: List<String>,
+    ): Boolean {
+        var i = 0
+        for (item in whole) if (i < part.size && part[i] == item) i++
+        return i == part.size
+    }
 
     /** The `field:value` lines of an `INFO` report for [fields], in their order; `null` if not a report. */
     private fun infoLines(

@@ -12,9 +12,15 @@ class Persistence(
     private val file: SnapshotFile,
     /** Milliseconds since the epoch. */
     private val clock: () -> Long,
+    /** Keys the snapshot held at startup — `rdb_last_load_keys_loaded`. */
+    val loadedKeys: Long = 0,
 ) {
     /** `server.lastsave`: seconds since the epoch of the last successful save, the start until then. */
     var lastSave: Long = clock() / 1000
+        private set
+
+    /** Saves that succeeded — `rdb_saves`. */
+    var saves: Long = 0
         private set
 
     fun save(db: Db): Reply {
@@ -22,6 +28,7 @@ class Persistence(
         return try {
             val outcome = file.save(db)
             lastSave = clock() / 1000
+            saves++
             println("kesh: saved ${outcome.keys} keys, ${outcome.bytes} bytes, to ${file.path} in ${outcome.millis} ms")
             Reply.OK
         } catch (e: SnapshotIOException) {

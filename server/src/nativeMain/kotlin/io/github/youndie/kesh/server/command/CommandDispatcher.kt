@@ -5,11 +5,14 @@ import io.github.youndie.kesh.resp.parseRedisLong
 import io.github.youndie.kesh.server.client.ClientState
 import io.github.youndie.kesh.server.client.Clients
 import io.github.youndie.kesh.server.config.MemoryConfig
+import io.github.youndie.kesh.server.info.CommandStats
+import io.github.youndie.kesh.server.info.Info
 import io.github.youndie.kesh.server.persistence.Persistence
 import io.github.youndie.kesh.store.Db
 import io.github.youndie.kesh.store.commands.StoreCommands
 import io.github.youndie.kesh.store.eviction.Eviction
 import io.github.youndie.kesh.store.expiry.ActiveExpiry
+import kotlin.time.TimeSource
 
 /**
  * Routes a parsed command to its implementation. Runs on the store thread only (research D-14).
@@ -32,7 +35,15 @@ class CommandDispatcher(
     private val persistence: Persistence? = null,
     /** `maxmemory-policy` and its work (B-12); the server also runs it between commands. */
     private val eviction: Eviction = Eviction(),
+    /** The RESP port for `INFO server`, once bound. */
+    port: () -> Int = { 0 },
 ) {
+    /** Commands run and their durations, for `INFO` and `/metrics` (B-15). */
+    val stats = CommandStats()
+
+    /** `INFO`'s report (B-15). */
+    val info = Info(db, clients, stats, eviction, expiry, persistence, port, clock)
+
     private val memoryConfig = MemoryConfig(db, eviction)
 
     /** Redis's `pre_command_oom_state`: over `maxmemory` with nothing left to evict, at this command's start. */
@@ -55,7 +66,9 @@ class CommandDispatcher(
                         CommandSpec("set", -4) { _, a -> memoryConfig.set(a.drop(2).map { it.decodeToString() }) },
                     ),
             ),
-            CommandSpec("info", -1) { _, a -> info(a.drop(1).map { it.decodeToString().lowercase() }) },
+            CommandSpec("info", -1) { _, a ->
+                Reply.Bulk(info.report(a.drop(1).map { it.decodeToString().lowercase() }).encodeToByteArray())
+            },
             CommandSpec("save", 1) { _, _ -> persistence?.save(db) ?: Reply.Error("ERR") },
             CommandSpec("lastsave", 1) { _, _ -> Reply.Integer(persistence?.lastSave ?: 0) },
             CommandSpec(
@@ -89,16 +102,9 @@ class CommandDispatcher(
             ),
         ).plus(
             StoreCommands.all.map { command ->
-                CommandSpec(command.name, command.arity) { _, args ->
-                    // `processCommand`: a command that may add data is refused while the dataset is over
-                    // `maxmemory` and the policy could evict nothing more (B-11, B-12); reads and deletes
-                    // still run.
-                    if (command.denyOom && outOfMemory) {
-                        OOM
-                    } else {
-                        db.now = clock()
-                        command.run(db, args)
-                    }
+                CommandSpec(command.name, command.arity, denyOom = command.denyOom) { _, args ->
+                    db.now = clock()
+                    command.run(db, args)
                 }
             },
         ).associateBy { it.name }
@@ -134,34 +140,15 @@ class CommandDispatcher(
             db.now = clock()
             outOfMemory = eviction.perform(db) == Eviction.Result.FAIL
         }
-        return handler(client, args)
-    }
-
-    /**
-     * `INFO`, as far as kesh has it: the `memory` section (B-11) and the expiry lines of `stats`
-     * (B-13). The rest arrives with B-15; a section asked for by name alone that kesh does not have
-     * answers empty, as Redis does for a section it does not know.
-     */
-    private fun info(sections: List<String>): Reply {
-        fun wanted(section: String) = sections.isEmpty() || sections.any { it == section || it in ALL_SECTIONS }
-        val text = StringBuilder()
-        if (wanted("memory")) text.append(memoryConfig.info())
-        if (wanted("stats")) {
-            if (text.isNotEmpty()) text.append("\r\n")
-            text.append("# Stats\r\n")
-            text.append("expired_keys:${db.expiredKeys}\r\n")
-            text.append("expired_stale_perc:${twoDecimals((expiry?.stalePerc ?: 0.0) * 100)}\r\n")
-            text.append("expired_time_cap_reached_count:${expiry?.timeCapReached ?: 0}\r\n")
-            text.append("expire_cycle_cpu_milliseconds:${(expiry?.timeUsedMicros ?: 0) / 1000}\r\n")
-            text.append("evicted_keys:${eviction.evictedKeys}\r\n")
-        }
-        return Reply.Bulk(text.toString().encodeToByteArray())
-    }
-
-    /** `%.2f`, as `INFO` prints a percentage. */
-    private fun twoDecimals(d: Double): String {
-        val hundredths = kotlin.math.round(d * 100).toLong()
-        return "${hundredths / 100}.${(hundredths % 100).toString().padStart(2, '0')}"
+        // `processCommand`: a command that may add data is refused while the dataset is over
+        // `maxmemory` and the policy could evict nothing more (B-11, B-12); reads and deletes still run.
+        // A refused command is not counted, as Redis counts only what reaches `call()`.
+        if (spec.denyOom && outOfMemory) return OOM
+        val started = TimeSource.Monotonic.markNow()
+        val reply = handler(client, args)
+        stats.record(fullName, started.elapsedNow().inWholeMicroseconds)
+        info.afterCommand()
+        return reply
     }
 
     private fun ping(args: List<ByteArray>): Reply =
@@ -246,7 +233,7 @@ class CommandDispatcher(
                 bulk("server"),
                 bulk(SERVER_NAME),
                 bulk("version"),
-                bulk(REDIS_COMPATIBLE_VERSION),
+                bulk(Info.REDIS_COMPATIBLE_VERSION),
                 bulk("proto"),
                 Reply.Integer(2),
                 bulk("id"),
@@ -496,11 +483,6 @@ class CommandDispatcher(
     }
 
     private companion object {
-        /**
-         * The version kesh answers as in `HELLO` (and later `INFO`): the Redis it is held to by the
-         * oracle (research D-16), not kesh's own. `server` says `kesh`, so nobody mistakes which.
-         */
-        const val REDIS_COMPATIBLE_VERSION = "7.2.0"
         const val SERVER_NAME = "kesh"
 
         /**
@@ -508,9 +490,6 @@ class CommandDispatcher(
          * Redis drops such a connection without a reply (`securityWarningCommand`), and so does kesh.
          */
         val SECURITY = setOf("post", "host:")
-
-        /** `INFO`'s words for every section. */
-        val ALL_SECTIONS = setOf("default", "all", "everything")
 
         /** `shared.oomerr`, `redis/redis@7.2!/src/server.c`. */
         val OOM: Reply = Reply.Error("OOM command not allowed when used memory > 'maxmemory'.")
@@ -570,6 +549,8 @@ class CommandSpec(
     val name: String,
     val arity: Int,
     val noAuth: Boolean = false,
+    /** Redis's `denyoom`: refused while over `maxmemory` with nothing left to evict. */
+    val denyOom: Boolean = false,
     val subcommands: List<CommandSpec> = emptyList(),
     val handler: ((ClientState, List<ByteArray>) -> Reply)? = null,
 ) {

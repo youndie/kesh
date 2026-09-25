@@ -46,7 +46,7 @@ class Client:
 
 
 def start(log):
-    env = dict(os.environ, KESH_PORT=str(PORT), KESH_DIR=WORK)
+    env = dict(os.environ, KESH_PORT=str(PORT), KESH_HTTP_PORT="off", KESH_DIR=WORK)
     p = subprocess.Popen([KESH], env=env, stdout=open(log, "w"), stderr=subprocess.STDOUT)
     for _ in range(3000):
         if p.poll() is not None: raise SystemExit(f"kesh exited {p.returncode}: {open(log).read()[-400:]}")

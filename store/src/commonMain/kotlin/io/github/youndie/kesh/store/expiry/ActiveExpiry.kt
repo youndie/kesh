@@ -28,6 +28,14 @@ class ActiveExpiry(
     var timeUsedMicros: Long = 0
         private set
 
+    /**
+     * `db->avg_ttl`: a running average of the time left, in milliseconds, of the live keys the cycles
+     * sample — each loop's average weighted 2 %, as `activeExpireCycle` keeps it; 0 with no expiring
+     * key. What `INFO keyspace` prints.
+     */
+    var avgTtl: Long = 0
+        private set
+
     /** The running share of expired keys among those sampled — `expired_stale_perc`, 0 to 1. */
     var stalePerc: Double = 0.0
         private set
@@ -41,20 +49,33 @@ class ActiveExpiry(
         do {
             iteration++
             val num = db.expires.size
-            if (num == 0) break
+            if (num == 0) {
+                avgTtl = 0
+                break
+            }
             val slots = db.expires.capacity
             if (slots > INITIAL_SLOTS && num * 100L / slots < 1) break
             val wanted = minOf(num, KEYS_PER_LOOP)
             val maxBuckets = wanted * 20L
             var checkedBuckets = 0L
             var sampled = 0
+            var ttlSum = 0L
+            var ttlSamples = 0
             val due = ArrayList<Entry>()
             while (sampled < wanted && checkedBuckets < maxBuckets) {
                 cursor =
                     db.expires.scan(cursor) {
                         sampled++
                         val entry = it.value as Entry
-                        if (db.isExpired(entry)) due.add(entry)
+                        if (db.isExpired(entry)) {
+                            due.add(entry)
+                        } else {
+                            val ttl = entry.expireAt - db.now
+                            if (ttl > 0) {
+                                ttlSum += ttl
+                                ttlSamples++
+                            }
+                        }
                     }
                 checkedBuckets++
             }
@@ -62,6 +83,11 @@ class ActiveExpiry(
             due.forEach { db.expire(it) }
             totalSampled += sampled
             totalExpired += due.size
+            if (ttlSamples > 0) {
+                val loopAverage = ttlSum / ttlSamples
+                if (avgTtl == 0L) avgTtl = loopAverage
+                avgTtl = (avgTtl / 50) * 49 + (loopAverage / 50)
+            }
             if (iteration and 0xf == 0 && clock() - start > TIME_LIMIT_MICROS) {
                 timeCapReached++
                 break

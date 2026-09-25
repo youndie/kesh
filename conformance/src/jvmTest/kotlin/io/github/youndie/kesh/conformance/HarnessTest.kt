@@ -87,6 +87,49 @@ class HarnessTest {
     }
 
     @Test
+    fun `fields holds kesh's sections and names to Redis's and ignores values`() {
+        fun report(vararg lines: String): RespFrame {
+            val text = lines.joinToString("\r\n", postfix = "\r\n")
+            return frame("$${text.length}\r\n$text\r\n")
+        }
+        val redis =
+            report(
+                "# Server",
+                "redis_version:7.2.16",
+                "redis_mode:standalone",
+                "",
+                "# Clients",
+                "connected_clients:1",
+                "maxclients:10000",
+            )
+        val named = listOf("connected_clients")
+        assertTrue(
+            Normaliser.FIELDS.agree(
+                report("# Server", "redis_version:7.2.0", "", "# Clients", "connected_clients:5"),
+                redis,
+                fields = named,
+            ),
+            "fewer fields, other values",
+        )
+        assertFalse(
+            Normaliser.FIELDS.agree(report("# Server", "kesh_thing:1"), redis, fields = emptyList()),
+            "a field Redis lacks",
+        )
+        assertFalse(
+            Normaliser.FIELDS.agree(report("# Server", "redis_mode:x", "redis_version:y"), redis, fields = emptyList()),
+            "Redis's order",
+        )
+        assertFalse(
+            Normaliser.FIELDS.agree(report("# Clients", "redis_mode:x"), redis, fields = emptyList()),
+            "another section",
+        )
+        assertFalse(Normaliser.FIELDS.agree(report("# Server"), redis, fields = named), "a named field kesh left out")
+        assertFalse(
+            Normaliser.FIELDS.agree(report("# Clients", "connected_clients:1"), report("# Clients"), fields = named),
+        )
+    }
+
+    @Test
     fun `shape ignores content and keeps types, lengths and nulls`() {
         assertTrue(Normaliser.SHAPE.agree(frame("*2\r\n$4\r\nkesh\r\n:1\r\n"), frame("*2\r\n$5\r\nredis\r\n:9\r\n")))
         assertFalse(Normaliser.SHAPE.agree(frame("*2\r\n$4\r\nkesh\r\n:1\r\n"), frame("*2\r\n$4\r\nkesh\r\n+1\r\n")))
