@@ -5,12 +5,13 @@ status: done
 priority: P0
 size: S/M
 stage: stage-1-protocol
+epic: feature-memory-limit
 blocked_by: [B-01]
 ---
 
 # B-19 — Heap probe: can plain Kotlin objects hold the reference dataset?
 
-**Feature:** `feature-memory-limit` — drafted in the *docs/layer-drafts* branch; the `epic` field is added when that document reaches `main`.
+**Feature:** [feature-memory-limit](../features/feature-memory-limit.md).
 
 The brief's D-3 (plain Kotlin objects) and D-4 (one process holds §5a) are compatible only if a
 §5a-shaped heap is served with acceptable pauses. The largest Kotlin/Native heap measured in the

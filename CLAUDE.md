@@ -20,8 +20,8 @@ under it (B-28), and Pub/Sub, with kompot's bus as its first consumer (B-27).** 
      `used_memory`;
    - **the heap is measured before the keyspace is built** (D-17, B-19).
 2. [backlog.md](backlog.md) — the queue and why it is ordered that way.
-3. The layer document the task belongs to — `features/`, `api/`, `services/` — in the branch
-   *docs/layer-drafts* until it reaches `main` (see below).
+3. The layer document the task belongs to — `features/`, `api/`, `services/` — all on `main` since
+   B-27 (see below).
 
 ## The rule that governs everything here
 
@@ -43,15 +43,16 @@ The pull request that implements an item brings the documents it makes true to `
 the backlog items of that feature, and removes the document from the drafts branch.
 
 When the last document has moved, the drafts branch — and the brief in it — is closed without
-merging.
+merging. **Done on 2026-09-25, with B-27:** every layer document is on `main`, and *docs/layer-drafts*
+is closed. A document for a feature not built yet is written in the item's own branch as
+`status: draft` and made `active` by the item that implements it.
 
 ## The backlog loop merges its own branches
 
 Decided by the owner on 2026-09-24. There is no remote yet, so an item's "pull request" is its local
 branch `feat/b-<nn>-<slug>`. When the item is `done`, the gate is green on the branch and the
 acceptance was walked, the loop fast-forwards `main` to it (rebasing first if `main` moved), runs
-`make gate` and `docs_check.py --on-main` on `main`, and then rebuilds *docs/layer-drafts* on top of
-`main` without the documents the item moved. Once a remote exists, this becomes: push, open the pull
+`make gate` and `docs_check.py --on-main` on `main`. Once a remote exists, this becomes: push, open the pull
 request, merge when green.
 
 ## Where things run

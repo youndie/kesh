@@ -5,11 +5,12 @@ status: done
 priority: P0
 size: XS
 stage: stage-1-protocol
+epic: feature-memory-limit
 ---
 
 # B-20 — Define "the managed heap cannot serve the reference dataset" before B-19 reports
 
-**Feature:** `feature-memory-limit` — drafted in the *docs/layer-drafts* branch; the `epic` field is added when that document reaches `main`.
+**Feature:** [feature-memory-limit](../features/feature-memory-limit.md).
 
 The brief says D-3 is revisited "only with a measurement that shows the managed heap cannot serve the
 reference dataset". B-19 produces the measurement; nothing yet says what number means "cannot".

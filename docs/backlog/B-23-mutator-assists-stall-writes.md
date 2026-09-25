@@ -5,12 +5,13 @@ status: done
 priority: P1
 size: S
 stage: stage-3-memory
+epic: feature-memory-limit
 blocked_by: []
 ---
 
 # B-23 — Writes stall for seconds while the keyspace grows: decide on the collector's mutator assists
 
-**Feature:** `feature-memory-limit` — drafted in the *docs/layer-drafts* branch; the `epic` field is added when that document reaches `main`.
+**Feature:** [feature-memory-limit](../features/feature-memory-limit.md).
 
 Found in B-05 (research §1.2, correction found in B-05). Under a write-heavy load that grows the
 keyspace, every Kotlin thread is stopped until the collector's running mark finishes — the runtime's

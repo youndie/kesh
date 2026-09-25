@@ -26,12 +26,8 @@ There is no `screens/` layer: kesh has no user interface.
 
 **Where the layer documents are.** `main` describes what exists. A layer document reaches `main` in
 the pull request that implements it, as `status: active`, with its scenarios' `**Automated:**` lines,
-live code anchors, and whatever is not built yet marked *target*. The rest are drafted in the branch
-*docs/layer-drafts* with `status: draft`. On `main`: `resp`, `server`,
-`feature-resp-connection`, `endpoint-connection` (B-01, B-02), `bench` (B-03), `conformance` (B-04), `store`, `feature-strings`, `feature-keyspace`,
-`endpoint-strings`, `endpoint-keyspace` (B-05), `feature-hashes`, `endpoint-hashes` (B-06),
-`feature-lists`, `endpoint-lists` (B-07), `feature-sets`, `endpoint-sets` (B-08), `feature-sorted-sets`,
-`endpoint-sorted-sets` (B-09), `feature-memory-limit` (B-11), `snapshot`, `feature-snapshots` (B-14).
+live code anchors, and whatever is not built yet marked *target*. Since B-27 every layer document is
+on `main`; the branch they were drafted in, *docs/layer-drafts*, is closed.
 
 **Backlog** — [backlog.md](../backlog.md): the index and the decisions; the items themselves are
 one file each in [`backlog/`](backlog/), cited as `[B-12](backlog/B-12-some-slug.md)`.

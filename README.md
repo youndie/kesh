@@ -4,10 +4,10 @@ An in-memory data store that speaks the Redis protocol (RESP2), built as a singl
 `linuxX64` binary on Kotlin/Native — so that `redis-cli`, `memtier_benchmark` and ordinary Redis
 client libraries work against it unchanged.
 
-> **Status: a skeleton. The linuxX64 binary answers `PING` and nothing else; nothing is published.**
-> This repository holds the architecture research, the backlog and the first two modules; the
-> remaining feature, API and module documents are drafted in the *docs/layer-drafts* branch. Start
-> at [docs/](docs/README.md).
+> **Status: v1 in progress; nothing is published.** Built: the connection commands, strings, keys and
+> the four collection kinds, `maxmemory` with eviction, active expiry, snapshots, `INFO`, probes and
+> metrics, an image and a chart, and Pub/Sub — held byte for byte to Redis 7.2. Measured at a sixteenth
+> of the reference dataset, not yet at full scale. Start at [docs/](docs/README.md).
 
 ## What v1 is meant to be
 
