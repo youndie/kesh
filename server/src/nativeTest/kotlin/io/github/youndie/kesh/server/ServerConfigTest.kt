@@ -64,6 +64,27 @@ class ServerConfigTest {
     }
 
     @Test
+    fun `the resident peak ratio comes from the chart and defaults to the measured one`() {
+        assertEquals(33, ServerConfig.fromEnvironment { null }.residentPeakRatioTenths)
+        assertEquals(
+            46,
+            ServerConfig
+                .fromEnvironment {
+                    if (it ==
+                        "KESH_RESIDENT_PEAK_RATIO_TENTHS"
+                    ) {
+                        "46"
+                    } else {
+                        null
+                    }
+                }.residentPeakRatioTenths,
+        )
+        assertFailsWith<IllegalArgumentException> {
+            ServerConfig.fromEnvironment { if (it == "KESH_RESIDENT_PEAK_RATIO_TENTHS") "9" else null }
+        }
+    }
+
+    @Test
     fun `a number that is not in range is refused at startup`() {
         assertFailsWith<IllegalArgumentException> {
             ServerConfig.fromEnvironment {

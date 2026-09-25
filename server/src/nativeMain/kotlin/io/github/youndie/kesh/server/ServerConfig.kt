@@ -1,6 +1,7 @@
 package io.github.youndie.kesh.server
 
 import io.github.youndie.kesh.resp.RequestLimits
+import io.github.youndie.kesh.server.config.MemoryBudgetCheck
 import io.github.youndie.kesh.server.config.MemoryConfig
 import io.github.youndie.kesh.store.eviction.Eviction
 import io.github.youndie.kesh.store.eviction.EvictionPolicy
@@ -55,6 +56,12 @@ data class ServerConfig(
     val shutdownDrainSeconds: Int = 15,
     /** `KESH_TERMINATION_GRACE_SECONDS`: the pod's grace period, so kore can refuse a plan that does not fit it. */
     val terminationGraceSeconds: Int? = null,
+    /**
+     * `KESH_RESIDENT_PEAK_RATIO_TENTHS`: resident memory at its peak per `used_memory`, in tenths — what
+     * `maxmemory` is held against the container's limit with (B-26). The chart passes the ratio it
+     * sizes the limit with, so the two cannot disagree.
+     */
+    val residentPeakRatioTenths: Int = MemoryBudgetCheck.DEFAULT_PEAK_RATIO_TENTHS,
 ) {
     override fun toString(): String {
         val grace = terminationGraceSeconds?.let { "${it}s" } ?: "undeclared"
@@ -62,7 +69,8 @@ data class ServerConfig(
             "maxClients=${maxClients ?: "derived"}, limits=$limits, queryBufferLimit=$queryBufferLimit, " +
             "maxMemory=$maxMemory, policy=${maxMemoryPolicy.configName}/$maxMemorySamples, " +
             "snapshot=$dir/$dbFilename, gcAssists=$gcAssists, httpPort=${httpPort ?: "off"}, " +
-            "saveOnShutdown=$saveOnShutdown, drain=${shutdownDrainSeconds}s, grace=$grace)"
+            "saveOnShutdown=$saveOnShutdown, drain=${shutdownDrainSeconds}s, grace=$grace, " +
+            "residentPeak=${residentPeakRatioTenths / 10}.${residentPeakRatioTenths % 10}x)"
     }
 
     companion object {
@@ -130,6 +138,8 @@ data class ServerConfig(
                 shutdownDrainSeconds =
                     number("KESH_SHUTDOWN_DRAIN_SECONDS", 1L..3_600L)?.toInt() ?: defaults.shutdownDrainSeconds,
                 terminationGraceSeconds = number("KESH_TERMINATION_GRACE_SECONDS", 1L..86_400L)?.toInt(),
+                residentPeakRatioTenths =
+                    number("KESH_RESIDENT_PEAK_RATIO_TENTHS", 10L..1_000L)?.toInt() ?: defaults.residentPeakRatioTenths,
                 httpPort =
                     when (read("KESH_HTTP_PORT")) {
                         "off" -> null

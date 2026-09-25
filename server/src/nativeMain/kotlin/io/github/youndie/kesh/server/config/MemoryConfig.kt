@@ -15,6 +15,8 @@ import io.github.youndie.kesh.store.eviction.EvictionPolicy
 class MemoryConfig(
     private val db: Db,
     private val eviction: Eviction,
+    /** Refuses a `maxmemory` the container cannot hold (B-26); none in tests that do not ask. */
+    private val budget: MemoryBudgetCheck? = null,
 ) {
     /** One parameter: its canonical name, its value as `CONFIG GET` prints it, and its parser. */
     private class Param(
@@ -28,6 +30,7 @@ class MemoryConfig(
         listOf(
             Param(MAXMEMORY, { db.maxMemory.toString() }) { raw ->
                 val value = memtoull(raw) ?: return@Param refused("argument must be a memory value")
+                budget?.refusal(value)?.let { return@Param refused(it) }
                 Result.success {
                     db.maxMemory = value
                     // `updateMaxmemory`: evicting starts at once and goes on between commands.

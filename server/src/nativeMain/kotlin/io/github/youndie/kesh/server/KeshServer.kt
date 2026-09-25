@@ -4,6 +4,7 @@ import io.github.youndie.kesh.resp.CommandReader
 import io.github.youndie.kesh.server.client.Clients
 import io.github.youndie.kesh.server.command.CommandDispatcher
 import io.github.youndie.kesh.server.command.epochMillis
+import io.github.youndie.kesh.server.config.MemoryBudgetCheck
 import io.github.youndie.kesh.server.http.HttpResponse
 import io.github.youndie.kesh.server.http.Metrics
 import io.github.youndie.kesh.server.net.EventLoop
@@ -21,6 +22,8 @@ import io.github.youndie.kore.health.LivenessGate
 import io.github.youndie.kore.health.ReadinessGate
 import io.github.youndie.kore.health.StartupGate
 import io.github.youndie.kore.lifecycle.ShutdownParticipant
+import io.github.youndie.kore.runtime.MemoryBudget
+import io.github.youndie.kore.runtime.containerMemoryBudget
 import kotlinx.cinterop.ExperimentalForeignApi
 import kotlinx.cinterop.addressOf
 import kotlinx.cinterop.usePinned
@@ -64,6 +67,8 @@ import kotlin.time.TimeSource
 @OptIn(ExperimentalForeignApi::class)
 class KeshServer(
     private val config: ServerConfig,
+    /** The container's memory limit (B-26): kore's reading of the cgroup, or a test's. */
+    private val memoryBudget: () -> MemoryBudget = ::containerMemoryBudget,
 ) : ShutdownParticipant {
     override val name: String = "resp-listener"
 
@@ -124,6 +129,11 @@ class KeshServer(
 
     suspend fun start() {
         check(boundPort == 0) { "already started" }
+        // A maxmemory the container cannot hold is a start that cannot go on (B-26): it would end in
+        // an OOM kill under load, not in -OOM replies. Before anything is bound or loaded.
+        val budget = MemoryBudgetCheck(memoryBudget(), config.residentPeakRatioTenths)
+        budget.refusal(config.maxMemory)?.let { throw StartupFailure("KESH_MAXMEMORY: $it") }
+        println("kesh: ${budget.describe(config.maxMemory)}")
         // The HTTP port first, so the probes answer — not ready — while the snapshot loads (B-15).
         config.httpPort?.let { wanted ->
             val fd =
@@ -197,6 +207,7 @@ class KeshServer(
                 persistence = persistence,
                 eviction = eviction,
                 port = { port },
+                memoryBudget = budget,
             )
         storeMetrics = {
             withContext(loop) {

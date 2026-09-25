@@ -53,6 +53,9 @@ spec:
               value: {{ .Values.maxmemory | int64 | quote }}
             - name: KESH_MAXMEMORY_POLICY
               value: {{ .Values.maxmemoryPolicy | quote }}
+            # The ratio the memory limit below is sized with; kesh refuses a maxmemory that would not fit (B-26).
+            - name: KESH_RESIDENT_PEAK_RATIO_TENTHS
+              value: {{ .Values.measured.residentPeakRatioTenths | quote }}
             - name: KESH_SAVE_ON_SHUTDOWN
               value: {{ ternary "on" "off" .Values.saveOnShutdown | quote }}
             - name: KESH_SHUTDOWN_DRAIN_SECONDS

@@ -4,6 +4,7 @@ import io.github.youndie.kesh.resp.Reply
 import io.github.youndie.kesh.resp.parseRedisLong
 import io.github.youndie.kesh.server.client.ClientState
 import io.github.youndie.kesh.server.client.Clients
+import io.github.youndie.kesh.server.config.MemoryBudgetCheck
 import io.github.youndie.kesh.server.config.MemoryConfig
 import io.github.youndie.kesh.server.info.CommandStats
 import io.github.youndie.kesh.server.info.Info
@@ -38,6 +39,8 @@ class CommandDispatcher(
     private val eviction: Eviction = Eviction(),
     /** The RESP port for `INFO server`, once bound. */
     port: () -> Int = { 0 },
+    /** What `CONFIG SET maxmemory` is held against (B-26); none in tests that do not ask. */
+    memoryBudget: MemoryBudgetCheck? = null,
 ) {
     /** Commands run and their durations, for `INFO` and `/metrics` (B-15). */
     val stats = CommandStats()
@@ -48,7 +51,7 @@ class CommandDispatcher(
     /** `INFO`'s report (B-15). */
     val info = Info(db, clients, stats, eviction, expiry, persistence, pubsub, port, clock)
 
-    private val memoryConfig = MemoryConfig(db, eviction)
+    private val memoryConfig = MemoryConfig(db, eviction, memoryBudget)
 
     /** Redis's `pre_command_oom_state`: over `maxmemory` with nothing left to evict, at this command's start. */
     private var outOfMemory = false

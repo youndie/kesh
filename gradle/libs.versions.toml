@@ -10,7 +10,7 @@ sborka = "0.4.0.91"
 # Ordered shutdown and probes. On the portfolio's repository, not on Maven Central. 0.1.4 is the
 # latest published; it depends on kotlinx-coroutines 1.11.0 and kotlin-stdlib 2.4.10, both of which
 # the 2.4.20 compiler consumes.
-kore = "0.1.4"
+kore = "0.1.5"
 
 # The client the portfolio already uses (kompot's realtime bus, research §1.1), as the conformance
 # module's smoke test that an unchanged client connects. Test tooling only; nothing ships with it.
