@@ -17,6 +17,14 @@ class RespFrame(
 ) {
     override fun toString(): String = escape(bytes)
 
+    /** For `$`: the string's own bytes, or `null` for the null bulk string. */
+    fun bulkPayload(): ByteArray? {
+        check(type == '$') { "not a bulk string" }
+        val headerEnd = bytes.indexOf('\r'.code.toByte())
+        val length = bytes.decodeToString(1, headerEnd).toInt()
+        return if (length < 0) null else bytes.copyOfRange(headerEnd + 2, headerEnd + 2 + length)
+    }
+
     companion object {
         /** Reads exactly one reply; throws [EOFException] if the stream ends before it is complete. */
         fun read(input: InputStream): RespFrame {

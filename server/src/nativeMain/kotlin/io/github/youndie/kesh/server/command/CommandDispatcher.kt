@@ -5,10 +5,7 @@ import io.github.youndie.kesh.resp.parseRedisLong
 import io.github.youndie.kesh.server.client.ClientState
 import io.github.youndie.kesh.server.client.Clients
 import io.github.youndie.kesh.store.Db
-import io.github.youndie.kesh.store.commands.HashCommands
-import io.github.youndie.kesh.store.commands.KeyCommands
-import io.github.youndie.kesh.store.commands.ListCommands
-import io.github.youndie.kesh.store.commands.StringCommands
+import io.github.youndie.kesh.store.commands.StoreCommands
 
 /**
  * Routes a parsed command to its implementation. Runs on the store thread only (research D-14).
@@ -64,7 +61,7 @@ class CommandDispatcher(
                 handler = { _, _ -> commandInfo(null) },
             ),
         ).plus(
-            (StringCommands.all + KeyCommands.all + HashCommands.all + ListCommands.all).map { command ->
+            StoreCommands.all.map { command ->
                 CommandSpec(command.name, command.arity) { _, args ->
                     db.now = clock()
                     command.handler(db, args)

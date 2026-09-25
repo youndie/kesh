@@ -65,6 +65,7 @@ class Runner(
                                     step.normaliser.agree(
                                         RespFrame.read(kReply.inputStream()),
                                         RespFrame.read(oReply.inputStream()),
+                                        step.population,
                                     )
                                 }.getOrDefault(false)
                             }

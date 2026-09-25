@@ -14,6 +14,7 @@ import java.io.File
  * PING                        exact comparison of one reply
  * [unordered] SMEMBERS s      a normaliser, named on the line it applies to
  * [shape] CLIENT ID
+ * [random a b c] SPOP s 2     a random reply: members of the population named, as many as Redis's
  * [closes] QUIT               one reply, then both servers must close the connection
  * [raw] *1\r\n$x\r\n          these bytes as they are; everything until the server closes (or goes
  *                             quiet) is the reply, and whether it closed is compared too
@@ -32,6 +33,8 @@ class Script(
         val bytes: ByteArray,
         val kind: Kind,
         val normaliser: Normaliser,
+        /** What a [Normaliser.RANDOM] reply may contain; empty for every other normaliser. */
+        val population: Set<List<Byte>> = emptySet(),
     )
 
     enum class Kind { COMMAND, CLOSES, RAW }
@@ -66,9 +69,25 @@ class Script(
             number: Int,
             line: String,
         ): Step {
-            val tag = Regex("""^\[(\w+)]\s*""").find(line)
+            val tag = Regex("""^\[(\w+)([^\]]*)]\s*""").find(line)
             val body = if (tag == null) line else line.substring(tag.range.last + 1)
-            return when (val name = tag?.groupValues?.get(1)) {
+            val arguments =
+                tag
+                    ?.groupValues
+                    ?.get(
+                        2,
+                    )?.trim()
+                    ?.split(Regex("""\s+"""))
+                    ?.filter { it.isNotEmpty() }
+                    .orEmpty()
+            val name = tag?.groupValues?.get(1)
+            require(arguments.isEmpty() || name == "random") { "line $number: only [random] takes a population" }
+            if (name == "random") {
+                require(arguments.isNotEmpty()) { "line $number: [random] needs the population it draws from" }
+                val population = arguments.map { it.encodeToByteArray().toList() }.toSet()
+                return Step(number, line, command(body, number), Kind.COMMAND, Normaliser.RANDOM, population)
+            }
+            return when (name) {
                 null -> {
                     Step(number, line, command(body, number), Kind.COMMAND, Normaliser.EXACT)
                 }

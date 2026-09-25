@@ -1,0 +1,139 @@
+# The set commands the brief lists, their refusals and the wrong type — endpoint-sets, without SSCAN.
+# A set's order is not Redis's (research D-22) and Redis promises none: replies of several members are
+# [unordered]. Random replies are [random <population>]: members of it, as many as Redis's, both held.
+# After a random SPOP the two servers hold different members, so later lines on that key read counts.
+FLUSHALL
+SADD post:9:tags kotlin native kotlin
+SISMEMBER post:9:tags kotlin
+SISMEMBER post:9:tags java
+SCARD post:9:tags
+[unordered] SMEMBERS post:9:tags
+TYPE post:9:tags
+SADD s m0 m1 m2 m3 m4 m5 m6 m7 m8 m9
+[random m0 m1 m2 m3 m4 m5 m6 m7 m8 m9] SRANDMEMBER s 3
+[random m0 m1 m2 m3 m4 m5 m6 m7 m8 m9] SRANDMEMBER s -20
+[random m0 m1 m2 m3 m4 m5 m6 m7 m8 m9] SRANDMEMBER s
+[random m0 m1 m2 m3 m4 m5 m6 m7 m8 m9] SRANDMEMBER s 1
+[random m0 m1 m2 m3 m4 m5 m6 m7 m8 m9] SRANDMEMBER s -1
+[unordered] SRANDMEMBER s 100
+[unordered] SRANDMEMBER s 10
+SRANDMEMBER s 0
+SRANDMEMBER s x
+SRANDMEMBER s -9223372036854775808
+SRANDMEMBER s 1 2
+SRANDMEMBER
+SRANDMEMBER nokey
+SRANDMEMBER nokey 5
+SRANDMEMBER nokey -5
+SRANDMEMBER nokey x
+SRANDMEMBER nokey 0
+SCARD s
+SMISMEMBER s m1 nope m2
+SMISMEMBER nokey a b
+SISMEMBER nokey a
+SCARD nokey
+SREM s nope
+SREM s m0 m1 m0
+SCARD s
+[random m2 m3 m4 m5 m6 m7 m8 m9] SPOP s
+SCARD s
+[random m2 m3 m4 m5 m6 m7 m8 m9] SPOP s 2
+SCARD s
+[random m2 m3 m4 m5 m6 m7 m8 m9] SPOP s 100
+EXISTS s
+SPOP s
+SPOP s 3
+SPOP nokey
+SPOP nokey 2
+SPOP nokey 0
+SPOP nokey x
+SADD c a b c
+SPOP c 0
+SPOP c -1
+SPOP c x
+SPOP c 1 2
+SPOP
+SCARD c
+[unordered] SPOP c 3
+EXISTS c
+SADD one x
+SREM one x
+EXISTS one
+SMEMBERS one
+SADD a 1 2 3
+SADD b 2 3 4
+SADD c 3 4 5
+[unordered] SINTER a b
+[unordered] SINTER a b c
+SINTER a nokey
+SINTER nokey a
+[unordered] SINTER a a
+[unordered] SUNION a b c
+[unordered] SUNION a nokey
+SUNION nokey
+[unordered] SUNION a a
+[unordered] SDIFF a b
+SDIFF a b c
+SDIFF nokey a
+SDIFF a a
+[unordered] SDIFF a nokey
+[unordered] SDIFF c a
+SINTER
+SUNION
+SDIFF
+SADD k
+SREM k
+SISMEMBER k
+SMISMEMBER k
+SMEMBERS
+SCARD
+SET str x
+SINTER nokey str
+SINTER str nokey
+SUNION a str
+SDIFF nokey str
+SDIFF a str
+SADD str a
+SREM str a
+SCARD str
+SISMEMBER str a
+SMISMEMBER str a
+SMEMBERS str
+SPOP str
+SPOP str 1
+SPOP str x
+SRANDMEMBER str
+SRANDMEMBER str 1
+SRANDMEMBER str x
+SMEMBERS nokey
+GET a
+HGET a f
+LLEN a
+EXPIRE a 100
+[shape] TTL a
+RENAME a a2
+[unordered] SMEMBERS a2
+# Integers: Redis keeps these as a sorted intset and kesh does not; the members agree, not the order.
+SADD ints 5 3 1 -2 1000000000000
+[unordered] SMEMBERS ints
+SISMEMBER ints 3
+SISMEMBER ints 03
+SADD ints 03
+SCARD ints
+# Where Redis's listpack ends (128 members, 64 bytes); kesh packs to the same limits.
+SADD big b0 b1 b2 b3 b4 b5 b6 b7 b8 b9 b10 b11 b12 b13 b14 b15 b16 b17 b18 b19 b20 b21 b22 b23 b24 b25 b26 b27 b28 b29 b30 b31 b32 b33 b34 b35 b36 b37 b38 b39 b40 b41 b42 b43 b44 b45 b46 b47 b48 b49 b50 b51 b52 b53 b54 b55 b56 b57 b58 b59 b60 b61 b62 b63 b64 b65 b66 b67 b68 b69 b70 b71 b72 b73 b74 b75 b76 b77 b78 b79 b80 b81 b82 b83 b84 b85 b86 b87 b88 b89 b90 b91 b92 b93 b94 b95 b96 b97 b98 b99 b100 b101 b102 b103 b104 b105 b106 b107 b108 b109 b110 b111 b112 b113 b114 b115 b116 b117 b118 b119 b120 b121 b122 b123 b124 b125 b126 b127
+SCARD big
+[unordered] SMEMBERS big
+SADD big b128
+SCARD big
+SISMEMBER big b128
+SREM big b0 b1 b2 b3 b4 b5 b6 b7 b8 b9 b10 b11 b12 b13 b14 b15 b16 b17 b18 b19 b20 b21 b22 b23 b24 b25 b26 b27 b28 b29 b30 b31 b32 b33 b34 b35 b36 b37 b38 b39 b40 b41 b42 b43 b44 b45 b46 b47 b48 b49 b50 b51 b52 b53 b54 b55 b56 b57 b58 b59 b60 b61 b62 b63 b64 b65 b66 b67 b68 b69 b70 b71 b72 b73 b74 b75 b76 b77 b78 b79 b80 b81 b82 b83 b84 b85 b86 b87 b88 b89 b90 b91 b92 b93 b94 b95 b96 b97 b98 b99
+SCARD big
+[unordered] SMEMBERS big
+SADD wide wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
+SADD wide vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv
+[unordered] SMEMBERS wide
+SISMEMBER wide vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv
+SADD many x0 x1 x2 x3 x4 x5 x6 x7 x8 x9 x10 x11 x12 x13 x14 x15 x16 x17 x18 x19 x20 x21 x22 x23 x24 x25 x26 x27 x28 x29 x30 x31 x32 x33 x34 x35 x36 x37 x38 x39 x40 x41 x42 x43 x44 x45 x46 x47 x48 x49 x50 x51 x52 x53 x54 x55 x56 x57 x58 x59 x60 x61 x62 x63 x64 x65 x66 x67 x68 x69 x70 x71 x72 x73 x74 x75 x76 x77 x78 x79 x80 x81 x82 x83 x84 x85 x86 x87 x88 x89 x90 x91 x92 x93 x94 x95 x96 x97 x98 x99 x100 x101 x102 x103 x104 x105 x106 x107 x108 x109 x110 x111 x112 x113 x114 x115 x116 x117 x118 x119 x120 x121 x122 x123 x124 x125 x126 x127 x128 x129 x130 x131 x132 x133 x134 x135 x136 x137 x138 x139 x140 x141 x142 x143 x144 x145 x146 x147 x148 x149 x150 x151 x152 x153 x154 x155 x156 x157 x158 x159 x160 x161 x162 x163 x164 x165 x166 x167 x168 x169 x170 x171 x172 x173 x174 x175 x176 x177 x178 x179 x180 x181 x182 x183 x184 x185 x186 x187 x188 x189 x190 x191 x192 x193 x194 x195 x196 x197 x198 x199
+SCARD many
+SISMEMBER many x199

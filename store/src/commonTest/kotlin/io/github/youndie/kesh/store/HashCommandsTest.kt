@@ -1,10 +1,7 @@
 package io.github.youndie.kesh.store
 
 import io.github.youndie.kesh.resp.encode
-import io.github.youndie.kesh.store.commands.HashCommands
-import io.github.youndie.kesh.store.commands.KeyCommands
-import io.github.youndie.kesh.store.commands.ListCommands
-import io.github.youndie.kesh.store.commands.StringCommands
+import io.github.youndie.kesh.store.commands.StoreCommands
 import kotlin.test.Test
 import kotlin.test.assertEquals
 
@@ -12,7 +9,7 @@ import kotlin.test.assertEquals
 class HashCommandsTest {
     private val db = Db().apply { now = 1_000_000 }
     private val commands =
-        (StringCommands.all + KeyCommands.all + HashCommands.all + ListCommands.all).associateBy {
+        StoreCommands.all.associateBy {
             it.name
         }
 

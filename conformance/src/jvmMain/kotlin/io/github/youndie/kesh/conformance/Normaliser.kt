@@ -26,11 +26,21 @@ enum class Normaliser {
      */
     SHAPE,
 
+    /**
+     * For random replies (`SPOP`, `SRANDMEMBER`; research D-5): membership and count, not value. The
+     * line names the population — `[random a b c] SRANDMEMBER s 2` — and **both** replies are held to
+     * it, so a population written wrong fails against Redis too. A bulk string must be a member (or
+     * null in both); an array must be as long as the oracle's, of members only, and without repeats
+     * whenever the oracle's has none.
+     */
+    RANDOM,
+
     ;
 
     fun agree(
         kesh: RespFrame,
         oracle: RespFrame,
+        population: Set<List<Byte>> = emptySet(),
     ): Boolean =
         when (this) {
             EXACT -> {
@@ -54,7 +64,39 @@ enum class Normaliser {
             SHAPE -> {
                 sameShape(kesh, oracle)
             }
+
+            RANDOM -> {
+                randomAgree(kesh, oracle, population)
+            }
         }
+
+    private fun randomAgree(
+        kesh: RespFrame,
+        oracle: RespFrame,
+        population: Set<List<Byte>>,
+    ): Boolean {
+        if (kesh.type != oracle.type) return false
+
+        fun member(frame: RespFrame) = frame.type == '$' && frame.bulkPayload()?.toList() in population
+        return when (kesh.type) {
+            '$' -> {
+                if (oracle.bulkPayload() == null) kesh.bulkPayload() == null else member(kesh) && member(oracle)
+            }
+
+            '*' -> {
+                val a = kesh.elements
+                val b = oracle.elements
+                if (a == null || b == null) return a == b
+                val distinct = b.map { it.bytes.toList() }.toSet().size == b.size
+                a.size == b.size && a.all(::member) && b.all(::member) &&
+                    (!distinct || a.map { it.bytes.toList() }.toSet().size == a.size)
+            }
+
+            else -> {
+                kesh.bytes.contentEquals(oracle.bytes)
+            }
+        }
+    }
 
     private fun pairs(elements: List<RespFrame>): List<List<Byte>> =
         elements

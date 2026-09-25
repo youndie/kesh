@@ -49,6 +49,27 @@ class HarnessTest {
     }
 
     @Test
+    fun `random holds both replies to the population and to the oracle's count`() {
+        val abc = setOf("a", "b", "c").map { it.encodeToByteArray().toList() }.toSet()
+        val ab = "*2\r\n$1\r\na\r\n$1\r\nb\r\n"
+        assertTrue(Normaliser.RANDOM.agree(frame("*2\r\n$1\r\nc\r\n$1\r\na\r\n"), frame(ab), abc))
+        assertFalse(Normaliser.RANDOM.agree(frame("*2\r\n$1\r\nc\r\n$1\r\nz\r\n"), frame(ab), abc), "not a member")
+        assertFalse(Normaliser.RANDOM.agree(frame("*1\r\n$1\r\nc\r\n"), frame(ab), abc), "not the count")
+        assertFalse(Normaliser.RANDOM.agree(frame("*2\r\n$1\r\nc\r\n$1\r\nc\r\n"), frame(ab), abc), "a repeat")
+        assertTrue(
+            Normaliser.RANDOM.agree(frame("*2\r\n$1\r\nc\r\n$1\r\nc\r\n"), frame("*2\r\n$1\r\na\r\n$1\r\na\r\n"), abc),
+            "repeats allowed where the oracle repeats",
+        )
+        assertFalse(
+            Normaliser.RANDOM.agree(frame(ab), frame("*2\r\n$1\r\na\r\n$1\r\nz\r\n"), abc),
+            "the oracle is held too",
+        )
+        assertTrue(Normaliser.RANDOM.agree(frame("$1\r\nb\r\n"), frame("$1\r\nc\r\n"), abc))
+        assertTrue(Normaliser.RANDOM.agree(frame("$-1\r\n"), frame("$-1\r\n"), abc))
+        assertFalse(Normaliser.RANDOM.agree(frame("$1\r\nb\r\n"), frame("$-1\r\n"), abc))
+    }
+
+    @Test
     fun `shape ignores content and keeps types, lengths and nulls`() {
         assertTrue(Normaliser.SHAPE.agree(frame("*2\r\n$4\r\nkesh\r\n:1\r\n"), frame("*2\r\n$5\r\nredis\r\n:9\r\n")))
         assertFalse(Normaliser.SHAPE.agree(frame("*2\r\n$4\r\nkesh\r\n:1\r\n"), frame("*2\r\n$4\r\nkesh\r\n+1\r\n")))
