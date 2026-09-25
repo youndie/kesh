@@ -116,6 +116,12 @@ The rest of the server commands is drafted in *endpoint-server*, with B-15 and B
 * **Loading takes about three times as long as saving** (6 s and 12 s): the heap grows as it loads,
   and the collector's mutator assists hold it (research R-7).
 * **A killed save leaves `temp-<pid>.kesh`** beside the snapshot, never loaded.
+* **`BGSAVE`'s `fork()` holds every command** while the kernel copies the page tables: 11 ms median at
+  1/64 of the reference dataset, 48–85 ms at 1/8 (B-25).
+* **A `BGSAVE` under load needs about 1.4 × `used_memory` beyond what the server holds** — 4.6 × in
+  all at 1/8, against the chart's 3.3 ×. The parent's collector writes into every live object during
+  the save, so copy-on-write copies nearly its whole heap (research R-6). In a pod at its limit, the
+  OOM killer takes the larger process. B-29.
 
 ---
 

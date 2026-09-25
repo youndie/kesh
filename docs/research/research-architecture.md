@@ -653,7 +653,8 @@ brief says. Redis instead accepts and answers `-LOADING`, which Lettuce waits on
 Kubernetes service both look the same (readiness is false), and refusing needs no command-level
 state. Rejected: `-LOADING` — a mode every command would have to check, for a difference only a
 client connecting straight to the pod could see.
-`SAVE` is the only save in v1 (R-6).
+`SAVE` was the only save until B-25 added `BGSAVE` through fork, with the child's collector assists
+off and the writer allocation-free (R-6).
 
 ### D-25. The collector's mutator assists stay on — *B-23; final by the owner, 2026-09-25*
 
@@ -883,6 +884,32 @@ the classic hazard, not exercised here. And the child, with no collector, grows 
 it allocates while writing. Both are testable; neither is tested. B-25 carries the fork design with
 those two checks. Rejected for v1 also: a pause-and-copy (the whole dataset twice in memory, which
 the 2.8 × resident ratio of B-11 cannot afford) — not measured.
+*Built in B-25* (`bench/reports/b-25/`): `BGSAVE` forks from the store thread. The child turns the
+assists off, closes the listeners, writes through `SAVE`'s file code and `_exit`s; the periodic work
+reaps it with `waitpid(WNOHANG)`; a stop kills a running child first. The two open checks, answered:
+- **Locks at the fork — none held in 1 000 forks.** Since B-28 the server has five threads, not
+  ktor's pool: the store thread that forks, the main thread, the collector's two (`GC Timer thread`,
+  `Main GC thread`) and one unnamed. 500
+  `BGSAVE`s at 1/64 under the reference load at pipeline 16 finished, twice (the old writer and the
+  new): 1 000 ok, 0 failed, 0 hung. A hang would have been found: each child is waited for up to
+  120 s, then its kernel stack is printed and it is killed. `fork()` held the parent 10–11 ms median,
+  15–25 ms max at 1/64; 48–85 ms at 1/8.
+- **The child's heap — its copies were the cost, now removed.** The writer copied every element out of
+  the packed collections (`Packed.read`), and built lists and pairs for lists and sorted sets; with
+  no collector, the child kept all of it. The packed layout is the snapshot's own blob layout, so the
+  writer now reads slices where the store keeps them (`ByteSlice`, `ScoredSlice`). At 1/8 under load,
+  5 saves each: the child's private dirty memory peaked at 4.2 GB with the copies and 1.6 GB without,
+  and the two processes together at 8.1 GB (Pss; one child OOM-killed by kesh's 8 GB scope) and
+  5.7 GB (5 of 5 ok). `used_memory` was 1.23 GB.
+- **What remains is the parent's copy-on-write, and the collector drives it.** The collector's mark
+  is a compare-and-set on each live object's `ObjectData` and its sweep resets it
+  (`JetBrains/kotlin@v2.4.20!/kotlin-native/runtime/src/gc/pmcs/cpp/ObjectData.hpp`), so an epoch
+  in the parent during a save writes to every page with a live object — the parent's private dirty
+  memory equalled its resident memory within two saves. Consequence: a background save under load
+  needs about 1.4 × `used_memory` beyond what the server holds, 4.6 × in all at 1/8; the chart's
+  limit is 3.3 ×. B-29 asks the owner what to do about it.
+- Not shown: the reference host and full scale (the build machine, other projects' builds resident);
+  a save while the dataset grows fast, where the child's copy-on-write would follow the growth.
 **R-7. Writes stall for seconds whenever the keyspace grows.** *Found in B-05.* Mechanism: the
 collector's mutator assists (§1.2, correction found in B-05) hold every thread for the length of a
 mark once allocation outruns it — a bulk load, a restore, a cache warming after a restart. Mitigation:

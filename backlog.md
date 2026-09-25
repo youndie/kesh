@@ -43,10 +43,10 @@ A stage is a field on the item, not a directory.
 | Task | | Priority | Size | Blocked by |
 |---|---|---|---|---|
 | [B-18](docs/backlog/B-18-soak-24h.md) `[ ]` | 24 h soak with TTL churn | P2 | S | B-17 |
-| [B-25](docs/backlog/B-25-bgsave-through-fork.md) `[~]` | BGSAVE through fork, with the child's collector assists off | P2 | M | B-14 |
 | [B-26](docs/backlog/B-26-maxmemory-container-check.md) `[ ]` | Refuse a maxmemory above the container's memory budget | P2 | S | B-11 |
+| [B-29](docs/backlog/B-29-bgsave-memory-budget.md) `[?]` | Budget a background save in the container's memory | P2 | S | B-25 |
 
-## Closed (25)
+## Closed (26)
 
 **Protocol and core**
 
@@ -78,6 +78,7 @@ A stage is a field on the item, not a directory.
 **Snapshots**
 
 - [B-14](docs/backlog/B-14-snapshots.md) `[x]` - Snapshots: the format, SAVE, load at startup, torn-save safety, and their measured cost
+- [B-25](docs/backlog/B-25-bgsave-through-fork.md) `[x]` - BGSAVE through fork, with the child's collector assists off
 
 **Operations**
 

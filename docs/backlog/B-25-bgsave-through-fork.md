@@ -1,7 +1,7 @@
 ---
 id: B-25
 title: "BGSAVE through fork, with the child's collector assists off"
-status: wip
+status: done
 priority: P2
 size: M
 stage: stage-4-persistence
@@ -83,3 +83,19 @@ hung on the test itself (it waited for 20 lines of a 12-line `INFO persistence`)
   counts what is resident, not what is used. Still to take, on a quiet host: 1/8 with the old writer
   (kept on the build machine as `~/kesh-b25-old-writer.kexe`, md5 `789ad031…`), 1/8 with the new one,
   and the 500 saves again on the final binary with `used_memory` sampled.
+
+### Iteration 3 — 2026-09-25: done
+
+- **AC 1 — met.** `BGSAVE` answers `+Background saving started` (Redis 7.2's bytes, with its syntax
+  error and "already in progress": `conformance/scripts/server/bgsave.redis`, all 21 scripts agree);
+  the snapshot is the dataset at the fork and `LASTSAVE` moves when the child ends
+  (`BackgroundSaveTest`, three tests; two of three mutations killed, the third recorded above).
+- **AC 2 — met.** 500 `BGSAVE`s against the server under the reference load, on the final binary: 500
+  ok, 0 failed, 0 hung; 500 more on the first binary, the same. At 1/8, the parent's resident memory
+  during a save is 3.2–4.4 GB and the two processes together peak at 5.7 GB (Pss), `used_memory`
+  1.23 GB. `bench/reports/b-25/`.
+- Found: a background save under load needs about 1.4 × `used_memory` beyond the server's own —
+  the parent's collector writes into every live object, so copy-on-write copies its heap. Above the
+  chart's 3.3 ×: **B-29**, a question for the owner.
+- Where it ran: the build machine (WSL2, 20 cores, 16 GB), kesh in a scope capped at 64 tasks and
+  8 GB. Not the reference host, not full scale.
