@@ -1,7 +1,7 @@
 ---
 id: B-29
 title: "Budget a background save in the container's memory"
-status: question
+status: done
 priority: P2
 size: S
 stage: stage-4-persistence
@@ -49,3 +49,9 @@ The choices, for the owner:
 | deploy | `deploy/chart/values.yaml` — `measured.residentPeakRatioTenths` |
 | server | `server/src/nativeMain/kotlin/io/github/youndie/kesh/server/persistence/Persistence.kt` |
 | bench | `bench/fork/bgsave.sh` |
+
+## Decided — 2026-09-25
+
+**Option 3**, by the owner: documented, not built. The decision is in `backlog.md`; the cost is stated
+in the chart's `values.yaml` beside `residentPeakRatioTenths`, in `services/deploy.md`, and in
+`feature-snapshots`' quirks. The rendered chart is identical before and after (`helm template`).

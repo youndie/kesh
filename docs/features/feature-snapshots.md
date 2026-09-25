@@ -121,7 +121,8 @@ The rest of the server commands is drafted in *endpoint-server*, with B-15 and B
 * **A `BGSAVE` under load needs about 1.4 × `used_memory` beyond what the server holds** — 4.6 × in
   all at 1/8, against the chart's 3.3 ×. The parent's collector writes into every live object during
   the save, so copy-on-write copies nearly its whole heap (research R-6). In a pod at its limit, the
-  OOM killer takes the larger process. B-29.
+  OOM killer takes the larger process. Left so by the owner's decision (B-29): nothing in kesh issues
+  a `BGSAVE`, and the chart's limit does not budget one — its comment and `services/deploy.md` say so.
 
 ---
 

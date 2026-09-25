@@ -34,6 +34,10 @@ measured:
   # Resident memory at its peak under the reference load, over used_memory, in tenths: 3.2 x at a
   # sixteenth and 2.9 x at an eighth of §5a on the two-host stand (B-28, bench/reports/b-28), rounded
   # up. B-11's 2.8 was taken with no traffic, and under traffic the ktor transport reached 5.3 x.
+  # NOT covered, by the owner's decision (B-29): a BGSAVE under load. Its child is in the same
+  # cgroup and holds the pages the server rewrites during the save — about 1.4 x used_memory more,
+  # 4.6 x in all at an eighth (bench/reports/b-25). Nothing in kesh issues a BGSAVE; an operator
+  # who does, under load, at this limit, can have the child or the server OOM-killed.
   residentPeakRatioTenths: 33
   # PLACEHOLDER until B-18 measures what a day of TTL churn adds on top of the peak, in per cent.
   dailyDriftPercent: 20

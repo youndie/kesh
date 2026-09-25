@@ -38,14 +38,13 @@ A stage is a field on the item, not a directory.
 
 <!-- BEGIN INDEX -->
 
-## Open (2)
+## Open (1)
 
 | Task | | Priority | Size | Blocked by |
 |---|---|---|---|---|
 | [B-18](docs/backlog/B-18-soak-24h.md) `[ ]` | 24 h soak with TTL churn | P2 | S | B-17 |
-| [B-29](docs/backlog/B-29-bgsave-memory-budget.md) `[?]` | Budget a background save in the container's memory | P2 | S | B-25 |
 
-## Closed (27)
+## Closed (28)
 
 **Protocol and core**
 
@@ -79,6 +78,7 @@ A stage is a field on the item, not a directory.
 
 - [B-14](docs/backlog/B-14-snapshots.md) `[x]` - Snapshots: the format, SAVE, load at startup, torn-save safety, and their measured cost
 - [B-25](docs/backlog/B-25-bgsave-through-fork.md) `[x]` - BGSAVE through fork, with the child's collector assists off
+- [B-29](docs/backlog/B-29-bgsave-memory-budget.md) `[x]` - Budget a background save in the container's memory
 
 **Operations**
 
@@ -115,6 +115,13 @@ only Pub/Sub, which the brief excluded. The owner added it on 2026-09-25 (resear
 **Feature links wait for the feature documents.** Items name their feature in the body. The `epic`
 field is added by the pull request that brings that feature document to `main`, because a link to a
 document that exists only in the drafts branch is a broken link here.
+
+**A `BGSAVE` is not budgeted in the memory limit.**
+[B-29](docs/backlog/B-29-bgsave-memory-budget.md): under load a background save needs about 1.4 ×
+`used_memory` beyond the server's own, and the chart's limit (3.3 ×) does not hold it. The owner chose
+on 2026-09-25 to document it rather than raise every pod's limit by 40 % or refuse a `BGSAVE` on an
+estimate Redis does not make: nothing in kesh issues one. The chart's comment and `services/deploy.md`
+say so.
 
 **Blocking is a fact, not a plan.** `blocked_by` lists what an item cannot be done without; an
 order of preference belongs in this file, not in the field.

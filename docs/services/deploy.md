@@ -50,6 +50,10 @@ from `maxmemory` and `values.measured`:
   traffic; under traffic the old transport reached 5.3 × and an OOM kill (research R-8). The Kotlin/Native runtime does not see the limit;
   kesh checks `maxmemory` against it through kore at the same 3.3, which the chart passes as
   `KESH_RESIDENT_PEAK_RATIO_TENTHS` (B-26): a `maxmemory` the limit cannot hold does not start.
+  **The limit does not budget a `BGSAVE`** (B-29, the owner's decision): under load its child needs
+  about 1.4 × `used_memory` beyond the server's own — 4.6 × in all at 1/8 (`bench/reports/b-25/`) —
+  and the OOM killer takes the larger process. Nothing in kesh issues one; the save on stop is a
+  `SAVE`. A `BGSAVE` in a pod near its limit is the operator's to size for.
 
 For `maxmemory` 1 GiB that is a 30 s grace period, a 32 s startup budget and a 4.0 GiB limit.
 
