@@ -76,6 +76,20 @@ class MemoryAccountingTest {
     }
 
     @Test
+    fun `DEL and UNLINK lower used_memory by the same amount before they reply`() {
+        val mb = "x".repeat(1 shl 20)
+        r("SET", "a", mb)
+        r("SET", "b", mb)
+        val full = db.usedMemory
+        r("DEL", "a")
+        val afterDel = db.usedMemory
+        r("UNLINK", "b")
+        val afterUnlink = db.usedMemory
+        assertEquals(full - afterDel, afterDel - afterUnlink)
+        assertTrue(full - afterDel > 1 shl 20, "a megabyte and its entry, not ${full - afterDel}")
+    }
+
+    @Test
     fun `deleting everything leaves only the buckets`() {
         repeat(500) { r("SET", "s$it", "x".repeat(it)) }
         repeat(20) { r("ZADD", "z", it.toString(), "m$it") }

@@ -20,7 +20,7 @@ D-12) — it is what makes growth free of stalls and `SCAN` complete.
 
 ## 2. Business rules
 
-Built in B-05, `SCAN` in B-10: everything but active expiry (B-13) and `used_memory` (B-11).
+Built in B-05, `SCAN` in B-10, `used_memory` in B-11: everything but active expiry (B-13).
 
 * **`DEL`, `UNLINK` and `FLUSHALL`/`FLUSHDB` with or without `ASYNC` behave the same** (research
   D-15, amending the brief): the keys are gone from the keyspace — and, from B-11, from `used_memory`
@@ -56,8 +56,8 @@ The active expiry cycle (B-13) will live beside these.
 
 ## 5. Scenarios
 
-Built in B-05: *TTL*, *Growth without a stall*; in B-10: *Scan completeness*. *Target*: *Active expiry*
-(B-13), *DEL and UNLINK account the same* (B-11, which brings `used_memory`).
+Built in B-05: *TTL*, *Growth without a stall*; in B-10: *Scan completeness*; in B-11: *DEL and
+UNLINK account the same*. *Target*: *Active expiry* (B-13).
 
 ### Scenario: TTL
 * **Given:** `SET k v EX 10`
@@ -87,6 +87,7 @@ Built in B-05: *TTL*, *Growth without a stall*; in B-10: *Scan completeness*. *T
 * **Given:** two identical 1 MB values at `a` and `b`
 * **When:** `DEL a` and `UNLINK b`
 * **Then:** each lowers `used_memory` by the same amount before its reply
+* **Automated:** `store/src/commonTest/kotlin/io/github/youndie/kesh/store/MemoryAccountingTest.kt::DEL and UNLINK lower used_memory by the same amount before they reply`
 
 ## 6. Out of scope
 
