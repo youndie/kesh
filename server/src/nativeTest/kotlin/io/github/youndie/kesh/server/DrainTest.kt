@@ -73,6 +73,9 @@ class DrainTest {
                             } catch (_: IOException) {
                                 break // the server closed the connection
                             }
+                            // A slow reader: the server's write of a megabyte of replies waits on the socket
+                            // most of the time, which is where a drain that cut a write would cut it.
+                            delay(20)
                             var owed = 4L * frame
                             while (owed > 0) {
                                 val n =
@@ -104,6 +107,70 @@ class DrainTest {
             println("whole replies per client: ${seen.map { it.whole }}")
             assertTrue(seen.count { it.whole > 0 } >= 40, "most clients were served before the drain")
             assertEquals(List(50) { 0 }, seen.map { it.leftover }, "bytes of a truncated reply, per client")
+        }
+
+    @OptIn(ExperimentalForeignApi::class)
+    @Test
+    fun `every command the drain lets run is answered - the saved counter equals the replies received`() =
+        runBlocking {
+            val dir = memScoped { mkdtemp("/tmp/kesh-ledger-XXXXXX".cstr.ptr)!!.toKString() }
+            val config = ServerConfig(host = "127.0.0.1", port = 0, dir = dir, saveOnShutdown = true)
+            val server = KeshServer(config)
+            server.start()
+            val selector = SelectorManager(Dispatchers.IO)
+            val incr = command("INCR", "c")
+            val four = ByteArray(4 * incr.size) { incr[it % incr.size] }
+            val clients =
+                (1..50).map {
+                    async(Dispatchers.IO) {
+                        val socket = aSocket(selector).tcp().connect("127.0.0.1", server.port)
+                        val output = socket.openWriteChannel(autoFlush = true)
+                        val input = socket.openReadChannel()
+                        val buffer = ByteArray(4096)
+                        var replies = 0
+                        serving@ while (true) {
+                            try {
+                                output.writeFully(four)
+                            } catch (_: IOException) {
+                                break // the server closed the connection
+                            }
+                            var owed = 4
+                            while (owed > 0) {
+                                val n =
+                                    try {
+                                        input.readAvailable(buffer)
+                                    } catch (_: IOException) {
+                                        -1 // a reset is the end of what this client will receive
+                                    }
+                                if (n < 0) break@serving
+                                // Integer replies, `:<n>\r\n`: one per line end.
+                                val lines = (0 until n).count { buffer[it] == '\n'.code.toByte() }
+                                replies += lines
+                                owed -= lines
+                            }
+                        }
+                        socket.close()
+                        replies
+                    }
+                }
+            delay(500)
+            withTimeout(30.seconds) { server.stop() }
+            val received = withTimeout(30.seconds) { clients.awaitAll() }.sum()
+            server.close()
+
+            val after = KeshServer(config.copy(saveOnShutdown = false))
+            after.start()
+            val socket = aSocket(selector).tcp().connect("127.0.0.1", after.port)
+            socket.openWriteChannel(autoFlush = true).writeFully(command("GET", "c"))
+            val reply = ByteArray(64)
+            val n = socket.openReadChannel().readAvailable(reply)
+            val counted = reply.decodeToString(0, n).lines()[1].toLong()
+            socket.close()
+            after.stop()
+            after.close()
+            selector.close()
+            assertTrue(received > 1_000, "the clients were busy: $received replies")
+            assertEquals(counted, received.toLong(), "INCRs executed against replies the clients received")
         }
 
     @OptIn(ExperimentalForeignApi::class)
