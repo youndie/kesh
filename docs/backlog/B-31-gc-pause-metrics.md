@@ -1,7 +1,7 @@
 ---
 id: B-31
 title: "Export the collector's pauses on /metrics"
-status: wip
+status: done
 priority: P2
 size: S
 stage: stage-5-operations
@@ -43,3 +43,19 @@ memory and keys, nothing of the collector. The only view is another binary,
 |---|---|
 | server | `server/src/nativeMain/kotlin/io/github/youndie/kesh/server/info/` |
 | server | `server/src/nativeMain/kotlin/io/github/youndie/kesh/server/http/Metrics.kt` |
+
+## Findings — 2026-09-25: done
+
+- **AC 1 — met.** `GcStatsTest::the runtime reports finished collections in a build with no flags`
+  reads `GC.lastGCInfo` in the ordinary test binary; the release build carries the metrics with no flag.
+- **AC 2 — met.** `bench/gc/control.sh` on a `-Pkesh.runtimeLogs=true` build (md5 `93452843…`), 1/64 of
+  the dataset, 60 s at pipeline 16, on the build machine: the runtime logged epochs #1–#45, kesh
+  exported 45, **every pause equal to the runtime's, epoch for epoch**; `kesh_gc_epochs_missed_total`
+  0, as no epoch was absent; the `/metrics` sums equal kesh's lines (pause #1 9.86 ms, #2 17.894 ms in
+  all). `bench/reports/b-31/control.txt`.
+- **AC 3 — met, in `docs/api/endpoint-http.md`** (where the metrics are listed) rather than
+  `services/server.md`, which lists the configuration: `KESH_GC_LOG` is there.
+- Mutations: without the missed-epoch count, `GcStatsTest::each collection is exported once and a gap
+  between polls is counted as missed` and `MetricsTest::the collector's families parse and carry what
+  was polled` fail. The pause arithmetic in `lastFinished` has no unit test with known times — the
+  runtime's times cannot be set; the control is its check.

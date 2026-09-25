@@ -38,14 +38,13 @@ A stage is a field on the item, not a directory.
 
 <!-- BEGIN INDEX -->
 
-## Open (2)
+## Open (1)
 
 | Task | | Priority | Size | Blocked by |
 |---|---|---|---|---|
 | [B-18](docs/backlog/B-18-soak-24h.md) `[ ]` | 24 h soak with TTL churn | P2 | S | B-17 |
-| [B-31](docs/backlog/B-31-gc-pause-metrics.md) `[~]` | Export the collector's pauses on /metrics | P2 | S | - |
 
-## Closed (29)
+## Closed (30)
 
 **Protocol and core**
 
@@ -86,6 +85,7 @@ A stage is a field on the item, not a directory.
 - [B-15](docs/backlog/B-15-info-probes-metrics.md) `[x]` - INFO, HTTP probes and Prometheus metrics
 - [B-16](docs/backlog/B-16-image-chart-graceful-stop.md) `[x]` - Image, chart, and a graceful stop that survives being repeated
 - [B-24](docs/backlog/B-24-taken-port-aborts.md) `[x]` - A taken port aborts the server with a core dump instead of exiting cleanly
+- [B-31](docs/backlog/B-31-gc-pause-metrics.md) `[x]` - Export the collector's pauses on /metrics
 
 **Capacity and soak**
 

@@ -129,7 +129,8 @@ docker run --rm --network host redis:7.2 redis-cli -p 6379 ping
 `KESH_DBFILENAME` (`dump.kesh`; B-14), `KESH_GC_ASSISTS` (`on`; B-23), `KESH_HTTP_PORT` (8080, `off` for
 none; B-15), `KESH_SAVE_ON_SHUTDOWN` (`off`), `KESH_SHUTDOWN_DRAIN_SECONDS` (15) and
 `KESH_TERMINATION_GRACE_SECONDS` (undeclared; B-16) — kore refuses at startup a plan that does not fit
-the declared grace period, and kesh exits 1 with its message; `KESH_RESIDENT_PEAK_RATIO_TENTHS` (33;
+the declared grace period, and kesh exits 1 with its message; `KESH_GC_LOG` (`off`; B-31) — one line per collection exported to `/metrics`, for a control against the
+runtime's log; `KESH_RESIDENT_PEAK_RATIO_TENTHS` (33;
 B-26) — a `KESH_MAXMEMORY` that, at that ratio, the container's memory limit cannot hold stops the
 start the same way. The printed configuration never shows the password.
 

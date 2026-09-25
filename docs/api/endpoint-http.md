@@ -42,6 +42,17 @@ Probes and metrics on a separate port for the cluster's internal network. Part o
 | `kesh_connected_clients` | gauge | RESP connections open |
 | `kesh_connections_received_total`, `kesh_rejected_connections_total` | counter | accepted, and refused at `maxclients` |
 | `kesh_command_duration_seconds{command}` | histogram | time on the store thread per command (`get`, `config\|get`), 50 µs to 1 s; `_count` is commands run |
+| `kesh_gc_pause_seconds{pause}` | histogram | the collector's stop-the-world pauses, `first` and `second`, one sample per collection — from the request to suspend to the resumption, the runtime's "Mutators pause time" (B-31) |
+| `kesh_gc_duration_seconds` | histogram | each collection, start to end |
+| `kesh_gc_collections_total`, `kesh_gc_epochs_missed_total` | counter | collections exported; collections that finished and were not — two between polls, or before the first |
+| `kesh_gc_marked_objects` | gauge | objects the last exported collection marked |
+
+**The collector's metrics rest on an experimental runtime API** — `kotlin.native.runtime.GC.lastGCInfo`,
+`@NativeRuntimeApi` and `@ExperimentalStdlibApi` in Kotlin 2.4.20; a compiler bump re-checks them.
+They are polled ten times a second by the periodic work, and a collection appears **one collection
+late**: the runtime moves a finished one to `lastGCInfo` only when the next starts. Held against the
+runtime's own log epoch for epoch in B-31 (`bench/gc/control.sh`, `bench/reports/b-31/control.txt`):
+45 of 45 collections, every pause equal, none missed.
 
 The store's numbers are copied on the store thread (research D-14) and appear once the start has
 completed; before that, only the process's two.
