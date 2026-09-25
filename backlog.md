@@ -42,16 +42,16 @@ A stage is a field on the item, not a directory.
 
 | Task | | Priority | Size | Blocked by |
 |---|---|---|---|---|
-| [B-21](docs/backlog/B-21-first-consumer-and-pubsub.md) `[?]` | Who is the first consumer, and does Pub/Sub belong in v1? | P0 | XS | - |
 | [B-12](docs/backlog/B-12-eviction-policies.md) `[ ]` | Eviction policies with sampled LRU | P1 | M | B-11 |
 | [B-15](docs/backlog/B-15-info-probes-metrics.md) `[ ]` | INFO, HTTP probes and Prometheus metrics | P1 | M | B-11 |
 | [B-16](docs/backlog/B-16-image-chart-graceful-stop.md) `[ ]` | Image, chart, and a graceful stop that survives being repeated | P1 | M | B-14, B-15 |
 | [B-17](docs/backlog/B-17-reference-load-report.md) `[ ]` | Reference load report on the reference host | P1 | M | B-03, B-12, B-14, B-22 |
+| [B-27](docs/backlog/B-27-pubsub.md) `[ ]` | Pub/Sub: PUBLISH, SUBSCRIBE and PSUBSCRIBE in RESP2 subscribe mode | P1 | M | B-21 |
 | [B-18](docs/backlog/B-18-soak-24h.md) `[ ]` | 24 h soak with TTL churn | P2 | S | B-17 |
 | [B-25](docs/backlog/B-25-bgsave-through-fork.md) `[ ]` | BGSAVE through fork, with the child's collector assists off | P2 | M | B-14 |
 | [B-26](docs/backlog/B-26-maxmemory-container-check.md) `[?]` | Refuse a maxmemory above the container's memory budget | P2 | S | B-11 |
 
-## Closed (18)
+## Closed (19)
 
 **Protocol and core**
 
@@ -62,6 +62,7 @@ A stage is a field on the item, not a directory.
 - [B-05](docs/backlog/B-05-strings-keyspace-lazy-expiry.md) `[x]` - Strings and keyspace on kesh's own hash table, lazy expiry
 - [B-19](docs/backlog/B-19-managed-heap-probe.md) `[x]` - Heap probe: can plain Kotlin objects hold the reference dataset?
 - [B-20](docs/backlog/B-20-define-cannot-serve.md) `[x]` - Define "the managed heap cannot serve the reference dataset" before B-19 reports
+- [B-21](docs/backlog/B-21-first-consumer-and-pubsub.md) `[x]` - Who is the first consumer, and does Pub/Sub belong in v1?
 
 **The five types**
 
@@ -104,10 +105,10 @@ quarter of it. B-19 is a few days; finding out in stage 6 is the whole project.
 [B-20](docs/backlog/B-20-define-cannot-serve.md) is a question for the owner and has to be answered
 before B-19's pull request opens. A threshold written after the table is written to fit the table.
 
-**The scope question is open, and it is not a formality.**
+**The scope question is answered: Pub/Sub is in.**
 [B-21](docs/backlog/B-21-first-consumer-and-pubsub.md): the portfolio's one Redis consumer uses
-only Pub/Sub, which v1 excludes. It blocks nothing formally; every item it could change is cheaper
-to change before it starts.
+only Pub/Sub, which the brief excluded. The owner added it on 2026-09-25 (research D-26), and
+[B-27](docs/backlog/B-27-pubsub.md) builds it; kompot's bus is the first consumer.
 
 **Feature links wait for the feature documents.** Items name their feature in the body. The `epic`
 field is added by the pull request that brings that feature document to `main`, because a link to a

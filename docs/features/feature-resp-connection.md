@@ -169,7 +169,8 @@ byte by `conformance/run.sh` — 78 comparisons, all agreeing, at B-04.
 ## 6. Out of scope
 
 * RESP3, `CLIENT TRACKING`, ACL users beyond one password (brief §2).
-* Pub/Sub — open, research Q-1 / B-21.
+* Pub/Sub — a feature of its own (`feature-pubsub`, B-27), added to v1 by the owner (research Q-1,
+  D-26). Until B-27, a subscribe command is an unknown command.
 
 ## 7. Quirks
 

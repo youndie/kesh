@@ -1,7 +1,7 @@
 ---
 id: B-21
 title: "Who is the first consumer, and does Pub/Sub belong in v1?"
-status: question
+status: done
 priority: P0
 size: XS
 stage: stage-1-protocol
@@ -31,5 +31,11 @@ and §5a are sized for.
 | Module | Path |
 |---|---|
 | docs | `docs/research/research-architecture.md` |
+
+## Decision (owner, 2026-09-25)
+
+**(b) — add Pub/Sub.** `PUBLISH`, `SUBSCRIBE`, `PSUBSCRIBE` and their `UN` forms in RESP2 subscribe
+mode join v1, and kompot's multi-instance bus is kesh's first real consumer. Recorded in research
+Q-1 and D-26; built by [B-27](B-27-pubsub.md). The capacity target was kept, not sized down.
 
 Research: [research-architecture](../research/research-architecture.md).

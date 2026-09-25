@@ -37,7 +37,7 @@ Read this table before any backlog item. Each row is argued in the section it na
 
 | # | The brief said | Research found | Where |
 |---|---|---|---|
-| 1 | The portfolio's services need a shared store for sessions, counters, leaderboards (§1) | **No service in the portfolio uses Redis for any of that today.** The one Redis consumer found uses it only for `PUBLISH`/`PSUBSCRIBE` — which v1 excludes | §1.1, Q-1 |
+| 1 | The portfolio's services need a shared store for sessions, counters, leaderboards (§1) | **No service in the portfolio uses Redis for any of that today.** The one Redis consumer found uses it only for `PUBLISH`/`PSUBSCRIBE` — which v1 excluded. *The owner added Pub/Sub on 2026-09-25* | §1.1, Q-1, D-26 |
 | 2 | Capacity (§5a, ~4.3 GB, ~15.8 M keys) is accepted in the last stage (item 17) | That capacity rests on a managed heap an order of magnitude larger than any Kotlin/Native heap measured in the portfolio, where the pause was already growing with the heap. **Measured first now**, before the store is built on it | §1.2, D-17 |
 | 3 | D-11: active expiry repeats "while more than 25 % of a sample is expired" | Not what Redis does and not what its current documentation says. The source repeats while more than **10 %** is stale (at default effort); 25 is the slow cycle's **CPU budget** | §1.5, D-11 |
 | 4 | `DEL` frees the value before it replies; `UNLINK` replies at once and reclaims later | Under a tracing collector nothing is freed synchronously. Both drop a reference; the observable difference is only in `used_memory`, and that is how it is restated | §1.3, D-15 |
@@ -76,7 +76,7 @@ it should be argued as one. It is the owner's call; see Q-1.
 
 **Consequence 2 — the one real consumer cannot use kesh v1.** Pub/Sub is explicitly out of scope
 (brief §2). Either the first consumer is a service not yet written, or Pub/Sub moves into scope.
-Q-1 asks which.
+Q-1 asks which. *Answered 2026-09-25:* Pub/Sub moves into scope (D-26).
 
 **Consequence 3 — the handshake the one real client performs is already compatible.** `HELLO 3`
 answered `-NOPROTO …` makes Lettuce fall back to RESP2, which is exactly what the brief prescribes,
@@ -403,7 +403,8 @@ runs, the code and the reasoning.
 ### D-4. One process holds the whole working set — *decision; the size is a choice, not a need*
 
 §1.1 found no current consumer of the capacity, so §5a is a target the owner sets, not a demand the
-portfolio places. Q-1 asks the owner to confirm it knowing that.
+portfolio places. Q-1 asks the owner to confirm it knowing that. *Confirmed 2026-09-25:* the owner
+added Pub/Sub for the one real consumer and kept the capacity target.
 
 ### D-5. Redis is the oracle, compared byte for byte — *decision, mechanism amended*
 
@@ -657,6 +658,17 @@ overshoot into a bounded one — a quieter host would only say how soon it reach
 would change the answer is a mark fast enough
 for the growth — a parallel mark, or a lower trigger (`heapTriggerCoefficient`) — not the switch.
 
+### D-26. Pub/Sub is in v1 — *deviation from the brief, the owner's answer to Q-1, 2026-09-25*
+
+The brief (§2) leaves Pub/Sub out. The portfolio's only Redis client needs nothing else (§1.1), so
+without it kesh v1 has no real consumer at all. Added: `PUBLISH`, `SUBSCRIBE`, `PSUBSCRIBE` and
+their `UN` forms in RESP2 subscribe mode, with Redis 7.2's replies as the oracle gives them and its
+pub/sub output-buffer limit (32 MB hard, 8 MB for 60 s — `clientBufferLimitsDefaults`,
+`redis/redis@7.2!/src/config.c`), so a subscriber that stops reading is dropped rather than growing
+the heap. The subscription registry is on the store thread with the clients (D-14). Rejected:
+(a) keeping the scope and naming a future consumer — no such service is planned; (c) sizing v1 down
+to Pub/Sub alone — the owner kept the capacity target. B-27 builds it.
+
 ### D-20. Hashes pack under Redis 7.2's listpack limits: 512 fields, 64-byte fields and values — *new, B-06*
 
 B-06 was to take its threshold from B-19's measurement. B-19 gave none: it packed every hash and
@@ -766,6 +778,8 @@ capacity §5a is sized for. The options as research sees them: (a) keep the scop
 future service that needs §5a; (b) add Pub/Sub, which makes kompot's multi-instance bus the first
 consumer — and needs a RESP2 subscribe mode on a connection, which D-14 does not preclude; (c) size
 v1 down to what a first consumer needs, which makes R-1 smaller.
+*Answered by the owner on 2026-09-25:* **(b) — Pub/Sub is added**, and kompot's bus is the first
+consumer (D-26, B-27). The capacity target (D-4) was not sized down: it stays, as a choice.
 
 **Q-2. What does "the managed heap cannot serve the reference dataset" mean in numbers?**
 *Answered by the owner on 2026-09-24 (B-20):* a stop-the-world pause p99 above 10 ms at full scale.
