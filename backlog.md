@@ -38,11 +38,12 @@ A stage is a field on the item, not a directory.
 
 <!-- BEGIN INDEX -->
 
-## Open (1)
+## Open (2)
 
 | Task | | Priority | Size | Blocked by |
 |---|---|---|---|---|
 | [B-18](docs/backlog/B-18-soak-24h.md) `[ ]` | 24 h soak with TTL churn | P2 | S | B-17 |
+| [B-31](docs/backlog/B-31-gc-pause-metrics.md) `[~]` | Export the collector's pauses on /metrics | P2 | S | - |
 
 ## Closed (29)
 
