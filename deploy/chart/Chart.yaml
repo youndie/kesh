@@ -1,0 +1,6 @@
+apiVersion: v2
+name: kesh
+description: A Redis-compatible (RESP2) in-memory store on Kotlin/Native — one instance, snapshots on a volume.
+type: application
+version: 0.1.0
+appVersion: "0.1.0"

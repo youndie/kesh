@@ -1,0 +1,117 @@
+{{- if ne (int .Values.replicas) 1 }}
+{{- fail (printf "replicas is %v: kesh is one instance — a second replica would be a second, independent store behind one service (brief §2)" .Values.replicas) }}
+{{- end }}
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: {{ .Release.Name }}
+  labels:
+    {{- include "kesh.labels" . | nindent 4 }}
+spec:
+  replicas: 1
+  serviceName: {{ .Release.Name }}-headless
+  selector:
+    matchLabels:
+      {{- include "kesh.labels" . | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        {{- include "kesh.labels" . | nindent 8 }}
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: {{ .Values.ports.http | quote }}
+        prometheus.io/path: /metrics
+    spec:
+      # announce {{ .Values.measured.announceSeconds }} s + drain {{ include "kesh.drainSeconds" . }} s
+      # (connections {{ .Values.measured.connectionDrainSeconds }} s + 2 x SAVE {{ include "kesh.saveSeconds" . }} s:
+      # {{ .Values.measured.saveMillisPerGiB }} ms/GiB x maxmemory {{ .Values.maxmemory }} B, B-14) + release
+      # {{ .Values.measured.releaseSeconds }} s + 2 s to exit. kesh is told the same number, and kore
+      # refuses to start a plan that does not fit it.
+      terminationGracePeriodSeconds: {{ include "kesh.graceSeconds" . }}
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 65532
+        runAsGroup: 65532
+        fsGroup: 65532
+      containers:
+        - name: kesh
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          ports:
+            - name: resp
+              containerPort: {{ .Values.ports.resp }}
+            - name: http
+              containerPort: {{ .Values.ports.http }}
+          env:
+            - name: KESH_PORT
+              value: {{ .Values.ports.resp | quote }}
+            - name: KESH_HTTP_PORT
+              value: {{ .Values.ports.http | quote }}
+            - name: KESH_DIR
+              value: /data
+            - name: KESH_MAXMEMORY
+              value: {{ .Values.maxmemory | int64 | quote }}
+            - name: KESH_MAXMEMORY_POLICY
+              value: {{ .Values.maxmemoryPolicy | quote }}
+            - name: KESH_SAVE_ON_SHUTDOWN
+              value: {{ ternary "on" "off" .Values.saveOnShutdown | quote }}
+            - name: KESH_SHUTDOWN_DRAIN_SECONDS
+              value: {{ include "kesh.drainSeconds" . | quote }}
+            - name: KESH_TERMINATION_GRACE_SECONDS
+              value: {{ include "kesh.graceSeconds" . | quote }}
+            {{- if .Values.passwordSecret.name }}
+            - name: KESH_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.passwordSecret.name }}
+                  key: {{ .Values.passwordSecret.key }}
+            {{- end }}
+          # The load budget: 2 x a full load ({{ include "kesh.loadSeconds" . }} s: {{ .Values.measured.loadMillisPerGiB }} ms/GiB
+          # x maxmemory, B-14) + 10 s = {{ include "kesh.startupSeconds" . }} s, in 5 s periods.
+          startupProbe:
+            httpGet:
+              path: /health/started
+              port: http
+            periodSeconds: 5
+            failureThreshold: {{ add (div (int64 (include "kesh.startupSeconds" .)) 5) 1 }}
+          # 2 s x 1 failure: inside kore's 5 s announce wait, so the endpoint is gone before the drain.
+          readinessProbe:
+            httpGet:
+              path: /health/ready
+              port: http
+            periodSeconds: 2
+            failureThreshold: 1
+          livenessProbe:
+            httpGet:
+              path: /health/live
+              port: http
+            periodSeconds: 10
+            failureThreshold: 3
+          resources:
+            requests:
+              {{- toYaml .Values.resources.requests | nindent 14 }}
+              memory: {{ include "kesh.memoryLimit" . | quote }}
+            limits:
+              # maxmemory {{ .Values.maxmemory }} B x {{ .Values.measured.residentPeakRatioTenths }}/10 (B-11's peak ratio)
+              # x (100 + {{ .Values.measured.dailyDriftPercent }})/100 (drift: PLACEHOLDER until B-18)
+              # + {{ .Values.measured.processBaseBytes }} B for the empty process.
+              memory: {{ include "kesh.memoryLimit" . | quote }}
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: [ALL]
+          volumeMounts:
+            - name: data
+              mountPath: /data
+  volumeClaimTemplates:
+    - metadata:
+        name: data
+      spec:
+        accessModes: [ReadWriteOnce]
+        {{- if .Values.persistence.storageClass }}
+        storageClassName: {{ .Values.persistence.storageClass }}
+        {{- end }}
+        resources:
+          requests:
+            storage: {{ .Values.persistence.size }}

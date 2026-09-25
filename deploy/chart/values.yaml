@@ -1,0 +1,55 @@
+# kesh's chart (B-16). One instance: kesh has no replication or cluster (brief §2), and a second replica
+# would be a second, independent store behind one service — rendering refuses it.
+replicas: 1
+
+image:
+  repository: kesh
+  tag: dev
+  pullPolicy: IfNotPresent
+
+# The dataset's limit as kesh accounts for it (INFO used_memory), in bytes. Everything the chart
+# derives — memory limit, grace period, startup budget — scales from this one number.
+maxmemory: 1073741824
+maxmemoryPolicy: allkeys-lru
+# SAVE at the end of the drain; the grace period below is derived to cover it.
+saveOnShutdown: true
+
+# requirepass, from an existing Secret; empty name for none.
+passwordSecret:
+  name: ""
+  key: password
+
+ports:
+  resp: 6379
+  http: 8080
+
+persistence:
+  size: 4Gi
+  storageClass: ""
+
+# The measurements the arithmetic in templates/statefulset.yaml starts from. Each names where it was
+# taken; none is a choice. Taken on the build machine, not a reference host (research Q-3), which is
+# why the templates add margins, and why B-17 may replace them.
+measured:
+  # B-11 (bench/reports/b-11): resident memory is 2.8 x used_memory at a load's peak, in tenths.
+  residentPeakRatioTenths: 28
+  # PLACEHOLDER until B-18 measures what a day of TTL churn adds on top of the peak, in per cent.
+  dailyDriftPercent: 20
+  # The process with an empty store: 30.6 MB resident, 9 threads, in this image at startup (B-16,
+  # its own /metrics), rounded up to 64 MiB.
+  processBaseBytes: 67108864
+  # B-14 (research R-5): SAVE 2.3 s per million keys of the reference dataset, and B-11's 593 bytes
+  # of used_memory per key (586 MB for 987 625 keys): 3.9 s per GiB of used_memory.
+  saveMillisPerGiB: 3900
+  # B-14: loading 6 s per million keys: 10.1 s per GiB of used_memory.
+  loadMillisPerGiB: 10100
+  # kore's announce stage: 5 s of waiting before the drain (ShutdownDeadlines.preDrainWait), and
+  # three release groups of 3 s — kesh registers none, but kore's plan budgets them.
+  announceSeconds: 5
+  releaseSeconds: 9
+  # What the drain gives connections before the save (KeshServer.CONNECTION_DRAIN).
+  connectionDrainSeconds: 5
+
+resources:
+  requests:
+    cpu: 500m

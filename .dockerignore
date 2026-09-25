@@ -1,0 +1,8 @@
+# The build context, trimmed: the image's first stage builds for itself what these directories hold.
+build
+*/build
+.gradle
+.kotlin
+.idea
+.DS_Store
+bench/reports

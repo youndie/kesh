@@ -22,6 +22,27 @@ class ServerConfigTest {
     }
 
     @Test
+    fun `the shutdown is configured from the environment`() {
+        val env =
+            mapOf(
+                "KESH_SAVE_ON_SHUTDOWN" to "on",
+                "KESH_SHUTDOWN_DRAIN_SECONDS" to "40",
+                "KESH_TERMINATION_GRACE_SECONDS" to "60",
+            )
+        val config = ServerConfig.fromEnvironment(env::get)
+        assertEquals(true, config.saveOnShutdown)
+        assertEquals(40, config.shutdownDrainSeconds)
+        assertEquals(60, config.terminationGraceSeconds)
+        val defaults = ServerConfig.fromEnvironment { null }
+        assertEquals(false, defaults.saveOnShutdown)
+        assertEquals(15, defaults.shutdownDrainSeconds)
+        assertEquals(null, defaults.terminationGraceSeconds, "undeclared: kore assumes Kubernetes' 30 s and says so")
+        assertFailsWith<IllegalArgumentException> {
+            ServerConfig.fromEnvironment { if (it == "KESH_SAVE_ON_SHUTDOWN") "yes" else null }
+        }
+    }
+
+    @Test
     fun `the environment overrides the defaults`() {
         val env =
             mapOf(
