@@ -29,6 +29,7 @@ import io.ktor.network.sockets.aSocket
 import io.ktor.network.sockets.openReadChannel
 import io.ktor.network.sockets.openWriteChannel
 import io.ktor.utils.io.writeFully
+import kotlinx.cinterop.ExperimentalForeignApi
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CloseableCoroutineDispatcher
 import kotlinx.coroutines.CoroutineExceptionHandler
@@ -50,6 +51,9 @@ import kotlinx.coroutines.newSingleThreadContext
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.withTimeoutOrNull
 import kotlinx.coroutines.yield
+import platform.posix.fclose
+import platform.posix.fopen
+import platform.posix.fputs
 import kotlin.random.Random
 import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.Duration.Companion.seconds
@@ -71,7 +75,7 @@ import kotlin.time.TimeSource
  *
  * As a [ShutdownParticipant] it is kore's drain stage: stop accepting, then end the connections.
  */
-@OptIn(DelicateCoroutinesApi::class, ExperimentalCoroutinesApi::class)
+@OptIn(DelicateCoroutinesApi::class, ExperimentalCoroutinesApi::class, ExperimentalForeignApi::class)
 class KeshServer(
     private val config: ServerConfig,
 ) : ShutdownParticipant {
@@ -179,6 +183,14 @@ class KeshServer(
         val clients = Clients(maxClients, passwordRequired = config.password != null)
         registry = clients
         // One keyspace, seeded per process so that keys chosen from outside cannot be made to collide.
+        // The store thread under its own name in `top -H` and /proc (B-17): the one thread a load report
+        // has to find, and the one an operator asks about first.
+        withContext(storeThread) {
+            fopen("/proc/thread-self/comm", "w")?.let {
+                fputs("kesh-store", it)
+                fclose(it)
+            }
+        }
         val started = TimeSource.Monotonic.markNow()
         val expiry = ActiveExpiry { started.elapsedNow().inWholeMicroseconds }
         val eviction =
