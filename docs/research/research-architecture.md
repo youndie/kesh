@@ -643,15 +643,17 @@ state. Rejected: `-LOADING` — a mode every command would have to check, for a 
 client connecting straight to the pod could see.
 `SAVE` is the only save in v1 (R-6).
 
-### D-25. The collector's mutator assists stay on — *provisional, B-23*
+### D-25. The collector's mutator assists stay on — *B-23; final by the owner, 2026-09-25*
 
 Research R-7: a write-heavy growth stalls every command for the length of a mark — 8.5 s at 16 M keys
 on the build machine. The only lever, a finite `GC.maxHeapBytes`, removes the stall and the brake with
 it: the heap passed 8 GB in 29 s of the same load, before half the keys were in. For a store whose
 `maxmemory` (B-11) is meant to keep it inside a container, an unbounded overshoot is worse than a
 stall. Rejected: assists off. The lever stays in the binary (`KESH_GC_ASSISTS=off`) for measurement.
-*Provisional* because the item's acceptance asks for a host with nothing else resident; the build
-machine had another session's builds running. What would change the answer is a mark fast enough
+The measurement was taken on a build machine with another session's builds resident, not on the
+quiet host the item asked for; the owner accepted it as final, since no host turns an unbounded
+overshoot into a bounded one — a quieter host would only say how soon it reaches the limit. What
+would change the answer is a mark fast enough
 for the growth — a parallel mark, or a lower trigger (`heapTriggerCoefficient`) — not the switch.
 
 ### D-20. Hashes pack under Redis 7.2's listpack limits: 512 fields, 64-byte fields and values — *new, B-06*
@@ -749,13 +751,13 @@ mark once allocation outruns it — a bulk load, a restore, a cache warming afte
 B-23 measures the growth with the assists off, which trades the stall for heap overshoot during the
 mark; B-11's `maxmemory` has to leave room for that overshoot if they go off. Open: the overshoot's
 size at §5a scale.
-*Measured in B-23, preliminary* (`bench/growth/assists.sh`, the build machine with other work
+*Measured in B-23* (`bench/growth/assists.sh`, the build machine with other work
 resident, two interleaved pairs): **with the assists, the longest stall of a 16 M-key growth is
 8.5 s** (8.54 s both runs, corrected for the machine's clock), peak resident 4.9–6.4 GB, 160 s for
 the growth. **Without them there is no stall — and no bound:** the heap passed 8 GB within 29 s, well
 short of 16 M keys, where a watchdog stopped it both times; the log shows each epoch ending with more
 heap than it began (5.8 GB before, 7.9 GB after, epoch 24). Allocation outruns the concurrent mark,
-and nothing slows it. Provisional decision, D-25: the assists stay on.
+and nothing slows it. Decision, D-25: the assists stay on (final).
 
 **Q-1. Who is the first consumer, and does Pub/Sub belong in v1?** (B-21, owner.) §1.1: the
 portfolio's only Redis user needs `PUBLISH`/`PSUBSCRIBE`, which v1 excludes, and nothing uses the
