@@ -1,0 +1,29 @@
+catalogue: 625000 sessions, 125000 profiles, 187500 counters, 18750 feeds, 31250 tag sets, 125 boards
+connections 50, pipeline 16, measured 60.007s after 10s of warm-up
+throughput: 57109 operations/s, 58254 commands/s; error replies: 0
+latency in µs, per operation (from its pipeline's write to its last reply):
+operation  weight  count  p50  p99  p99.9  max
+GET  40  1370412  9983  19455  1212415  1715956
+HGET  15  512811  9983  19455  1212415  1715956
+HGETALL  5  171414  9983  19455  1212415  1715956
+LRANGE  10  342615  9983  19455  1245183  1715956
+SISMEMBER  5  171553  9983  19455  1212415  1715736
+ZREVRANGE  5  171248  9983  19455  1245183  1715884
+SET  8  274551  9983  19455  1212415  1715956
+HSET  4  137347  9983  19455  1212415  1715736
+INCR  4  137512  9983  19455  1212415  1715884
+LPUSH  2  68757  9983  19455  1212415  1715634
+ZINCRBY  2  68724  9983  19967  1212415  1715736
+ALL  100  3426944  9983  19455  1212415  1715956
+Uncaught Kotlin exception: kotlin.IllegalStateException: cannot open kesh-b17/kesh-p16-r2.raw
+    at 0   kesh-load.kexe                      0x346cbb           kfun:io.github.youndie.kesh.bench.load.run$1.$invokeCOROUTINE$3.invokeSuspend#internal + 24139 
+    at 1   kesh-load.kexe                      0x25b5ff           kfun:kotlin.coroutines.native.internal.BaseContinuationImpl#resumeWith(kotlin.Result<kotlin.Any?>){} + 223 
+    at 2   kesh-load.kexe                      0x2fcfc0           kfun:kotlinx.coroutines.DispatchedTask#run(){} + 736 
+    at 3   kesh-load.kexe                      0x2dce49           kfun:kotlinx.coroutines.EventLoopImplBase#processNextEvent(){}kotlin.Long-impl + 1001 
+    at 4   kesh-load.kexe                      0x30293e           kfun:kotlinx.coroutines#runBlocking(kotlin.coroutines.CoroutineContext;kotlin.coroutines.SuspendFunction1<kotlinx.coroutines.CoroutineScope,0:0>){0§<kotlin.Any?>}0:0 + 1134 
+    at 5   kesh-load.kexe                      0x33b08f           kfun:io.github.youndie.kesh.bench.load#main(kotlin.Array<kotlin.String>){} + 4687 
+    at 6   kesh-load.kexe                      0x35828f           Init_and_run_start + 639 
+    at 7   kesh-load.kexe                      0x35838a           Konan_main + 10 
+    at 8   libc.so.6                           0x791d4762a600     0x0 + 133166658659840 
+    at 9   libc.so.6                           0x791d4762a717     __libc_start_main + 135 
+    at 10  kesh-load.kexe                      0x252378           0x0 + 2433912 

@@ -1,0 +1,29 @@
+catalogue: 625000 sessions, 125000 profiles, 187500 counters, 18750 feeds, 31250 tag sets, 125 boards
+connections 50, pipeline 1, measured 60.88s after 10s of warm-up
+throughput: 6410 operations/s, 6538 commands/s; error replies: 0
+latency in µs, per operation (from its pipeline's write to its last reply):
+operation  weight  count  p50  p99  p99.9  max
+GET  40  156338  5247  12287  1146879  1720057
+HGET  15  58335  5247  12287  1146879  1719041
+HGETALL  5  19287  5375  12543  1146879  1715726
+LRANGE  10  38927  5375  12287  1114111  1709869
+SISMEMBER  5  19571  5247  12287  1146879  1722735
+ZREVRANGE  5  19604  5375  12287  67583  1711511
+SET  8  31193  5247  12287  1146879  1714090
+HSET  4  15870  5247  12287  1146879  1717211
+INCR  4  15516  5247  12287  1146879  1712767
+LPUSH  2  7828  5247  12543  1114111  1712928
+ZINCRBY  2  7797  5375  12543  1146879  1711902
+ALL  100  390266  5247  12287  1146879  1722735
+Uncaught Kotlin exception: kotlin.IllegalStateException: cannot open kesh-b17/kesh-p1-r2.raw
+    at 0   kesh-load.kexe                      0x346cbb           kfun:io.github.youndie.kesh.bench.load.run$1.$invokeCOROUTINE$3.invokeSuspend#internal + 24139 
+    at 1   kesh-load.kexe                      0x25b5ff           kfun:kotlin.coroutines.native.internal.BaseContinuationImpl#resumeWith(kotlin.Result<kotlin.Any?>){} + 223 
+    at 2   kesh-load.kexe                      0x2fcfc0           kfun:kotlinx.coroutines.DispatchedTask#run(){} + 736 
+    at 3   kesh-load.kexe                      0x2dce49           kfun:kotlinx.coroutines.EventLoopImplBase#processNextEvent(){}kotlin.Long-impl + 1001 
+    at 4   kesh-load.kexe                      0x30293e           kfun:kotlinx.coroutines#runBlocking(kotlin.coroutines.CoroutineContext;kotlin.coroutines.SuspendFunction1<kotlinx.coroutines.CoroutineScope,0:0>){0§<kotlin.Any?>}0:0 + 1134 
+    at 5   kesh-load.kexe                      0x33b08f           kfun:io.github.youndie.kesh.bench.load#main(kotlin.Array<kotlin.String>){} + 4687 
+    at 6   kesh-load.kexe                      0x35828f           Init_and_run_start + 639 
+    at 7   kesh-load.kexe                      0x35838a           Konan_main + 10 
+    at 8   libc.so.6                           0x7bd034c2a600     0x0 + 136134168585728 
+    at 9   libc.so.6                           0x7bd034c2a717     __libc_start_main + 135 
+    at 10  kesh-load.kexe                      0x252378           0x0 + 2433912 

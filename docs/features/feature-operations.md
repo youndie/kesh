@@ -98,10 +98,10 @@ engines, and the RESP listener is not one → the release stages, empty → exit
 * **Automated:** `conformance/scripts/server/info.redis`
 
 ### Scenario: Reference load reported
-*Target*, B-17.
 * **Given:** the reference dataset on the reference host, the generator on another machine
 * **When:** the reference load runs at pipeline depths 1 and 16 over 50 connections
 * **Then:** throughput, p50/p99/p99.9 by command, resident memory and threads are reported with the raw `memtier_benchmark` output committed
+* **Automated:** `bench/load/stand.sh` — at a sixteenth, on a two-host stand that is not the reference host, with `kesh-load` instead of `memtier_benchmark` (research D-30); report and raw output in `bench/reports/b-17/`. At an eighth kesh was OOM-killed: B-28
 
 ## 6. Out of scope
 

@@ -1,0 +1,2 @@
+subject host busy: 18% of 4 cores
+generator host busy: 55% of 4 cores

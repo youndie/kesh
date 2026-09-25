@@ -1,0 +1,10 @@
+date: 2026-09-25T10:57:19Z
+kesh md5: 6497f0561d6a80d3a488e6d621481c53
+kesh-load md5: b06b43b73f4ddf007fac8234c648eafc
+== subject: 4 cores, kernel 7.0.0-30-generic
+Mem:            7746        1773        5998        1210        1437        5972
+ 10:57:23 up 12 days, 14:14,  4 users,  load average: 0.25, 5.04, 6.09
+== generator: 4 cores, kernel 7.0.0-30-generic
+Mem:            7746         763        4114         181        3357        6982
+ 10:57:25 up 12 days, 14:14,  2 users,  load average: 0.01, 0.47, 0.52
+scale 0.0625, rounds 2, warm-up 10s, measured 60s, 50 connections

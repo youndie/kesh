@@ -1,0 +1,18 @@
+subject host busy: 55% of 4 cores
+generator host busy: 40% of 4 cores
+cores used by thread over the run, warm-up included (100% = one core):
+PROCESS all 186%
+kesh-store 1813351 24%
+kesh.kexe 1813433 2%
+kesh.kexe 1813432 2%
+kesh.kexe 1813431 2%
+kesh.kexe 1813430 2%
+kesh.kexe 1813429 2%
+kesh.kexe 1813428 2%
+VmHWM:	 3005252 kB
+VmRSS:	 2741532 kB
+Threads:	82
+kesh_resident_memory_bytes 2807328768
+kesh_threads 82
+kesh_used_memory_bytes 608664504
+kesh_keys 802350

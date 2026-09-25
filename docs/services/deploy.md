@@ -46,7 +46,8 @@ from `maxmemory` and `values.measured`:
 * **The startup probe's budget** = twice a full load (10.1 s per GiB, B-14) + 10 s.
 * **The memory limit** = `maxmemory` × 2.8 (B-11's resident/`used_memory` ratio at a load's peak)
   × 1.2 for a day's drift + 64 MiB for the empty process. **The 1.2 is a placeholder** until B-18
-  measures the drift, and `values.yaml` says so. The Kotlin/Native runtime does not see the limit;
+  measures the drift, and `values.yaml` says so. **Under traffic the 2.8 does not hold**: B-17 saw
+  5.3 × at a sixteenth of §5a, and an OOM kill at an eighth (research R-8) — B-28 re-derives it. The Kotlin/Native runtime does not see the limit;
   kesh will check `maxmemory` against it through kore (B-26).
 
 For `maxmemory` 1 GiB that is a 30 s grace period, a 32 s startup budget and a 3.4 GiB limit.

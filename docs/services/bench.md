@@ -20,7 +20,10 @@ Everything that measures, and the dataset every measurement talks about.
 entries (for an in-process caller) and as a RESP load script (for loading through the protocol),
 with a summary that checks itself against the table.
 
-***Target*:** the heap probe (B-19), the `memtier_benchmark` profiles for the reference load (B-17),
+**Built (B-17):** `kesh-load`, the reference load on the dataset's own keys (research D-30), and
+`load/stand.sh`, which runs it on a two-host stand against kesh and Redis 7.2.
+
+***Target*:** the heap probe (B-19),
 the 24 h soak runner (B-18), and the reports with their raw output.
 
 **Deliberately does not:** gate a build on a performance number (research D-9). The heap probe has a
@@ -46,6 +49,9 @@ verdict, but it is a design verdict on research D-3, not a performance gate.
 | `bench/src/commonMain/kotlin/io/github/youndie/kesh/bench/LoadScript.kt` | entries → RESP commands |
 | `bench/src/commonMain/kotlin/io/github/youndie/kesh/bench/DatasetSummary.kt` | counts and user bytes against the table |
 | `bench/src/nativeMain/kotlin/io/github/youndie/kesh/bench/Main.kt` | the `kesh-dataset` command line |
+| `bench/src/commonMain/kotlin/io/github/youndie/kesh/bench/load/` | the load: the key catalogue, Zipf, §5a's mix, the latency histogram, the reply counter |
+| `bench/src/nativeMain/kotlin/io/github/youndie/kesh/bench/load/Main.kt` | `kesh-load --load` and `--run` |
+| `bench/load/stand.sh` | the two-host series: kesh, then Redis 7.2, per-thread CPU and memory beside the generator's output |
 | `bench/src/commonTest/kotlin/io/github/youndie/kesh/bench/ReferenceDatasetTest.kt` | determinism, the pinned digest, shapes, fixed values |
 
 ## 3. How it is built

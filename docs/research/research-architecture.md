@@ -727,6 +727,22 @@ there would triple the grace period for nothing. The drain deadline (`KESH_SHUTD
 is the connections' 5 s plus the save, which the chart derives (R-5, [deploy](../services/deploy.md)).
 Rejected: a `SHUTDOWN`-style save before the drain — writes still arriving would be lost.
 
+### D-30. The reference load is kesh's own generator, on the dataset's own keys — *deviation from B-17's text, the owner's call, 2026-09-25*
+
+§5a's load is a mix over the reference dataset's keys; 10 M of them are `session:<uuid>` and the
+counters are `rate:<id>:<minute>`. `memtier_benchmark` derives keys from a number, so it could only
+miss. `kesh-load` (bench) rebuilds the keys from the seed and drives the 80/20 mix with Zipf 0.99
+keys, closed loop, pipelines of 1 and 16. **Two limits it brings, both measured in B-17:** its ceiling
+(135 k operations/s against Redis 7.2 on the two-host stand, above kesh's 57 k), and its own
+collector, which puts a floor of about 0.1 s under p99.9 — so a subject's tail below that cannot be
+told from the generator's. Rejected: memtier on the keyed parts only (profiles, feeds, tags, boards) —
+a load without its largest part.
+
+**What B-17 found about kesh's throughput.** At 43 % of Redis's operations the limit is neither the
+store thread (a quarter to a half of a core) nor the network, but the transport around it: ktor's I/O
+pool — 64 threads, 82 in the process — and a dispatch to the store thread and back per batch. Whether
+that is worth rebuilding is a question for after B-28, not a capacity target in v1 (D-9).
+
 ### D-20. Hashes pack under Redis 7.2's listpack limits: 512 fields, 64-byte fields and values — *new, B-06*
 
 B-06 was to take its threshold from B-19's measurement. B-19 gave none: it packed every hash and
@@ -798,6 +814,13 @@ a measurement host that is not the reference (`deploy/chart/values.yaml`).
 Linear in the dataset. At full scale that is *some 36 s to save, 4.3 GB, and 98 s to load* —
 arithmetic, not measured: B-22's host. Loading runs three times slower than saving because the heap
 grows as it loads and the mutator assists hold it (R-7); B-23 may change the load time.
+
+**R-8. The heap runs away under load** (*found in B-17*). An epoch that marks while the load
+allocates keeps all of it — 20.9 M objects kept and 13 924 swept at an eighth of §5a — and the
+scheduler sets the next target at twice that; resident memory reached 5.8 GB from 1.2 GB of
+`used_memory` and the host killed the process. kesh allocates about 200 objects per operation.
+Mitigation: B-28 (P0); until then the chart's limit and every capacity claim hold only at a
+sixteenth, measured.
 
 **R-6. `BGSAVE` without fork** (the brief's §10 question 1). Carried unchanged, with two facts added:
 a forked child of a multi-threaded Kotlin/Native process has one thread and a runtime whose other
