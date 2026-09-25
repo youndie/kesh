@@ -5,11 +5,12 @@ status: done
 priority: P1
 size: XS
 stage: stage-6-capacity
+epic: feature-operations
 ---
 
 # B-22 — Choose the reference host for the load report and the soak
 
-**Feature:** `feature-operations` — drafted in the *docs/layer-drafts* branch; the `epic` field is added when that document reaches `main`.
+**Feature:** [feature-operations](../features/feature-operations.md).
 
 The brief's own floor is "at least an 8 GB host". The portfolio's measurement hosts have 7.7 GB, and
 the one 16 GB machine is the build machine, shared and not idle (research §1.9). A pause measured

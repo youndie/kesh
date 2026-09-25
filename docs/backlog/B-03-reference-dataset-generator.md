@@ -5,12 +5,13 @@ status: done
 priority: P0
 size: S
 stage: stage-1-protocol
+epic: feature-operations
 blocked_by: [B-01]
 ---
 
 # B-03 — bench: the reference dataset generator, deterministic by seed
 
-**Feature:** `feature-operations` — drafted in the *docs/layer-drafts* branch; the `epic` field is added when that document reaches `main`.
+**Feature:** [feature-operations](../features/feature-operations.md).
 
 The scenarios, the heap probe (B-19), the conformance suite's large cases, the load report and the soak
 all talk about the same dataset — the brief's §5a, carried as research appendix A. If each builds its own approximation, their

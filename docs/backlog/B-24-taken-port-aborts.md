@@ -5,11 +5,12 @@ status: done
 priority: P2
 size: XS
 stage: stage-5-operations
+epic: feature-operations
 ---
 
 # B-24 — A taken port aborts the server with a core dump instead of exiting cleanly
 
-**Feature:** `feature-operations` — drafted in the *docs/layer-drafts* branch; the `epic` field is added when that document reaches `main`.
+**Feature:** [feature-operations](../features/feature-operations.md).
 
 Found in B-13 (2026-09-25): a second kesh started on a port another holds dies with
 `Uncaught Kotlin exception: …AddressAlreadyInUseException: EADDRINUSE (98)`, a stack trace, and exit

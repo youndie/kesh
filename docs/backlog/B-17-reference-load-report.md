@@ -5,12 +5,13 @@ status: open
 priority: P1
 size: M
 stage: stage-6-capacity
+epic: feature-operations
 blocked_by: [B-03, B-12, B-14, B-22]
 ---
 
 # B-17 — Reference load report on the reference host
 
-**Feature:** `feature-operations` — drafted in the *docs/layer-drafts* branch; the `epic` field is added when that document reaches `main`.
+**Feature:** [feature-operations](../features/feature-operations.md).
 
 The capacity v1 is built for (brief §2, D-4), reported per D-9: the reference dataset loaded and
 served at the reference load on the reference host.

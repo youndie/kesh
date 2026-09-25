@@ -26,7 +26,7 @@ compare bytes), record golden files from Redis once (the oracle is run, every ti
 ## 2. API contracts
 
 * **Scripts** under `conformance/scripts/<group>/*.redis`, one command per line in `redis-cli`'s own
-  quoting, optionally prefixed: `[unordered]`, `[pairs]`, `[shape]`, `[random <population>]`, `[cursor]`, `[info <field>…]` (normalisers, named on the line they apply
+  quoting, optionally prefixed: `[unordered]`, `[pairs]`, `[shape]`, `[random <population>]`, `[cursor]`, `[info <field>…]`, `[fields <field>…]` (normalisers, named on the line they apply
   to), `[closes]` (both servers must close after the reply), `[raw]` (bytes as written, `\r\n` and
   `\xHH` escapes; everything until the server closes or goes quiet is the reply). A header
   `# requires: password` runs the script against the password-protected pair, unauthenticated.
@@ -65,6 +65,9 @@ compare bytes), record golden files from Redis once (the oracle is run, every ti
   kept together for `HSCAN` and `ZSCAN` (B-10); an error reply is compared as it came.
   `[info evicted_keys] INFO stats` compares only the named fields' `field:value` lines of a report
   that has many lines kesh does not, and holds the oracle to having each field (B-12).
+  `[fields used_memory] INFO memory` compares a report's shape, not its values: every section and
+  field kesh prints must be in Redis's, in the same section and order, and the named fields in both
+  (B-15).
 * **Each step goes to both servers, one reply at a time.** Replies are read by structure
   (`RespFrame`), so a step's reply is exactly its own bytes; a connection that a step closed is
   reopened on both sides for the next step.

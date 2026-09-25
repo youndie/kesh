@@ -685,6 +685,23 @@ on it. Deviations: the LFU policies are refused, not accepted (the brief leaves 
 `maxmemory-eviction-tenacity` is fixed at 10; the rounds between commands start at the periodic
 work's pace (100 ms), not on the next turn of an event loop.
 
+### D-28. The HTTP port is kesh's own, on kore's gates; `INFO` prints only what means the same — *new, B-15*
+
+**The port.** kore's probes come as routes for a Ktor server (`kore-ktor`), and kesh is not one: its
+RESP listener is raw `ktor-network`. A Ktor engine for three `GET`s would bring a second selector and
+its threads into a process whose descriptor ceiling (D-13) and signal hazards (R-3) are already the
+design's tightest constraints. So kesh answers `GET` itself on the RESP listener's selector, one
+request per connection, and asks kore's gates (`ReadinessGate`, `LivenessGate`, `StartupGate` —
+`kore-core`) what to say. The port binds **before** the snapshot loads, which is what lets readiness
+be false during the load (D-24): the startup gate waits on `snapshot` and `listener`. Rejected:
+`ktor-server-cio` with `kore-ktor`'s routes — the same answers for a second event loop.
+
+**`INFO`.** Redis's names where the meaning is the same, and nothing else: a field kesh cannot fill
+truthfully — `rdb_changes_since_last_save` (kesh counts no dirty keys), `keyspace_hits` (lookups are
+not counted), the fork, AOF and replication lines — is absent rather than 0, because a 0 reads as a
+measurement. `multiplexing_api:select` is truthful: `ktor-network` on Native is `pselect` (§1.4).
+The harness holds the shape (`[fields]`), not the values.
+
 ### D-20. Hashes pack under Redis 7.2's listpack limits: 512 fields, 64-byte fields and values — *new, B-06*
 
 B-06 was to take its threshold from B-19's measurement. B-19 gave none: it packed every hash and

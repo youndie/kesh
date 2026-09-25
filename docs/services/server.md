@@ -30,8 +30,8 @@ can watch (research D-13, from B-02).
 
 ## 2. API contracts
 
-* [endpoint-connection](../api/endpoint-connection.md) is implemented here. `endpoint-server` and
-  `endpoint-http` are drafted in the *docs/layer-drafts* branch and arrive with B-11, B-14 and B-15.
+* [endpoint-connection](../api/endpoint-connection.md), [endpoint-server](../api/endpoint-server.md)
+  (partly) and [endpoint-http](../api/endpoint-http.md) are implemented here.
 * **Auth tier:** one shared password (`KESH_PASSWORD`, Redis's `requirepass`); before `AUTH` only
   `AUTH`, `HELLO` and `QUIT` are answered.
 
@@ -39,12 +39,14 @@ can watch (research D-13, from B-02).
 
 | File | What is there |
 |---|---|
-| `server/src/nativeMain/kotlin/io/github/youndie/kesh/server/Main.kt` | `main`: start, then kore's `runUntilSignal` with the listener as the drain |
+| `server/src/nativeMain/kotlin/io/github/youndie/kesh/server/Main.kt` | `main`: start, then kore's `runUntilSignal`: readiness off, then the listener as the drain |
 | `server/src/nativeMain/kotlin/io/github/youndie/kesh/server/KeshServer.kt` | the listener, the store thread, the connection scope, the drain |
 | `server/src/nativeMain/kotlin/io/github/youndie/kesh/server/connection/Connection.kt` | read → parse → execute on the store thread → write, per read |
 | `server/src/nativeMain/kotlin/io/github/youndie/kesh/server/command/CommandDispatcher.kt` | the command table and the connection commands; store thread only |
 | `server/src/nativeMain/kotlin/io/github/youndie/kesh/server/client/Clients.kt` | the client registry and the `maxclients` count; store thread only |
 | `server/src/nativeMain/kotlin/io/github/youndie/kesh/server/client/DescriptorCeiling.kt` | the default `maxclients`, from the descriptors open at startup |
+| `server/src/nativeMain/kotlin/io/github/youndie/kesh/server/http/HttpPort.kt` | the HTTP port: `GET`, one request per connection, on the RESP listener's selector (research D-28) |
+| `server/src/nativeMain/kotlin/io/github/youndie/kesh/server/info/Info.kt` | `INFO`'s six sections |
 | `server/src/nativeTest/kotlin/io/github/youndie/kesh/server/ConnectionScenariosTest.kt` | the feature's scenarios through a real socket |
 | `server/src/nativeMain/kotlin/io/github/youndie/kesh/server/ServerConfig.kt` | environment |
 | `server/src/nativeTest/kotlin/io/github/youndie/kesh/server/KeshServerTest.kt` | through a real socket: PING, pipelining, protocol error, drain, restart |
@@ -120,7 +122,8 @@ docker run --rm --network host redis:7.2 redis-cli -p 6379 ping
 (none), `KESH_MAXCLIENTS` (derived), `KESH_PROTO_MAX_BULK_LEN` (512 MB),
 `KESH_CLIENT_QUERY_BUFFER_LIMIT` (1 GB), `KESH_MAXMEMORY` (0, no limit; B-11),
 `KESH_MAXMEMORY_POLICY` (`noeviction`) and `KESH_MAXMEMORY_SAMPLES` (5; B-12), `KESH_DIR` (`.`) and
-`KESH_DBFILENAME` (`dump.kesh`; B-14), `KESH_GC_ASSISTS` (`on`; B-23). The printed configuration never
+`KESH_DBFILENAME` (`dump.kesh`; B-14), `KESH_GC_ASSISTS` (`on`; B-23), `KESH_HTTP_PORT` (8080, `off` for
+none; B-15). The printed configuration never
 shows the password.
 
 **`KESH_` in upper case, decided in B-01.** The brief spelled the prefix `kesh_`, which read as a

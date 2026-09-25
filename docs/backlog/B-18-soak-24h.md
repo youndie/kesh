@@ -5,12 +5,13 @@ status: open
 priority: P2
 size: S
 stage: stage-6-capacity
+epic: feature-operations
 blocked_by: [B-17]
 ---
 
 # B-18 — 24 h soak with TTL churn
 
-**Feature:** `feature-operations` — drafted in the *docs/layer-drafts* branch; the `epic` field is added when that document reaches `main`.
+**Feature:** [feature-operations](../features/feature-operations.md).
 
 A non-moving collector cannot compact (research R-2); over a day of TTL churn, resident memory may
 drift away from `used_memory` even though nothing leaks.

@@ -5,12 +5,13 @@ status: open
 priority: P1
 size: M
 stage: stage-5-operations
+epic: feature-operations
 blocked_by: [B-14, B-15]
 ---
 
 # B-16 — Image, chart, and a graceful stop that survives being repeated
 
-**Feature:** `feature-operations` — drafted in the *docs/layer-drafts* branch; the `epic` field is added when that document reaches `main`.
+**Feature:** [feature-operations](../features/feature-operations.md).
 
 kesh deploys like the portfolio's other native services: a minimal image and a Helm chart with one
 StatefulSet replica and a persistent volume for snapshots.
