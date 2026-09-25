@@ -1,7 +1,7 @@
 ---
 id: B-13
 title: "Active expiry, Redis's algorithm as its source has it"
-status: open
+status: wip
 priority: P1
 size: S
 stage: stage-3-memory

@@ -44,7 +44,7 @@ A stage is a field on the item, not a directory.
 |---|---|---|---|---|
 | [B-21](docs/backlog/B-21-first-consumer-and-pubsub.md) `[?]` | Who is the first consumer, and does Pub/Sub belong in v1? | P0 | XS | - |
 | [B-12](docs/backlog/B-12-eviction-policies.md) `[ ]` | Eviction policies with sampled LRU | P1 | M | B-11 |
-| [B-13](docs/backlog/B-13-active-expiry.md) `[ ]` | Active expiry, Redis's algorithm as its source has it | P1 | S | B-05 |
+| [B-13](docs/backlog/B-13-active-expiry.md) `[~]` | Active expiry, Redis's algorithm as its source has it | P1 | S | B-05 |
 | [B-14](docs/backlog/B-14-snapshots.md) `[ ]` | Snapshots: the format, SAVE, load at startup, torn-save safety, and their measured cost | P1 | L | B-10 |
 | [B-15](docs/backlog/B-15-info-probes-metrics.md) `[ ]` | INFO, HTTP probes and Prometheus metrics | P1 | M | B-11 |
 | [B-16](docs/backlog/B-16-image-chart-graceful-stop.md) `[ ]` | Image, chart, and a graceful stop that survives being repeated | P1 | M | B-14, B-15 |
