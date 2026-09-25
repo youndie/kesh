@@ -677,7 +677,8 @@ pub/sub output-buffer limit (32 MB hard, 8 MB for 60 s — `clientBufferLimitsDe
 `redis/redis@7.2!/src/config.c`), so a subscriber that stops reading is dropped rather than growing
 the heap. The subscription registry is on the store thread with the clients (D-14). Rejected:
 (a) keeping the scope and naming a future consumer — no such service is planned; (c) sizing v1 down
-to Pub/Sub alone — the owner kept the capacity target. B-27 builds it.
+to Pub/Sub alone — the owner kept the capacity target. *Built in B-27* on kesh's own loop (D-31):
+the registry is on the store thread with the clients, and the output limit counts queued bytes.
 
 ### D-27. Eviction is Redis's, run against kesh's accounting — *new, B-12*
 

@@ -20,7 +20,7 @@ Helm chart. One instance per deployment.
 
 Cluster mode, replication, Sentinel; RESP3; transactions, Lua, modules, blocking commands, ACL users
 beyond one password; Redis's RDB and AOF file formats. Pub/Sub was out of the brief's scope and is
-now in it — see [B-27](docs/backlog/B-27-pubsub.md).
+now in it — see [feature-pubsub](docs/features/feature-pubsub.md).
 
 ## Documentation
 

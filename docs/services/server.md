@@ -46,6 +46,7 @@ limit allows (research D-31).
 | `server/src/nativeMain/kotlin/io/github/youndie/kesh/server/net/RespConnection.kt` | read → parse → execute → write, per connection, on the loop; a buffer kept per connection |
 | `server/src/nativeMain/kotlin/io/github/youndie/kesh/server/net/HttpConnection.kt` | the HTTP port on the same loop: `GET`, one request per connection |
 | `server/src/nativeMain/kotlin/io/github/youndie/kesh/server/net/Sockets.kt` | non-blocking listen and accept, `SO_REUSEADDR`, `TCP_NODELAY`, the descriptor limit |
+| `server/src/nativeMain/kotlin/io/github/youndie/kesh/server/pubsub/PubSub.kt` | Pub/Sub's registry on the store thread: confirmations, delivery, the counts (B-27) |
 | `server/src/nativeMain/kotlin/io/github/youndie/kesh/server/command/CommandDispatcher.kt` | the command table and the connection commands; store thread only |
 | `server/src/nativeMain/kotlin/io/github/youndie/kesh/server/client/Clients.kt` | the client registry and the `maxclients` count; store thread only |
 | `server/src/nativeMain/kotlin/io/github/youndie/kesh/server/info/Info.kt` | `INFO`'s six sections |

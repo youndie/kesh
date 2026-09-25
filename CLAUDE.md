@@ -5,7 +5,7 @@ sborka conventions and kore. **State: connection commands, strings, the four col
 (B-01…B-10), `used_memory` and `maxmemory` (B-11) with Redis's eviction policies (B-12), active expiry
 (B-13), snapshots with `SAVE` (B-14), `INFO`, probes and metrics on the HTTP port (B-15), the image, the chart and a drain that answers what
 it read (B-16), the reference load measured (B-17), and kesh's own `epoll` transport that stopped the heap's runaway
-under it (B-28); Pub/Sub is ahead.** Read before writing code — the obvious design is wrong in several documented ways.
+under it (B-28), and Pub/Sub, with kompot's bus as its first consumer (B-27).** Read before writing code — the obvious design is wrong in several documented ways.
 
 ## Where to start a session
 

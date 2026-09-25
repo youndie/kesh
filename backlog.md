@@ -38,16 +38,15 @@ A stage is a field on the item, not a directory.
 
 <!-- BEGIN INDEX -->
 
-## Open (4)
+## Open (3)
 
 | Task | | Priority | Size | Blocked by |
 |---|---|---|---|---|
-| [B-27](docs/backlog/B-27-pubsub.md) `[~]` | Pub/Sub: PUBLISH, SUBSCRIBE and PSUBSCRIBE in RESP2 subscribe mode | P1 | M | B-21 |
 | [B-18](docs/backlog/B-18-soak-24h.md) `[ ]` | 24 h soak with TTL churn | P2 | S | B-17 |
 | [B-25](docs/backlog/B-25-bgsave-through-fork.md) `[ ]` | BGSAVE through fork, with the child's collector assists off | P2 | M | B-14 |
 | [B-26](docs/backlog/B-26-maxmemory-container-check.md) `[ ]` | Refuse a maxmemory above the container's memory budget | P2 | S | B-11 |
 
-## Closed (24)
+## Closed (25)
 
 **Protocol and core**
 
@@ -59,6 +58,7 @@ A stage is a field on the item, not a directory.
 - [B-19](docs/backlog/B-19-managed-heap-probe.md) `[x]` - Heap probe: can plain Kotlin objects hold the reference dataset?
 - [B-20](docs/backlog/B-20-define-cannot-serve.md) `[x]` - Define "the managed heap cannot serve the reference dataset" before B-19 reports
 - [B-21](docs/backlog/B-21-first-consumer-and-pubsub.md) `[x]` - Who is the first consumer, and does Pub/Sub belong in v1?
+- [B-27](docs/backlog/B-27-pubsub.md) `[x]` - Pub/Sub: PUBLISH, SUBSCRIBE and PSUBSCRIBE in RESP2 subscribe mode
 
 **The five types**
 
