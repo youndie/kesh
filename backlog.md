@@ -42,7 +42,7 @@ A stage is a field on the item, not a directory.
 
 | Task | | Priority | Size | Blocked by |
 |---|---|---|---|---|
-| [B-16](docs/backlog/B-16-image-chart-graceful-stop.md) `[ ]` | Image, chart, and a graceful stop that survives being repeated | P1 | M | B-14, B-15 |
+| [B-16](docs/backlog/B-16-image-chart-graceful-stop.md) `[~]` | Image, chart, and a graceful stop that survives being repeated | P1 | M | B-14, B-15 |
 | [B-17](docs/backlog/B-17-reference-load-report.md) `[ ]` | Reference load report on the reference host | P1 | M | B-03, B-12, B-14, B-22 |
 | [B-27](docs/backlog/B-27-pubsub.md) `[ ]` | Pub/Sub: PUBLISH, SUBSCRIBE and PSUBSCRIBE in RESP2 subscribe mode | P1 | M | B-21 |
 | [B-18](docs/backlog/B-18-soak-24h.md) `[ ]` | 24 h soak with TTL churn | P2 | S | B-17 |

@@ -1,7 +1,7 @@
 ---
 id: B-16
 title: "Image, chart, and a graceful stop that survives being repeated"
-status: open
+status: wip
 priority: P1
 size: M
 stage: stage-5-operations
