@@ -599,7 +599,14 @@ Rejected: keeping the portfolio's setting for uniformity — it would cost kesh 
 pause for a memory saving it cannot use.
 Watch: the per-thread cost comes back with threads. kesh's connections run on `Dispatchers.IO`
 (up to 64 threads); at 256 KiB per size class touched, that is on the order of 100 MB at worst —
-small beside the heap, and to be checked in B-17's resident-memory figures.
+small beside the heap, and to be checked in B-17's resident-memory figures. *Amended in B-28:* the
+transport is kesh's own loop (D-31) and the process has five threads, so the per-thread cost is gone.
+*The comparison arm, B-30:* `-Pkesh.allocatorPageSize=16` builds the server with sborka's pages, 256
+being the default. The one value sets the compiler's `fixedBlockPageSize` and a generated constant, so
+the process says which arm it is — `kesh: built with 16 KiB allocator pages` at startup and
+`kesh_build_info{allocator_page_size_kb="16"}` on `/metrics`. The default build is byte-identical to
+`-Pkesh.allocatorPageSize=256`. The server-side comparison itself is not scheduled: full scale is not
+measured (the owner, 2026-09-25).
 
 ### D-23. Sorted sets: Redis's skiplist with spans, the first level in the node — *new, B-09*
 

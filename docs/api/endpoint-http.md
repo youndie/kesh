@@ -35,6 +35,7 @@ Probes and metrics on a separate port for the cluster's internal network. Part o
 |---|---|---|
 | `kesh_resident_memory_bytes` | gauge | `VmRSS` of the process — answered during the load too |
 | `kesh_threads` | gauge | threads of the process — answered during the load too |
+| `kesh_build_info{allocator_page_size_kb}` | gauge | always 1; the allocator page size the binary was built with, `-Pkesh.allocatorPageSize` (B-30, research D-19) — answered during the load too |
 | `kesh_used_memory_bytes`, `kesh_maxmemory_bytes` | gauge | `INFO`'s `used_memory` and `maxmemory` |
 | `kesh_keys`, `kesh_keys_with_expiry` | gauge | the keyspace and its expiry index |
 | `kesh_expired_keys_total`, `kesh_evicted_keys_total` | counter | `INFO stats`' `expired_keys`, `evicted_keys` |

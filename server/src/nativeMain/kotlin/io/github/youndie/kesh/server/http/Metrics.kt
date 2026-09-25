@@ -1,5 +1,6 @@
 package io.github.youndie.kesh.server.http
 
+import io.github.youndie.kesh.server.BuildInfo
 import io.github.youndie.kesh.server.info.CommandStats
 import io.github.youndie.kesh.server.info.ProcessFacts
 
@@ -35,6 +36,11 @@ object Metrics {
         buildString {
             gauge("kesh_resident_memory_bytes", "Resident memory of the process (VmRSS).", ProcessFacts.residentBytes())
             gauge("kesh_threads", "Threads of the process.", ProcessFacts.threads())
+            // What the binary was built with (B-30): a measured process says which arm it is.
+            append("# HELP kesh_build_info How this binary was built; the value is always 1.\n")
+            append("# TYPE kesh_build_info gauge\n")
+            val pageSize = BuildInfo.ALLOCATOR_PAGE_SIZE_KB
+            append("kesh_build_info{allocator_page_size_kb=\"$pageSize\"} 1\n")
             if (store == null) return@buildString
             gauge("kesh_used_memory_bytes", "The dataset as kesh accounts for it: INFO used_memory.", store.usedMemory)
             gauge("kesh_maxmemory_bytes", "maxmemory; 0 for no limit.", store.maxMemory)

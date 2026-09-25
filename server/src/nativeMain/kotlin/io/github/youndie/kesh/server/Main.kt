@@ -11,6 +11,8 @@ import kotlin.time.Duration.Companion.seconds
 
 @OptIn(NativeRuntimeApi::class)
 fun main() {
+    // Which build this is (B-30): a measurement names its arm from the process, not only from an md5.
+    println("kesh: built with ${BuildInfo.ALLOCATOR_PAGE_SIZE_KB} KiB allocator pages")
     val config = ServerConfig.fromEnvironment()
     // Research R-7: the runtime turns its mutator assists off when the heap ceiling is finite
     // (`GCSchedulerConfig::mutatorAssists`). A ceiling this high caps nothing else.

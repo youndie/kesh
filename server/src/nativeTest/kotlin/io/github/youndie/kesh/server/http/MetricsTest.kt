@@ -1,5 +1,6 @@
 package io.github.youndie.kesh.server.http
 
+import io.github.youndie.kesh.server.BuildInfo
 import io.github.youndie.kesh.server.info.CommandStats
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -21,5 +22,13 @@ class MetricsTest {
         assertEquals(3.0, bucket("+Inf"))
         assertEquals(3.0, samples.single { it.name.endsWith("_count") }.value)
         assertEquals(3.00003, samples.single { it.name.endsWith("_sum") }.value)
+    }
+
+    @Test
+    fun `the build info names the allocator page size the binary was built with`() {
+        // Before the server starts too: a scrape during the snapshot load already says which arm it is.
+        val sample = PrometheusText.parse(Metrics.render(null)).getValue("kesh_build_info").single()
+        assertEquals(mapOf("allocator_page_size_kb" to "${BuildInfo.ALLOCATOR_PAGE_SIZE_KB}"), sample.labels)
+        assertEquals(1.0, sample.value)
     }
 }
