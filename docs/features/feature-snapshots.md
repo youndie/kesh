@@ -42,8 +42,8 @@ budget are derived from it (research R-5). Built in B-14; saving on stop is B-16
 * The child is collected by the periodic work, ten times a second — `waitpid(WNOHANG)`, no `SIGCHLD`
   handler (research R-3). A stop kills a running child first and removes its temporary file, as
   Redis's `prepareForShutdown` does, so it cannot race the stop's own save to the rename.
-* Saving on `SIGTERM` when configured is B-16's (`KESH_SAVE_ON_SHUTDOWN`); `SHUTDOWN [SAVE|NOSAVE]`
-  is *target*.
+* Saving on `SIGTERM` when configured is B-16's (`KESH_SAVE_ON_SHUTDOWN`). There is no `SHUTDOWN`
+  command — ruled out by the owner on 2026-09-25; kore's ordered stop is the only way down.
 
 ## 3. The commands this feature adds
 
@@ -71,7 +71,7 @@ The rest of the server commands is drafted in *endpoint-server*, with B-15 and B
 * **Given:** the reference dataset
 * **When:** `SAVE`, stop and start
 * **Then:** `DBSIZE`, a random sample of 10 000 keys and every sorted set's `ZCARD` match the values before the stop
-* **Automated:** `bench/snapshot/check.py` — through the running server at 1/16 and 1/8 of the dataset (987 625 and 1 975 250 keys; every sampled key read in full, unordered replies sorted); the format alone in `snapshot/src/commonTest/kotlin/io/github/youndie/kesh/snapshot/SnapshotTest.kt::every kind comes back as it was`. Full scale waits for B-22's host.
+* **Automated:** `bench/snapshot/check.py` — through the running server at 1/16 and 1/8 of the dataset (987 625 and 1 975 250 keys; every sampled key read in full, unordered replies sorted); the format alone in `snapshot/src/commonTest/kotlin/io/github/youndie/kesh/snapshot/SnapshotTest.kt::every kind comes back as it was`. Full scale is not measured, by the owner's decision (see `backlog.md`).
 
 ### Scenario: Torn save
 * **Given:** a snapshot on disk

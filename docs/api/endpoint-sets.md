@@ -49,4 +49,4 @@ Auth tier `password` means: answered only after `AUTH` when `requirepass` is set
 | `SRANDMEMBER` count not a number | `-ERR value is not an integer or out of range` | `object.c` — `getLongLongFromObjectOrReply` |
 | `SRANDMEMBER` count of `LLONG_MIN` | `-ERR value is out of range, value must between -9223372036854775807 and 9223372036854775807` | `object.c` — `getRangeLongFromObjectOrReply` |
 | a third argument to `SPOP` or `SRANDMEMBER` | `-ERR syntax error` | `t_set.c` — `spopCommand`, `srandmemberCommand` |
-| over `maxmemory` | `-OOM …` | *target*, B-11 |
+| over `maxmemory` under `noeviction` | `-OOM command not allowed when used memory > 'maxmemory'.` | `redis/redis@7.2!/src/server.c` `createSharedObjects` (`shared.oomerr`); built in B-11 |

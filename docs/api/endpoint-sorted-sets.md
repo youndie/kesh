@@ -65,4 +65,4 @@ Auth tier `password` means: answered only after `AUTH` when `requirepass` is set
 | a pop's count not a number, or negative | `-ERR value is out of range, must be positive` | `object.c` — `getPositiveLongFromObjectOrReply` |
 | a rank, index or `LIMIT` not an integer | `-ERR value is not an integer or out of range` | `object.c` — `getLongLongFromObjectOrReply` |
 | `ZRANK` with more than one option | `-ERR wrong number of arguments for 'zrank' command` | `zrankGenericCommand` |
-| over `maxmemory` | `-OOM …` | *target*, B-11 |
+| over `maxmemory` under `noeviction` | `-OOM command not allowed when used memory > 'maxmemory'.` | `redis/redis@7.2!/src/server.c` `createSharedObjects` (`shared.oomerr`); built in B-11 |

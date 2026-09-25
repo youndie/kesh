@@ -49,4 +49,4 @@ Auth tier `password` means: answered only after `AUTH` when `requirepass` is set
 | a pop with more than one count | `-ERR wrong number of arguments for 'lpop' command` | `t_list.c` — `popGenericCommand` |
 | `LSET` on a missing key | `-ERR no such key` | `server.c` — `shared.nokeyerr` |
 | `LSET` out of range | `-ERR index out of range` | `server.c` — `shared.outofrangeerr` |
-| over `maxmemory` | `-OOM …` | *target*, B-11 |
+| over `maxmemory` under `noeviction` | `-OOM command not allowed when used memory > 'maxmemory'.` | `redis/redis@7.2!/src/server.c` `createSharedObjects` (`shared.oomerr`); built in B-11 |

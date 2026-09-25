@@ -30,7 +30,7 @@ and 3 M rate counters are strings (research appendix A).
   `-WRONGTYPE Operation against a key holding the wrong kind of value`.
 * `INCRBYFLOAT` prints its result as Redis does — fixed-point, trimmed — but computes in `Double`
   where Redis on x86-64 uses `long double`; see the quirk below.
-* *Target* (B-11): a write that would exceed `maxmemory` under `noeviction` answers `-OOM …`.
+* Under `noeviction`, a write that would exceed `maxmemory` answers `-OOM command not allowed when used memory > 'maxmemory'.` (B-11) — any command Redis flags `denyoom`; reads and deletes still run. **Automated:** `server/src/nativeTest/kotlin/io/github/youndie/kesh/server/command/CommandDispatcherTest.kt::a full dataset refuses writes under noeviction and still reads and deletes`.
 
 ## 4. Code anchors
 

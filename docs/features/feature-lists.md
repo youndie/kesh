@@ -31,7 +31,7 @@ items (research D-21).
   positive`; a count of 0 answers an empty array, and a missing key with a count the null array.
 * Whether a number or the key is checked first follows Redis command by command — `LINDEX` and
   `LSET` look at the key first, `LRANGE`, `LTRIM`, `LREM` and the pops read their numbers first.
-* *Target* (B-11): a write that would exceed `maxmemory` under `noeviction` answers `-OOM …`.
+* Under `noeviction`, a write that would exceed `maxmemory` answers `-OOM command not allowed when used memory > 'maxmemory'.` (B-11) — any command Redis flags `denyoom`; reads and deletes still run. **Automated:** `server/src/nativeTest/kotlin/io/github/youndie/kesh/server/command/CommandDispatcherTest.kt::a full dataset refuses writes under noeviction and still reads and deletes`.
 
 ## 4. Code anchors
 

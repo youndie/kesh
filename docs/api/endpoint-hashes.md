@@ -53,4 +53,4 @@ Auth tier `password` means: answered only after `AUTH` when `requirepass` is set
 | `HINCRBYFLOAT` increment infinite | `-ERR value is NaN or Infinity` | `hincrbyfloatCommand` |
 | `HINCRBYFLOAT` on a non-float field | `-ERR hash value is not a float` | `hincrbyfloatCommand` |
 | the result infinite | `-ERR increment would produce NaN or Infinity` | `hincrbyfloatCommand` |
-| over `maxmemory` | `-OOM …` | *target*, B-11 |
+| over `maxmemory` under `noeviction` | `-OOM command not allowed when used memory > 'maxmemory'.` | `redis/redis@7.2!/src/server.c` `createSharedObjects` (`shared.oomerr`); built in B-11 |

@@ -18,7 +18,7 @@ Operators see what the instance is doing and run it like every other native serv
 portfolio: one image, one chart, probes, metrics, a memory limit, an ordered stop.
 
 Built in B-15: `INFO`, the probes and the metrics; in B-16: the image, the chart and the graceful
-stop. *Target*: the reference load report and the soak (B-17, B-18).
+stop; in B-17 and B-28: the reference load report (`bench/reports/b-17`, `b-28`). *Target*: the soak (B-18).
 
 ## 2. Business rules
 
@@ -63,8 +63,7 @@ engines, and the RESP listener is not one → the release stages, empty → exit
 | deploy | `deploy/Dockerfile`, `deploy/chart/` — the image and the chart, every sizing value derived ([deploy](../services/deploy.md)) |
 | bench | `bench/drain/run.sh` — the graceful stop, repeated, in a kind cluster |
 
-*Target*: the load profiles and the soak under `bench` (B-17, B-18), reported beside the existing
-`bench/reports/`.
+The load profiles are `bench/load/` (B-17); the soak is B-18's, reported beside them in `bench/reports/`.
 
 ## 5. Scenarios
 

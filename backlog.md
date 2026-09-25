@@ -123,5 +123,12 @@ on 2026-09-25 to document it rather than raise every pod's limit by 40 % or refu
 estimate Redis does not make: nothing in kesh issues one. The chart's comment and `services/deploy.md`
 say so.
 
+**v1 is measured up to an eighth of the reference dataset, and stops there.** Every report is at
+1/64–1/8 of §5a: the stand and the build machine hold no more under load. The owner decided on
+2026-09-25 that a run at full scale (~4.3 GB of data) is not needed; what the reports say of full
+scale is arithmetic, and each says so. Also decided then: Redis's `SHUTDOWN`, `TIME`, `MEMORY USAGE`
+and `DEBUG SLEEP` are not in kesh, and `requirepass` and saving on stop are set from the environment
+only — no item is kept for them.
+
 **Blocking is a fact, not a plan.** `blocked_by` lists what an item cannot be done without; an
 order of preference belongs in this file, not in the field.

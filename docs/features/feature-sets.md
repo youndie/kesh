@@ -30,7 +30,7 @@ members; a small set is one packed `ByteArray`, as a small hash is (research D-2
 * A third argument to `SPOP` or `SRANDMEMBER` is `-ERR syntax error`, not an arity error.
 * `SINTER`, `SUNION` and `SDIFF` check the type of every key before answering: a wrong-type key
   after a missing one still answers `WRONGTYPE`. A missing key is an empty set.
-* *Target* (B-11): a write that would exceed `maxmemory` under `noeviction` answers `-OOM …`.
+* Under `noeviction`, a write that would exceed `maxmemory` answers `-OOM command not allowed when used memory > 'maxmemory'.` (B-11) — any command Redis flags `denyoom`; reads and deletes still run. **Automated:** `server/src/nativeTest/kotlin/io/github/youndie/kesh/server/command/CommandDispatcherTest.kt::a full dataset refuses writes under noeviction and still reads and deletes`.
 
 ## 4. Code anchors
 

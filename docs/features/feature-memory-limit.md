@@ -117,7 +117,7 @@ The rest of `CONFIG` and `INFO` is drafted in *endpoint-server*, with B-15.
 * **Given:** the reference dataset built in-process (B-03's seed) in plain Kotlin objects
 * **When:** a write churn shaped like the reference load runs
 * **Then:** live heap, resident memory, objects marked and GC pause p50/p99/max are reported, and research D-3 records the verdict against B-20's threshold
-* Done by B-19 at a quarter of the dataset — `bench/reports/b-19/README.md`; the full scale is B-17's.
+* Done by B-19 at a quarter of the dataset — `bench/reports/b-19/README.md`. Full scale is not measured, by the owner's decision (see `backlog.md`).
 
 ## 6. Out of scope
 

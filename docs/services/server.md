@@ -23,8 +23,9 @@ command of [endpoint-connection](../api/endpoint-connection.md), `requirepass`, 
 ceiling, and kore's shutdown plan with the listener as its drain participant. **Since B-28 the
 transport is kesh's own `epoll` loop** (research D-31), not `ktor-network`.
 
-***Target*:** the HTTP port with probes and metrics (B-15); snapshot load and save (B-14); `CONFIG`
-(B-11); `INFO` (B-15). The data commands go to the `store` module (B-05).
+Also: the HTTP port with probes and metrics (B-15); snapshot load, `SAVE` and `BGSAVE` (B-14, B-25);
+`CONFIG` (B-11, B-12); `INFO` (B-15); Pub/Sub (B-27); the container memory check (B-26). The data
+commands are the `store` module's (B-05…B-10).
 
 **Deliberately does not:** implement any data command, or accept more connections than its descriptor
 limit allows (research D-31).
@@ -107,7 +108,7 @@ limit allows (research D-31).
 * **Binary:** `kesh.kexe`, the release executable of the linuxX64 target; `stageNativeImage` copies it
   as `kesh` into the module's `native-image` build directory, with the list of shared libraries it
   asks for (glibc only).
-* **Image, chart, probes, metrics:** *target* — B-15, B-16.
+* **Image, chart, probes, metrics:** [deploy](deploy.md) (B-15, B-16).
 
 ## 6. Local setup
 

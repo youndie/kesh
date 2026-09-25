@@ -34,7 +34,7 @@ a design input, not only the complexity: 3.5 objects a member on average (resear
   read as bare `strtod` reads it — leading space skipped, an empty string is `0`, `1e400` is `inf`.
   A score is printed as `d2string` prints it: integers as integers, `1.5e-7`, `1e+20`, `-0`.
 * In `LIMIT offset count`, a negative offset selects nothing and a negative count everything.
-* *Target* (B-11): a write that would exceed `maxmemory` under `noeviction` answers `-OOM …`.
+* Under `noeviction`, a write that would exceed `maxmemory` answers `-OOM command not allowed when used memory > 'maxmemory'.` (B-11) — any command Redis flags `denyoom`; reads and deletes still run. **Automated:** `server/src/nativeTest/kotlin/io/github/youndie/kesh/server/command/CommandDispatcherTest.kt::a full dataset refuses writes under noeviction and still reads and deletes`.
 
 ## 4. Code anchors
 

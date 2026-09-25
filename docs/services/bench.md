@@ -23,8 +23,8 @@ with a summary that checks itself against the table.
 **Built (B-17):** `kesh-load`, the reference load on the dataset's own keys (research D-30), and
 `load/stand.sh`, which runs it on a two-host stand against kesh and Redis 7.2.
 
-***Target*:** the heap probe (B-19),
-the 24 h soak runner (B-18), and the reports with their raw output.
+Also the heap probe (B-19), the fork probe (B-14) and `BGSAVE` under load (B-25, `fork/bgsave.sh`),
+and the reports with their raw output (`reports/`). ***Target*:** the 24 h soak runner (B-18).
 
 **Deliberately does not:** gate a build on a performance number (research D-9). The heap probe has a
 verdict, but it is a design verdict on research D-3, not a performance gate.

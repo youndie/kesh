@@ -33,7 +33,7 @@ becomes a table where Redis 7.2 would make it one (research D-20).
   `hashTypeTryConversion`.
 * The encoding is invisible except in reply order, and there it matches Redis: insertion order while
   packed, table order after — the same rule, so the same moment.
-* *Target* (B-11): a write that would exceed `maxmemory` under `noeviction` answers `-OOM …`.
+* Under `noeviction`, a write that would exceed `maxmemory` answers `-OOM command not allowed when used memory > 'maxmemory'.` (B-11) — any command Redis flags `denyoom`; reads and deletes still run. **Automated:** `server/src/nativeTest/kotlin/io/github/youndie/kesh/server/command/CommandDispatcherTest.kt::a full dataset refuses writes under noeviction and still reads and deletes`.
 
 ## 4. Code anchors
 
