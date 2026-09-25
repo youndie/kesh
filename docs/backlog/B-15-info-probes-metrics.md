@@ -1,7 +1,7 @@
 ---
 id: B-15
 title: "INFO, HTTP probes and Prometheus metrics"
-status: open
+status: wip
 priority: P1
 size: M
 stage: stage-5-operations
