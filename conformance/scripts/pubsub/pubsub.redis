@@ -1,0 +1,48 @@
+# Pub/Sub (B-27): confirmations, delivery to channel and pattern subscribers, and the subscribe mode.
+# Several connections: `@sub`, `@psub` and `@both` subscribe; the unnamed one publishes. A mass
+# unsubscribe answers in the order of Redis's dictionary, and each confirmation carries the count left,
+# so it is compared only where its order is determined: with one subscription left, and with none.
+FLUSHALL
+PUBLISH nobody hi
+SUBSCRIBE
+PUBLISH only-channel
+@sub SUBSCRIBE news
+[frames 2] @sub SUBSCRIBE a b
+@sub SUBSCRIBE news
+PUBLISH news hello
+[read 1] @sub
+@psub PSUBSCRIBE app:*
+[frames 2] @psub PSUBSCRIBE n?ws x
+PUBLISH news again
+[read 1] @sub
+[read 1] @psub
+PUBLISH app:home:42 "hello there"
+[read 1] @psub
+PUBLISH "binary\x00channel" "\xff\x00"
+# A client on a channel and on a pattern that matches it receives the message twice: the channel first.
+@both SUBSCRIBE t
+@both PSUBSCRIBE t*
+PUBLISH t x
+[read 2] @both
+# In subscribe mode only (un)subscribing, PING and QUIT are served.
+@sub GET k
+@sub SET k v
+@sub CLIENT LIST
+@sub PING
+@sub PING hi
+@sub UNSUBSCRIBE news
+PUBLISH news gone
+@sub UNSUBSCRIBE a
+@sub UNSUBSCRIBE
+@sub UNSUBSCRIBE
+@sub GET k
+@sub PUNSUBSCRIBE
+@sub PING
+[frames 2] @psub PUNSUBSCRIBE app:* n?ws
+@psub PUNSUBSCRIBE
+@psub UNSUBSCRIBE nothere
+@psub PSUBSCRIBE "[ab]*"
+PUBLISH b1 m
+[read 1] @psub
+[closes] @both QUIT
+FLUSHALL

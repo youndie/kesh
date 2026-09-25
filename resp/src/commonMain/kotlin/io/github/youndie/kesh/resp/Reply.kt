@@ -39,6 +39,15 @@ sealed interface Reply {
         val items: List<Reply>?,
     ) : Reply
 
+    /**
+     * Several replies to one command, written one after another: `SUBSCRIBE a b` answers one
+     * confirmation per channel. Not a RESP type of its own — nothing on the wire says they belong
+     * together.
+     */
+    class Frames(
+        val replies: List<Reply>,
+    ) : Reply
+
     companion object {
         val OK: Reply = Simple("OK")
         val PONG: Reply = Simple("PONG")

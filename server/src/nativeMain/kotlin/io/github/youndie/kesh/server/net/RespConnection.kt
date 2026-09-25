@@ -20,6 +20,9 @@ import platform.posix.close
 import platform.posix.errno
 import platform.posix.read
 import platform.posix.write
+import kotlin.time.Duration.Companion.seconds
+import kotlin.time.TimeMark
+import kotlin.time.TimeSource
 
 /**
  * One RESP connection on the [EventLoop] (research D-31): read into a buffer kept for the
@@ -47,6 +50,10 @@ internal class RespConnection(
 
     private val chunk = ByteArray(READ_CHUNK)
     private val writer = ReplyWriter()
+    private val pushes = ReplyWriter()
+
+    /** Since when the output has been over the soft pub/sub limit; `null` while it is not. */
+    private var overSoftSince: TimeMark? = null
     private var pending = ByteArray(0)
     private var pendingFrom = 0
     private var pendingTo = 0
@@ -61,6 +68,40 @@ internal class RespConnection(
         if (!open) return
         if (events and (EPOLLIN or EPOLLHUP or EPOLLERR) != 0u) readAvailable()
         if (open && events and EPOLLOUT != 0u) flush()
+    }
+
+    /**
+     * A published message for this client (B-27): queued behind whatever it has not been sent yet,
+     * then held to Redis's pub/sub output limit — the bytes queued, counted here, since nothing
+     * pushes back on a queue (research D-29).
+     */
+    fun deliver(message: Reply) {
+        if (!open) return
+        pushes.write(message)
+        append(pushes.toByteArray())
+        pushes.clear()
+        if (overOutputLimit()) {
+            println("kesh: client ${client.address} closed for exceeding the pub/sub output buffer limit")
+            close()
+            return
+        }
+        flush()
+    }
+
+    /**
+     * `checkClientOutputBufferLimits` for the pub/sub class, Redis 7.2's defaults
+     * (`clientBufferLimitsDefaults`, `redis/redis@7.2!/src/config.c`): 32 MB at once, or 8 MB for 60 s.
+     */
+    private fun overOutputLimit(): Boolean {
+        if (client.subscriptions == 0) return false
+        val queued = pendingTo - pendingFrom
+        if (queued > PUBSUB_HARD_LIMIT) return true
+        if (queued <= PUBSUB_SOFT_LIMIT) {
+            overSoftSince = null
+            return false
+        }
+        val since = overSoftSince ?: TimeSource.Monotonic.markNow().also { overSoftSince = it }
+        return since.elapsedNow() > PUBSUB_SOFT_SECONDS
     }
 
     /** Ends the connection once what it was told has been written: the drain's first step (B-16). */
@@ -200,5 +241,8 @@ internal class RespConnection(
     private companion object {
         const val READ_CHUNK = 16 * 1024
         const val READS_PER_TURN = 16
+        const val PUBSUB_HARD_LIMIT = 32L * 1024 * 1024
+        const val PUBSUB_SOFT_LIMIT = 8L * 1024 * 1024
+        val PUBSUB_SOFT_SECONDS = 60.seconds
     }
 }

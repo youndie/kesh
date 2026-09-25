@@ -23,6 +23,8 @@ object Metrics {
         val connectedClients: Long,
         val connectionsReceived: Long,
         val rejectedConnections: Long,
+        val pubsubChannels: Long,
+        val pubsubPatterns: Long,
         val commands: List<Pair<String, CommandStats.Command>>,
     )
 
@@ -47,6 +49,8 @@ object Metrics {
                 "RESP connections refused at maxclients.",
                 store.rejectedConnections,
             )
+            gauge("kesh_pubsub_channels", "Channels with at least one subscriber.", store.pubsubChannels)
+            gauge("kesh_pubsub_patterns", "Patterns with at least one subscriber.", store.pubsubPatterns)
             histogram(store.commands)
         }
 

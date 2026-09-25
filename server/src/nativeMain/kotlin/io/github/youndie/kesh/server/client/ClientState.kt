@@ -1,5 +1,7 @@
 package io.github.youndie.kesh.server.client
 
+import io.github.youndie.kesh.resp.Reply
+import io.github.youndie.kesh.server.pubsub.PubSub
 import kotlin.time.TimeMark
 import kotlin.time.TimeSource
 
@@ -27,6 +29,16 @@ class ClientState(
 
     /** Reply to what was asked, then close: `QUIT`, or `CLIENT KILL` aimed at itself. */
     var closeAfterReply: Boolean = false
+
+    /** The channels and patterns this client is subscribed to (B-27); the registry is [PubSub]. */
+    internal val channels = LinkedHashSet<PubSub.Name>()
+    internal val patterns = LinkedHashSet<PubSub.Name>()
+
+    /** Channels and patterns: what a confirmation counts, and what puts the client in subscribe mode. */
+    val subscriptions: Int get() = channels.size + patterns.size
+
+    /** Where a published message goes: the connection's output, set by the transport. */
+    var deliver: ((Reply) -> Unit)? = null
 
     /** Closed by another client's `CLIENT KILL`. */
     var killed: Boolean = false

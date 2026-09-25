@@ -47,6 +47,10 @@ class ReplyWriter(
                     items.forEach(::write)
                 }
             }
+
+            is Reply.Frames -> {
+                reply.replies.forEach(::write)
+            }
         }
     }
 

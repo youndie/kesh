@@ -8,6 +8,7 @@ import io.github.youndie.kesh.server.config.MemoryConfig
 import io.github.youndie.kesh.server.info.CommandStats
 import io.github.youndie.kesh.server.info.Info
 import io.github.youndie.kesh.server.persistence.Persistence
+import io.github.youndie.kesh.server.pubsub.PubSub
 import io.github.youndie.kesh.store.Db
 import io.github.youndie.kesh.store.commands.StoreCommands
 import io.github.youndie.kesh.store.eviction.Eviction
@@ -41,8 +42,11 @@ class CommandDispatcher(
     /** Commands run and their durations, for `INFO` and `/metrics` (B-15). */
     val stats = CommandStats()
 
+    /** Channels and patterns, and who listens (B-27). */
+    val pubsub = PubSub()
+
     /** `INFO`'s report (B-15). */
-    val info = Info(db, clients, stats, eviction, expiry, persistence, port, clock)
+    val info = Info(db, clients, stats, eviction, expiry, persistence, pubsub, port, clock)
 
     private val memoryConfig = MemoryConfig(db, eviction)
 
@@ -51,7 +55,12 @@ class CommandDispatcher(
 
     private val table: Map<String, CommandSpec> =
         listOf(
-            CommandSpec("ping", -1) { _, a -> ping(a) },
+            CommandSpec("ping", -1) { c, a -> ping(c, a) },
+            CommandSpec("subscribe", -2) { c, a -> pubsub.subscribe(c, a.drop(1)) },
+            CommandSpec("unsubscribe", -1) { c, a -> pubsub.unsubscribe(c, a.drop(1)) },
+            CommandSpec("psubscribe", -2) { c, a -> pubsub.psubscribe(c, a.drop(1)) },
+            CommandSpec("punsubscribe", -1) { c, a -> pubsub.punsubscribe(c, a.drop(1)) },
+            CommandSpec("publish", 3) { _, a -> Reply.Integer(pubsub.publish(a[1], a[2]).toLong()) },
             CommandSpec("echo", 2) { _, a -> Reply.Bulk(a[1]) },
             CommandSpec("quit", -1, noAuth = true) { c, _ -> quit(c) },
             CommandSpec("auth", -2, noAuth = true) { c, a -> auth(c, a) },
@@ -144,6 +153,14 @@ class CommandDispatcher(
         // `maxmemory` and the policy could evict nothing more (B-11, B-12); reads and deletes still run.
         // A refused command is not counted, as Redis counts only what reaches `call()`.
         if (spec.denyOom && outOfMemory) return OOM
+        // `processCommand`, after the memory check: a RESP2 client with a subscription may only
+        // (un)subscribe, `PING` and `QUIT` (research D-26).
+        if (client.subscriptions > 0 && name !in SUBSCRIBE_MODE_ALLOWED) {
+            return error(
+                "ERR Can't execute '$fullName': only (P|S)SUBSCRIBE / (P|S)UNSUBSCRIBE / PING / QUIT / RESET are " +
+                    "allowed in this context",
+            )
+        }
         val started = TimeSource.Monotonic.markNow()
         val reply = handler(client, args)
         stats.record(fullName, started.elapsedNow().inWholeMicroseconds)
@@ -151,11 +168,27 @@ class CommandDispatcher(
         return reply
     }
 
-    private fun ping(args: List<ByteArray>): Reply =
-        when (args.size) {
-            1 -> Reply.PONG
-            2 -> Reply.Bulk(args[1])
-            else -> error("ERR wrong number of arguments for 'ping' command")
+    /** `pingCommand`: in subscribe mode a RESP2 client gets `pong` and the message as an array. */
+    private fun ping(
+        client: ClientState,
+        args: List<ByteArray>,
+    ): Reply =
+        when {
+            args.size > 2 -> {
+                error("ERR wrong number of arguments for 'ping' command")
+            }
+
+            client.subscriptions > 0 -> {
+                Reply.Multi(listOf(Reply.Bulk(PONG_BULK), Reply.Bulk(if (args.size == 2) args[1] else ByteArray(0))))
+            }
+
+            args.size == 2 -> {
+                Reply.Bulk(args[1])
+            }
+
+            else -> {
+                Reply.PONG
+            }
         }
 
     private fun quit(client: ClientState): Reply {
@@ -326,7 +359,8 @@ class CommandDispatcher(
      */
     private fun clientLine(c: ClientState): String =
         "id=${c.id} addr=${c.address} laddr=${c.localAddress} fd=-1 name=${c.name.orEmpty()} " +
-            "age=${c.ageSeconds} idle=${c.idleSeconds} flags=N db=0 sub=0 psub=0 ssub=0 multi=-1 qbuf=0 " +
+            "age=${c.ageSeconds} idle=${c.idleSeconds} flags=${if (c.subscriptions > 0) "P" else "N"} db=0 " +
+            "sub=${c.channels.size} psub=${c.patterns.size} ssub=0 multi=-1 qbuf=0 " +
             "qbuf-free=0 argv-mem=0 multi-mem=0 rbs=0 rbp=0 obl=0 oll=0 omem=0 tot-mem=0 events=r " +
             "cmd=${c.lastCommand} user=default redir=-1 resp=2 lib-name=${c.libName.orEmpty()} " +
             "lib-ver=${c.libVersion.orEmpty()}"
@@ -483,6 +517,10 @@ class CommandDispatcher(
     }
 
     private companion object {
+        /** What a subscribed RESP2 client may send (`processCommand`; kesh has no `RESET` or `SSUBSCRIBE`). */
+        val SUBSCRIBE_MODE_ALLOWED = setOf("ping", "subscribe", "unsubscribe", "psubscribe", "punsubscribe", "quit")
+        val PONG_BULK = "pong".encodeToByteArray()
+
         const val SERVER_NAME = "kesh"
 
         /**

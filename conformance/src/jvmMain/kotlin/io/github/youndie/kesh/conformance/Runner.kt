@@ -45,11 +45,14 @@ class Runner(
     private val quietAfter: Int = 300,
 ) {
     fun run(script: Script): List<Outcome> {
-        var k = Connection(kesh)
-        var o = Connection(oracle)
+        // A connection per name the script uses (`@sub`), opened when first used, on each side.
+        val keshSide = HashMap<String, Connection>()
+        val oracleSide = HashMap<String, Connection>()
         val outcomes = ArrayList<Outcome>()
         try {
             for (step in script.steps) {
+                val k = keshSide.getOrPut(step.connection) { Connection(kesh) }
+                val o = oracleSide.getOrPut(step.connection) { Connection(oracle) }
                 val (kReply, kClosed) = k.safely(step)
                 val (oReply, oClosed) = o.safely(step)
                 // `[closes]` is a claim about both servers, not only that they behave alike: two servers
@@ -78,13 +81,13 @@ class Runner(
                 if (kClosed || oClosed) {
                     k.close()
                     o.close()
-                    k = Connection(kesh)
-                    o = Connection(oracle)
+                    keshSide.remove(step.connection)
+                    oracleSide.remove(step.connection)
                 }
             }
         } finally {
-            k.close()
-            o.close()
+            keshSide.values.forEach { it.close() }
+            oracleSide.values.forEach { it.close() }
         }
         return outcomes
     }
@@ -118,15 +121,32 @@ class Runner(
         /** The reply's bytes, and whether the server closed the connection after it. */
         fun exchange(step: Script.Step): Pair<ByteArray, Boolean> {
             if (step.kind == Script.Kind.CURSOR) return iterate(step)
+            if (step.kind == Script.Kind.READ) return frames(step.frames) to false
             socket.getOutputStream().apply {
                 write(step.bytes)
                 flush()
             }
             return when (step.kind) {
-                Script.Kind.COMMAND -> RespFrame.read(input).bytes to false
-                Script.Kind.CLOSES -> RespFrame.read(input).bytes to endsNow()
-                Script.Kind.RAW -> drain()
-                Script.Kind.CURSOR -> error("a [cursor] step is iterated, not exchanged once")
+                Script.Kind.COMMAND -> {
+                    (if (step.frames == 1) RespFrame.read(input).bytes else frames(step.frames)) to
+                        false
+                }
+
+                Script.Kind.CLOSES -> {
+                    RespFrame.read(input).bytes to endsNow()
+                }
+
+                Script.Kind.RAW -> {
+                    drain()
+                }
+
+                Script.Kind.CURSOR -> {
+                    error("a [cursor] step is iterated, not exchanged once")
+                }
+
+                Script.Kind.READ -> {
+                    error("a [read] step sends nothing")
+                }
             }
         }
 
@@ -166,6 +186,14 @@ class Runner(
                 args[cursorAt] = cursor
             }
             error("no end of iteration after $MAX_ROUNDS rounds")
+        }
+
+        /** [count] replies as one synthetic array, so a normaliser compares them together. */
+        private fun frames(count: Int): ByteArray {
+            val out = ByteArrayOutputStream()
+            out.write("*$count\r\n".encodeToByteArray())
+            repeat(count) { out.write(RespFrame.read(input).bytes) }
+            return out.toByteArray()
         }
 
         /** Everything the server sends until it closes (true) or stays quiet for [quietAfter] ms (false). */

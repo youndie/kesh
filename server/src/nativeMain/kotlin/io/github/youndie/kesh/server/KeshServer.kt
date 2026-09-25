@@ -199,6 +199,8 @@ class KeshServer(
                     connectedClients = clients.size.toLong(),
                     connectionsReceived = clients.registered,
                     rejectedConnections = clients.rejected,
+                    pubsubChannels = commands.pubsub.channelCount.toLong(),
+                    pubsubPatterns = commands.pubsub.patternCount.toLong(),
                     commands = commands.stats.snapshot(),
                 )
             }
@@ -248,6 +250,7 @@ class KeshServer(
             val connection =
                 RespConnection(fd, loop, CommandReader(config.limits), config.queryBufferLimit, commands) { closed ->
                     respConnections.remove(closed)
+                    commands.pubsub.remove(closed.client)
                     clients.unregister(closed.client)
                 }
             val client =
@@ -260,6 +263,7 @@ class KeshServer(
                 return@repeat
             }
             connection.client = client
+            client.deliver = connection::deliver
             respConnections += connection
             loop.add(fd, EPOLLIN, connection)
         }

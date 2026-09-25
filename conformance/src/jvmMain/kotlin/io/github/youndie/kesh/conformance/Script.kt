@@ -16,6 +16,9 @@ import java.io.File
  * [shape] CLIENT ID
  * [random a b c] SPOP s 2     a random reply: members of the population named, as many as Redis's
  * [info evicted_keys] INFO     only these fields' lines of the report are compared
+ * @sub SUBSCRIBE news          on the script's connection named `sub` (opened when first used)
+ * [frames 2] SUBSCRIBE a b     two replies, compared as one array; `[frames 2 unordered]` as a multiset
+ * [read 1] @sub                sends nothing; reads what the server pushed to `sub`
  * [fields used_memory] INFO    the report's sections and field names, which Redis must have too
  * [cursor] SCAN 0 COUNT 5     iterated to cursor 0 on each server; the unions are compared
  * [closes] QUIT               one reply, then both servers must close the connection
@@ -30,7 +33,7 @@ class Script(
     val requiresPassword: Boolean,
     val steps: List<Step>,
 ) {
-    class Step(
+    data class Step(
         val line: Int,
         val source: String,
         val bytes: ByteArray,
@@ -42,11 +45,18 @@ class Script(
         val arguments: List<ByteArray> = emptyList(),
         /** The fields a [Normaliser.INFO] step compares. */
         val fields: List<String> = emptyList(),
+        /** Which of the script's connections the step uses: `@name` on the line; `main` without one. */
+        val connection: String = MAIN,
+        /** How many replies the step reads — `[frames N]`, `[read N]`; more than one are compared as one array. */
+        val frames: Int = 1,
     )
 
-    enum class Kind { COMMAND, CLOSES, RAW, CURSOR }
+    /** `READ` sends nothing and reads what the server pushes: a subscriber's messages. */
+    enum class Kind { COMMAND, CLOSES, RAW, CURSOR, READ }
 
     companion object {
+        const val MAIN = "main"
+
         fun parse(
             name: String,
             text: String,
@@ -77,7 +87,19 @@ class Script(
             line: String,
         ): Step {
             val tag = Regex("""^\[(\w+)([^\]]*)]\s*""").find(line)
-            val body = if (tag == null) line else line.substring(tag.range.last + 1)
+            val afterTag = if (tag == null) line else line.substring(tag.range.last + 1)
+            val at = Regex("""^@(\w+)\s*""").find(afterTag)
+            val connection = at?.groupValues?.get(1) ?: MAIN
+            val body = if (at == null) afterTag else afterTag.substring(at.range.last + 1)
+            return parsed(number, line, tag, body).copy(connection = connection)
+        }
+
+        private fun parsed(
+            number: Int,
+            line: String,
+            tag: MatchResult?,
+            body: String,
+        ): Step {
             val arguments =
                 tag
                     ?.groupValues
@@ -88,8 +110,19 @@ class Script(
                     ?.filter { it.isNotEmpty() }
                     .orEmpty()
             val name = tag?.groupValues?.get(1)
-            require(arguments.isEmpty() || name == "random" || name == "info" || name == "fields") {
-                "line $number: only [random], [info] and [fields] take arguments"
+            require(arguments.isEmpty() || name in setOf("random", "info", "fields", "frames", "read")) {
+                "line $number: only [random], [info], [fields], [frames] and [read] take arguments"
+            }
+            if (name == "frames" || name == "read") {
+                val count =
+                    arguments.firstOrNull()?.toIntOrNull() ?: error("line $number: [$name] needs how many replies")
+                val normaliser = if ("unordered" in arguments.drop(1)) Normaliser.UNORDERED else Normaliser.EXACT
+                return if (name == "read") {
+                    require(body.isBlank()) { "line $number: [read] sends nothing" }
+                    Step(number, line, ByteArray(0), Kind.READ, normaliser, frames = count)
+                } else {
+                    Step(number, line, command(body, number), Kind.COMMAND, normaliser, frames = count)
+                }
             }
             if (name == "info" || name == "fields") {
                 require(arguments.isNotEmpty()) { "line $number: [$name] needs the fields it compares" }

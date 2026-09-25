@@ -3,6 +3,7 @@ package io.github.youndie.kesh.server.info
 import io.github.youndie.kesh.server.client.Clients
 import io.github.youndie.kesh.server.config.MemoryConfig.Companion.bytesToHuman
 import io.github.youndie.kesh.server.persistence.Persistence
+import io.github.youndie.kesh.server.pubsub.PubSub
 import io.github.youndie.kesh.store.Db
 import io.github.youndie.kesh.store.eviction.Eviction
 import io.github.youndie.kesh.store.expiry.ActiveExpiry
@@ -23,6 +24,7 @@ class Info(
     private val eviction: Eviction,
     private val expiry: ActiveExpiry?,
     private val persistence: Persistence?,
+    private val pubsub: PubSub,
     /** The RESP port, once bound; 0 before. */
     private val port: () -> Int,
     /** Milliseconds since the epoch. */
@@ -135,6 +137,8 @@ class Info(
             "expired_time_cap_reached_count" to (expiry?.timeCapReached ?: 0),
             "expire_cycle_cpu_milliseconds" to (expiry?.timeUsedMicros ?: 0) / 1000,
             "evicted_keys" to eviction.evictedKeys,
+            "pubsub_channels" to pubsub.channelCount,
+            "pubsub_patterns" to pubsub.patternCount,
         )
 
     /** `db0:keys=…,expires=…,avg_ttl=…`, only while the database has keys — as Redis prints it. */

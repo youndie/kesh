@@ -179,6 +179,28 @@ class HarnessTest {
     }
 
     @Test
+    fun `a line names its connection and how many replies it reads`() {
+        val script =
+            Script.parse(
+                "t",
+                """
+                @sub SUBSCRIBE news
+                [frames 2 unordered] @sub SUBSCRIBE a b
+                PUBLISH news hi
+                [read 1] @sub
+                """.trimIndent(),
+            )
+        val (subscribe, twice, publish, read) = script.steps
+        assertEquals("sub", subscribe.connection)
+        assertEquals(Script.MAIN, publish.connection)
+        assertEquals(2, twice.frames)
+        assertEquals(Normaliser.UNORDERED, twice.normaliser)
+        assertEquals(Script.Kind.READ, read.kind)
+        assertEquals("sub", read.connection)
+        assertEquals(0, read.bytes.size)
+    }
+
+    @Test
     fun `an unknown tag is a broken script, not a silent exact comparison`() {
         assertFailsWith<IllegalStateException> { Script.parse("s", "[sorted] SMEMBERS s") }
     }

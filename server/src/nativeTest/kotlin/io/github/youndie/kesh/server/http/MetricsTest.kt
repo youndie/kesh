@@ -12,7 +12,7 @@ class MetricsTest {
         stats.record("save", 30)
         stats.record("save", 2_000_000)
         stats.record("save", 1_000_000)
-        val store = Metrics.Store(0, 0, 0, 0, 0, 0, 0, 0, 0, stats.snapshot())
+        val store = Metrics.Store(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, stats.snapshot())
         val samples = PrometheusText.parse(Metrics.render(store)).getValue("kesh_command_duration_seconds")
 
         fun bucket(le: String) = samples.single { it.name.endsWith("_bucket") && it.labels["le"] == le }.value
