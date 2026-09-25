@@ -19,8 +19,8 @@ policy or refuses writes. On Kotlin/Native this matters more than on Redis: the 
 heap ceiling of its own and does not see its container's limit (research §1.2), so kesh's own
 accounting is the only thing between a write and an OOM kill.
 
-Built in B-11: `used_memory`, `maxmemory`, `noeviction`; in B-12: the eviction policies. *Target*: the
-container check (B-26, below).
+Built in B-11: `used_memory`, `maxmemory`, `noeviction`; in B-12: the eviction policies; in B-26: the
+container check (below).
 
 ## 2. Business rules
 
@@ -50,9 +50,13 @@ container check (B-26, below).
   clock); `EXISTS`, `TYPE`, the `TTL` family and `SCAN` look without touching, as in Redis.
 * Evicting stops after 500 µs (Redis's default `maxmemory-eviction-tenacity`, not settable in kesh)
   and goes on between commands; so does the eviction `CONFIG SET maxmemory` starts.
-* *Target* (B-26): **a `maxmemory` that, with the measured peak ratio, exceeds the container's
-  memory budget is refused** — at startup and on `CONFIG SET`, naming both numbers. Waits on a kore
-  release that has `containerMemoryBudget()`.
+* **A `maxmemory` that, at the measured peak ratio, exceeds the container's memory limit is refused**
+  (B-26) — at startup, which exits 1, and on `CONFIG SET`, which answers `config.c`'s `CONFIG SET
+  failed` with kesh's reason: both numbers, the file the limit came from, and the largest `maxmemory`
+  that fits. The limit is kore's reading of the cgroup (`containerMemoryBudget()`); the ratio is
+  `KESH_RESIDENT_PEAK_RATIO_TENTHS` (33 by default, B-28's 3.3 ×), which the chart sets to the ratio
+  it sizes its limit with. No limit, one kore cannot read, and `maxmemory 0` refuse nothing; the
+  startup log says which it was.
 
 ## 3. The commands this feature adds
 
@@ -104,10 +108,10 @@ The rest of `CONFIG` and `INFO` is drafted in *endpoint-server*, with B-15.
 * **Automated:** `conformance/scripts/memory/eviction.redis`; `store/src/commonTest/kotlin/io/github/youndie/kesh/store/EvictionTest.kt::a volatile policy with nothing volatile fails and so does noeviction`
 
 ### Scenario: maxmemory beyond the container
-*Target*, B-26.
 * **Given:** a container limit of 1 GiB
 * **When:** `CONFIG SET maxmemory 2gb`
 * **Then:** the command is refused with a message naming the requested value and the budget, and `maxmemory` is unchanged
+* **Automated:** `server/src/nativeTest/kotlin/io/github/youndie/kesh/server/config/MemoryBudgetTest.kt::CONFIG SET maxmemory beyond the container is refused and maxmemory stays`, with the budget given; in a real 1 GiB container (`docker run --memory 1g`, distroless/cc) by hand in B-26: refused, `CONFIG GET` unchanged, and a start with `KESH_MAXMEMORY=2gb` exits 1 — `docs/backlog/B-26-maxmemory-container-check.md`
 
 ### Scenario: The reference dataset fits the managed heap
 * **Given:** the reference dataset built in-process (B-03's seed) in plain Kotlin objects

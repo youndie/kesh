@@ -48,7 +48,8 @@ from `maxmemory` and `values.measured`:
   reference load, B-28) × 1.2 for a day's drift + 64 MiB for the empty process. **The 1.2 is a placeholder** until B-18
   measures the drift, and `values.yaml` says so. Until B-28 the ratio was B-11's 2.8, taken without
   traffic; under traffic the old transport reached 5.3 × and an OOM kill (research R-8). The Kotlin/Native runtime does not see the limit;
-  kesh will check `maxmemory` against it through kore (B-26).
+  kesh checks `maxmemory` against it through kore at the same 3.3, which the chart passes as
+  `KESH_RESIDENT_PEAK_RATIO_TENTHS` (B-26): a `maxmemory` the limit cannot hold does not start.
 
 For `maxmemory` 1 GiB that is a 30 s grace period, a 32 s startup budget and a 4.0 GiB limit.
 

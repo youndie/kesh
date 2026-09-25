@@ -38,15 +38,14 @@ A stage is a field on the item, not a directory.
 
 <!-- BEGIN INDEX -->
 
-## Open (3)
+## Open (2)
 
 | Task | | Priority | Size | Blocked by |
 |---|---|---|---|---|
 | [B-18](docs/backlog/B-18-soak-24h.md) `[ ]` | 24 h soak with TTL churn | P2 | S | B-17 |
-| [B-26](docs/backlog/B-26-maxmemory-container-check.md) `[~]` | Refuse a maxmemory above the container's memory budget | P2 | S | B-11 |
 | [B-29](docs/backlog/B-29-bgsave-memory-budget.md) `[?]` | Budget a background save in the container's memory | P2 | S | B-25 |
 
-## Closed (26)
+## Closed (27)
 
 **Protocol and core**
 
@@ -74,6 +73,7 @@ A stage is a field on the item, not a directory.
 - [B-12](docs/backlog/B-12-eviction-policies.md) `[x]` - Eviction policies with sampled LRU
 - [B-13](docs/backlog/B-13-active-expiry.md) `[x]` - Active expiry, Redis's algorithm as its source has it
 - [B-23](docs/backlog/B-23-mutator-assists-stall-writes.md) `[x]` - Writes stall for seconds while the keyspace grows: decide on the collector's mutator assists
+- [B-26](docs/backlog/B-26-maxmemory-container-check.md) `[x]` - Refuse a maxmemory above the container's memory budget
 
 **Snapshots**
 

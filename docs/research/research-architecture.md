@@ -152,7 +152,11 @@ by it.** kesh's own accounting (D-10) is the only thing between a write and an O
 `containerMemoryBudget()` from kore can at least refuse a `maxmemory` that, with the measured
 overhead, exceeds the container's limit — at startup and on `CONFIG SET`. *Amended 2026-09-25:* that
 function is in kore's `main` but in no published release (0.1.4 has no `MemoryBudget`); the check
-is B-26 and waits for one.
+is B-26 and waits for one. *Built in B-26* on kore 0.1.5 (the portfolio's repository, not Maven
+Central): the ratio is the chart's, 3.3 (B-28), passed as `KESH_RESIDENT_PEAK_RATIO_TENTHS` — not
+B-11's 2.8, which was taken without traffic. A limit kore cannot read, or none, refuses nothing, and
+`maxmemory 0` refuses nothing; the startup log says which. In a 1 GiB container `CONFIG SET maxmemory
+2gb` is refused, the largest that fits is 310 MB, and a start with 2 GB exits 1.
 
 **Consequence 5 — pause measurements need one subject per host.** The conformance oracle (a
 `redis-server`) may share a host with kesh; a latency measurement may not.
@@ -486,7 +490,8 @@ server idle 45 s): **resident memory is 2.4 × `used_memory` idle and 2.8 × at 
 a measurement host; full scale needs B-22's host. *Hypothesis*: most of the 2.4 is the collector's
 target of twice the live set (§1.2), which holds only if `used_memory` tracks the live heap — the GC
 log's `alive` is the check. *Consequence*: a container limit has to hold the peak — `maxmemory` × 2.8
-and the process's base — which is the ratio B-26's container check uses.
+and the process's base. *Amended in B-28:* under traffic the peak is 3.3 ×, and that is the ratio the
+chart and B-26's container check use.
 
 ### D-11. Active expiry samples keys with a TTL on a timer — *corrected; built in B-13*
 

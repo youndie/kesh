@@ -48,7 +48,7 @@ Auth tier `password` means: answered only after `AUTH` when `requirepass` is set
 
 | Condition | Reply | Where Redis says it |
 |---|---|---|
-| `CONFIG SET maxmemory` above the container's budget | *target*, B-26: a kesh-specific refusal naming both numbers (research §1.2, consequence 4) | — |
+| `CONFIG SET maxmemory` above the container's budget | `-ERR CONFIG SET failed (possibly related to argument 'maxmemory') - maxmemory <n> (<human>) needs up to <ratio> x as much resident memory, more than the container's limit of <n> (<human>, <file>); at most <n> (<human>) fits` — kesh's own reason in Redis's frame (B-26, research §1.2, consequence 4) | the frame: `redis/redis@7.2!/src/config.c` `configSetCommand` |
 | `SAVE` or `BGSAVE` while a child saves | `-ERR Background save already in progress` | `redis/redis@7.2!/src/rdb.c` `saveCommand`, `bgsaveCommand` |
 | `BGSAVE` with an argument but `SCHEDULE` | `-ERR syntax error` | `redis/redis@7.2!/src/rdb.c` `bgsaveCommand` |
 | command during snapshot load | none: the listener binds after the load, so no command can arrive (research D-24); Redis answers `-LOADING Redis is loading the dataset in memory` | `redis/redis@7.2!/src/server.c` `createSharedObjects` |

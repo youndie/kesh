@@ -4,7 +4,7 @@ title: "server — the binary: TCP listener, connections, dispatch, lifecycle"
 type: service
 status: active
 module: server
-tech_stack: [Kotlin/Native linuxX64, epoll, kore 0.1.4]
+tech_stack: [Kotlin/Native linuxX64, epoll, kore 0.1.5]
 owner: unassigned
 depends_on: [resp, kore]
 publishes: [native binary kesh]
@@ -99,7 +99,7 @@ limit allows (research D-31).
 | Kind | Name | What for |
 |---|---|---|
 | Module | [resp](resp.md) | parsing and writing |
-| Library | kore-core 0.1.4 | `runUntilSignal`, the shutdown plan |
+| Library | kore-core 0.1.5 | `runUntilSignal`, the shutdown plan, the probes' gates, `containerMemoryBudget()` (B-26); from the portfolio's repository — 0.1.5 is not on Maven Central |
 | Library | kotlinx-coroutines, from the shared `wip` catalog | the loop is a coroutine dispatcher; the tests' clients use `ktor-network` |
 
 ## 5. Infrastructure and deploy
@@ -128,8 +128,9 @@ docker run --rm --network host redis:7.2 redis-cli -p 6379 ping
 `KESH_DBFILENAME` (`dump.kesh`; B-14), `KESH_GC_ASSISTS` (`on`; B-23), `KESH_HTTP_PORT` (8080, `off` for
 none; B-15), `KESH_SAVE_ON_SHUTDOWN` (`off`), `KESH_SHUTDOWN_DRAIN_SECONDS` (15) and
 `KESH_TERMINATION_GRACE_SECONDS` (undeclared; B-16) — kore refuses at startup a plan that does not fit
-the declared grace period, and kesh exits 1 with its message. The printed configuration never
-shows the password.
+the declared grace period, and kesh exits 1 with its message; `KESH_RESIDENT_PEAK_RATIO_TENTHS` (33;
+B-26) — a `KESH_MAXMEMORY` that, at that ratio, the container's memory limit cannot hold stops the
+start the same way. The printed configuration never shows the password.
 
 **`KESH_` in upper case, decided in B-01.** The brief spelled the prefix `kesh_`, which read as a
 working-name substitution rather than a decision; environment variables are conventionally upper
