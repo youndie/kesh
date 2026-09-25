@@ -31,7 +31,10 @@ real consumer.
 - **A slow subscriber must not grow memory without bound.** A message waits in the subscriber's
   outgoing buffer; Redis bounds that buffer (`client-output-buffer-limit pubsub 32mb 8mb 60`) and
   drops the client past it (`clientBufferLimitsDefaults`, `redis/redis@7.2!/src/config.c`). kesh does the same with those defaults — a test that stops reading on a
-  subscriber and keeps publishing shows the connection dropped, not the heap grown. Rejected:
+  subscriber and keeps publishing shows the connection dropped, not the heap grown.
+  **Count the bytes; do not wait for backpressure** (B-16, research D-29): ktor's write channel
+  queues replies in memory without suspending — 100 MB to a client that read none — so the limit has
+  to track what each subscriber has queued itself. Rejected:
   blocking `PUBLISH` until the subscriber reads — one stuck client would stop the store thread.
 - **Not covered:** `PUBSUB CHANNELS|NUMSUB|NUMPAT`, sharded `SSUBSCRIBE`/`SPUBLISH`, RESP3 push
   messages, keyspace notifications. Each is a new item if a consumer needs it.

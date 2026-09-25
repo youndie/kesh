@@ -702,6 +702,31 @@ not counted), the fork, AOF and replication lines — is absent rather than 0, b
 measurement. `multiplexing_api:select` is truthful: `ktor-network` on Native is `pselect` (§1.4).
 The harness holds the shape (`[fields]`), not the values.
 
+### D-29. The drain answers what it read, and saves inside the drain stage — *new, B-16*
+
+**What a drain interrupts.** kore cancels the drain participant at its deadline; within it, kesh
+interrupts only a connection's *wait for its next read*. A batch already read runs on the store
+thread and its replies are written under `NonCancellable`: a command whose bytes arrived is either
+executed and answered, or not executed. Cancelling the whole connection — what B-01 to B-15 did —
+let a batch run and then dropped its replies: `DrainTest`'s ledger counted 4 to 12 executed `INCR`s
+without a reply in each of three runs of that mutant. A torn reply, the case the brief names, did not
+appear even then: once `writeFully` returns, ktor has queued the whole reply and closing the socket
+flushes it.
+
+**A client that stops reading does not hold the drain — because nothing bounds its buffer.** Measured
+in B-16: a client that asked for 100 MB of replies and read none let `stop()` return in 1.4 ms; ktor's
+write channel queued the replies in memory without suspending. Redis's default for normal clients is
+also unbounded (`client-output-buffer-limit normal 0 0 0`), so the behaviour matches — but **backpressure
+is not something kesh can rely on to bound memory**: a limit (B-27's for subscribers) has to count the
+bytes it queues itself. The 5 s after which the drain closes connections still writing is a guard for
+a write that does suspend; no test reaches it.
+
+**Where the save goes.** In the drain stage, after the connections, not as a release participant:
+kore budgets its three release groups one deadline each in the grace-period check, so a save sized
+there would triple the grace period for nothing. The drain deadline (`KESH_SHUTDOWN_DRAIN_SECONDS`)
+is the connections' 5 s plus the save, which the chart derives (R-5, [deploy](../services/deploy.md)).
+Rejected: a `SHUTDOWN`-style save before the drain — writes still arriving would be lost.
+
 ### D-20. Hashes pack under Redis 7.2's listpack limits: 512 fields, 64-byte fields and values — *new, B-06*
 
 B-06 was to take its threshold from B-19's measurement. B-19 gave none: it packed every hash and
@@ -760,7 +785,9 @@ refuses cleanly, `connected_clients` and `rejected_connections` are in `INFO` an
 **R-5. `SAVE` and startup load of ~4.3 GB take longer than the chart allows.** Mechanism: `SIGTERM`
 with save-on-shutdown must finish inside `terminationGracePeriodSeconds`; startup must finish before
 the startup probe gives up. Mitigation: B-14 measures `SAVE` and load time on §5a; B-16 derives the
-grace period and the startup probe budget from them and writes the arithmetic next to the values.
+grace period and the startup probe budget from them and writes the arithmetic next to the values —
+*done in B-16*: per GiB of `used_memory`, 3.9 s to save and 10.1 s to load, doubled in the chart for
+a measurement host that is not the reference (`deploy/chart/values.yaml`).
 *Measured in B-14* (`bench/snapshot/check.py`, the build machine, a snapshot on its local disk):
 
 | scale | keys | `SAVE` | snapshot | load at startup |

@@ -123,7 +123,9 @@ docker run --rm --network host redis:7.2 redis-cli -p 6379 ping
 `KESH_CLIENT_QUERY_BUFFER_LIMIT` (1 GB), `KESH_MAXMEMORY` (0, no limit; B-11),
 `KESH_MAXMEMORY_POLICY` (`noeviction`) and `KESH_MAXMEMORY_SAMPLES` (5; B-12), `KESH_DIR` (`.`) and
 `KESH_DBFILENAME` (`dump.kesh`; B-14), `KESH_GC_ASSISTS` (`on`; B-23), `KESH_HTTP_PORT` (8080, `off` for
-none; B-15). The printed configuration never
+none; B-15), `KESH_SAVE_ON_SHUTDOWN` (`off`), `KESH_SHUTDOWN_DRAIN_SECONDS` (15) and
+`KESH_TERMINATION_GRACE_SECONDS` (undeclared; B-16) — kore refuses at startup a plan that does not fit
+the declared grace period, and kesh exits 1 with its message. The printed configuration never
 shows the password.
 
 **`KESH_` in upper case, decided in B-01.** The brief spelled the prefix `kesh_`, which read as a
