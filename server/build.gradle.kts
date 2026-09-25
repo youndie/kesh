@@ -22,7 +22,13 @@ nativeService {
 }
 
 kotlin {
-    linuxX64()
+    linuxX64 {
+        // The collector's log, for measurements only (B-23): `-Pkesh.runtimeLogs=true`. A compiler flag,
+        // not a switch, so a measured binary is a different binary — its md5 goes in the report.
+        if (providers.gradleProperty("kesh.runtimeLogs").orNull == "true") {
+            binaries.all { freeCompilerArgs += "-Xruntime-logs=gc=info,gcScheduler=info" }
+        }
+    }
 
     sourceSets {
         nativeMain.dependencies {

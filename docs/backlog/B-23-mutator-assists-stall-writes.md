@@ -1,7 +1,7 @@
 ---
 id: B-23
 title: "Writes stall for seconds while the keyspace grows: decide on the collector's mutator assists"
-status: wip
+status: question
 priority: P1
 size: S
 stage: stage-3-memory
@@ -42,5 +42,33 @@ over 3 s. Steady-state churn over a heap that does not grow (B-19) did not show 
 |---|---|
 | server | `server/src/nativeMain/kotlin/io/github/youndie/kesh/server/Main.kt` |
 | server | `server/build.gradle.kts` |
+| bench | `bench/growth/assists.sh` |
+
+## Findings (2026-09-25)
+
+- **The lever is built**: `KESH_GC_ASSISTS=off` sets a finite `GC.maxHeapBytes` at startup; a binary
+  built with `-Pkesh.runtimeLogs=true` logs the collector. `bench/growth/assists.sh` interleaves the
+  arms, reads the longest stall and pause from the log, corrects them by the wall clock measured in
+  the same run, and kills kesh above 8 GB.
+- **Measured on the build machine** (two interleaved pairs, 9.5–11 GB available, load 1.7–4.9, another
+  session's builds resident): assists **on** — longest stall 8.54 s, stop-the-world at most 4.3 ms,
+  peak resident 4.9–6.4 GB, 16 M keys in 160 s. Assists **off** — no stall, and the heap past 8 GB in
+  29 s, before half the keys were in; the watchdog stopped it both times (heap 7.9 GB after epoch 24).
+- **Provisional decision, research D-25: the assists stay on.** The overshoot is unbounded; a
+  `maxmemory` cannot hold a heap the collector cannot brake.
+- **Not met as written:** "a host with at least 8 GB free and **nothing else resident**" — the build
+  machine had other work running, and the off arm needs more than 8 GB to finish at all.
+
+## Question (for the owner)
+
+The answer looks clear — the off arm does not bound its heap — but it was taken on a busy build
+machine, and the off arm never reached 16 M keys. Options:
+
+1. **Accept it**: D-25 becomes final, B-23 closes, and the lever stays for later measurements.
+2. **Wait for B-22's host** and run `bench/growth/assists.sh` there with a higher watchdog, to put a
+   number on the off arm's peak.
+
+Research's recommendation: **1** — no host changes "unbounded" into "bounded", and a number for the
+peak would only say how soon it hits the limit.
 
 Research: [research-architecture](../research/research-architecture.md).

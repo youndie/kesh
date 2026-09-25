@@ -48,7 +48,7 @@ A stage is a field on the item, not a directory.
 | [B-16](docs/backlog/B-16-image-chart-graceful-stop.md) `[ ]` | Image, chart, and a graceful stop that survives being repeated | P1 | M | B-14, B-15 |
 | [B-17](docs/backlog/B-17-reference-load-report.md) `[ ]` | Reference load report on the reference host | P1 | M | B-03, B-12, B-14, B-22 |
 | [B-22](docs/backlog/B-22-reference-host.md) `[?]` | Choose the reference host for the load report and the soak | P1 | XS | - |
-| [B-23](docs/backlog/B-23-mutator-assists-stall-writes.md) `[~]` | Writes stall for seconds while the keyspace grows: decide on the collector's mutator assists | P1 | S | - |
+| [B-23](docs/backlog/B-23-mutator-assists-stall-writes.md) `[?]` | Writes stall for seconds while the keyspace grows: decide on the collector's mutator assists | P1 | S | - |
 | [B-18](docs/backlog/B-18-soak-24h.md) `[ ]` | 24 h soak with TTL churn | P2 | S | B-17 |
 | [B-25](docs/backlog/B-25-bgsave-through-fork.md) `[ ]` | BGSAVE through fork, with the child's collector assists off | P2 | M | B-14 |
 | [B-26](docs/backlog/B-26-maxmemory-container-check.md) `[?]` | Refuse a maxmemory above the container's memory budget | P2 | S | B-11 |

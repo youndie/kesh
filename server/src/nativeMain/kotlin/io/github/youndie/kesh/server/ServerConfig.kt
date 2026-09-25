@@ -29,11 +29,16 @@ data class ServerConfig(
     /** Where the snapshot lives (`dir`, `dbfilename`; B-14). */
     val dir: String = ".",
     val dbFilename: String = "dump.kesh",
+    /**
+     * Whether the collector's mutator assists are on (B-23, research R-7). `KESH_GC_ASSISTS=off` turns
+     * them off with a finite `GC.maxHeapBytes`, the one lever the runtime offers.
+     */
+    val gcAssists: Boolean = true,
 ) {
     override fun toString(): String =
         "ServerConfig(host=$host, port=$port, password=${if (password == null) "none" else "set"}, " +
             "maxClients=${maxClients ?: "derived"}, limits=$limits, queryBufferLimit=$queryBufferLimit, " +
-            "maxMemory=$maxMemory, snapshot=$dir/$dbFilename)"
+            "maxMemory=$maxMemory, snapshot=$dir/$dbFilename, gcAssists=$gcAssists)"
 
     companion object {
         fun fromEnvironment(read: (String) -> String? = ::environmentVariable): ServerConfig {
@@ -67,6 +72,12 @@ data class ServerConfig(
                     } ?: defaults.maxMemory,
                 dir = read("KESH_DIR")?.takeIf { it.isNotEmpty() } ?: defaults.dir,
                 dbFilename = read("KESH_DBFILENAME")?.takeIf { it.isNotEmpty() } ?: defaults.dbFilename,
+                gcAssists =
+                    when (val raw = read("KESH_GC_ASSISTS")) {
+                        null, "on" -> true
+                        "off" -> false
+                        else -> throw IllegalArgumentException("KESH_GC_ASSISTS is on or off: $raw")
+                    },
             )
         }
     }

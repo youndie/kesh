@@ -141,7 +141,8 @@ server from `KESH_MAXMEMORY` and `CONFIG SET`; its policy and samples arrive wit
   `used_memory` itself is B-11's.
 * **While writes grow the keyspace, commands stall for seconds** — not in the table, which moves one
   bucket per operation at any size, but in the collector: its mutator assists hold every thread
-  until a mark finishes, 1.6–4.2 s at 12–27 M live objects (research §1.2, R-7). A 16 M-key load
-  with `redis-benchmark` saw 0.1 % of `SET`s over 1.6 s. B-23 decides whether to turn them off.
+  until a mark finishes, 1.6–4.2 s at 12–27 M live objects and 8.5 s at the end of a 16 M-key load
+  (research §1.2, R-7). They stay on (research D-25): without them the heap outgrows 8 GB before half
+  the keys are in.
 * **`DEL` and `UNLINK` are the same operation**, as are `FLUSHALL` with and without `ASYNC`
   (research D-15).
