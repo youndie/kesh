@@ -26,7 +26,7 @@ compare bytes), record golden files from Redis once (the oracle is run, every ti
 ## 2. API contracts
 
 * **Scripts** under `conformance/scripts/<group>/*.redis`, one command per line in `redis-cli`'s own
-  quoting, optionally prefixed: `[unordered]`, `[pairs]`, `[shape]` (normalisers, named on the line they apply
+  quoting, optionally prefixed: `[unordered]`, `[pairs]`, `[shape]`, `[random <population>]` (normalisers, named on the line they apply
   to), `[closes]` (both servers must close after the reply), `[raw]` (bytes as written, `\r\n` and
   `\xHH` escapes; everything until the server closes or goes quiet is the reply). A header
   `# requires: password` runs the script against the password-protected pair, unauthenticated.
@@ -43,7 +43,7 @@ compare bytes), record golden files from Redis once (the oracle is run, every ti
 |---|---|
 | `conformance/src/jvmMain/kotlin/io/github/youndie/kesh/conformance/Runner.kt` | sending each step to both servers, reading, comparing, reconnecting, the diff |
 | `conformance/src/jvmMain/kotlin/io/github/youndie/kesh/conformance/RespFrame.kt` | one reply's exact bytes, with enough structure to normalise |
-| `conformance/src/jvmMain/kotlin/io/github/youndie/kesh/conformance/Normaliser.kt` | `EXACT`, `UNORDERED`, `PAIRS`, `SHAPE` |
+| `conformance/src/jvmMain/kotlin/io/github/youndie/kesh/conformance/Normaliser.kt` | `EXACT`, `UNORDERED`, `PAIRS`, `SHAPE`, `RANDOM` |
 | `conformance/src/jvmMain/kotlin/io/github/youndie/kesh/conformance/Script.kt` | the script format |
 | `conformance/src/jvmMain/kotlin/io/github/youndie/kesh/conformance/Main.kt` | the run, the oracle's version, the Lettuce smoke |
 | `conformance/run.sh` | the four servers and the run |
@@ -58,8 +58,10 @@ compare bytes), record golden files from Redis once (the oracle is run, every ti
   a converted hash's `HGETALL`, where `[unordered]` would accept a value moved to another field
   (B-06); `[shape]` compares reply types, array lengths and nulls, and ignores
   content — for what differs by design: identities, `HELLO`'s `server` and `version` (research D-18),
-  `CLIENT LIST`. `random` and `cursor`, which research D-5 also names, arrive with the commands that
-  need them (`SPOP`, B-08; `SCAN`, B-10).
+  `CLIENT LIST`. `[random a b c]` checks a random reply (`SPOP`, `SRANDMEMBER`) for membership in the
+  population the line names and for Redis's count, holding **both** servers to the population so a
+  wrong one fails against Redis too (B-08). `cursor`, which research D-5 also names, arrives with
+  `SCAN` (B-10).
 * **Each step goes to both servers, one reply at a time.** Replies are read by structure
   (`RespFrame`), so a step's reply is exactly its own bytes; a connection that a step closed is
   reopened on both sides for the next step.

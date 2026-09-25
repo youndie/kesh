@@ -18,8 +18,8 @@ Owns all data: the keyspace, the value kinds, key expiry, and — later — memo
 eviction. Every data command's semantics lives here; `server` checks existence, arity and
 authentication and dispatches to it.
 
-**Built (B-05 to B-07):** kesh's own hash table (research D-12), strings, hashes, lists, the keyspace
-commands except `SCAN`, and lazy expiry. ***Target*:** sets (B-08), sorted sets (B-09), `SCAN`
+**Built (B-05 to B-08):** kesh's own hash table (research D-12), strings, hashes, lists, sets, the
+keyspace commands except `SCAN`, and lazy expiry. ***Target*:** sorted sets (B-09), `SCAN`
 (B-10), memory accounting and `maxmemory` (B-11), eviction (B-12), active expiry (B-13).
 
 **Deliberately does not:** do I/O, parse or write the wire, persist anything (that is `snapshot`), or
@@ -28,9 +28,11 @@ free memory — under a tracing collector nothing does (research D-15).
 ## 2. API contracts
 
 * The command groups it implements: [endpoint-strings](../api/endpoint-strings.md),
-  [endpoint-hashes](../api/endpoint-hashes.md), [endpoint-lists](../api/endpoint-lists.md) and
-  [endpoint-keyspace](../api/endpoint-keyspace.md). Sets and sorted sets are drafted in the
-  *docs/layer-drafts* branch.
+  [endpoint-hashes](../api/endpoint-hashes.md), [endpoint-lists](../api/endpoint-lists.md),
+  [endpoint-sets](../api/endpoint-sets.md) and [endpoint-keyspace](../api/endpoint-keyspace.md).
+  Sorted sets are drafted in the *docs/layer-drafts* branch.
+* **The command table** is `StoreCommands.all`, every group once; the server's dispatcher and the
+  store's tests both register it.
 * **A command** is a `StoreCommand`: Redis's name and arity, and a handler over the `Db` returning a
   RESP reply. Each handler follows its Redis function check by check — the addresses are in the KDoc.
 * **Threading:** single-threaded. Every call happens on the store thread (research D-14); nothing in
@@ -49,6 +51,8 @@ free memory — under a tracing collector nothing does (research D-15).
 | `store/src/commonMain/kotlin/io/github/youndie/kesh/store/hashes/HashValue.kt` | a hash: packed bytes, then a `Keyspace` table (research D-20) |
 | `store/src/commonMain/kotlin/io/github/youndie/kesh/store/commands/ListCommands.kt` | the list commands (`t_list.c`) |
 | `store/src/commonMain/kotlin/io/github/youndie/kesh/store/lists/ListValue.kt` | a list: a deque of 8 KiB packed chunks (research D-21) |
+| `store/src/commonMain/kotlin/io/github/youndie/kesh/store/commands/SetCommands.kt` | the set commands (`t_set.c`) |
+| `store/src/commonMain/kotlin/io/github/youndie/kesh/store/sets/SetValue.kt` | a set: packed members, then a `Keyspace` table (research D-22) |
 | `store/src/commonMain/kotlin/io/github/youndie/kesh/store/packed/Packed.kt` | the length-prefixed layout both packed kinds use |
 | `store/src/commonMain/kotlin/io/github/youndie/kesh/store/commands/KeyCommands.kt` | the keyspace commands (`db.c`, `expire.c`) |
 | `store/src/commonMain/kotlin/io/github/youndie/kesh/store/Glob.kt` | `stringmatchlen`, for `KEYS` and later `SCAN … MATCH` |
@@ -72,8 +76,8 @@ free memory — under a tracing collector nothing does (research D-15).
 * **The expiry lives on the entry**, not in a second table. Active expiry (B-13) needs an index of
   the keys that have one, and adds it then.
 * **Strings are `ByteArray` values; the type of a value is its class.** A command that finds another
-  class answers `WRONGTYPE` (`stringOf`, `hashOf`, `listValueOf`); sets and sorted sets arrive with
-  B-08 and B-09.
+  class answers `WRONGTYPE` (`stringOf`, `hashOf`, `listValueOf`, `setValueOf`); sorted sets arrive
+  with B-09.
 * **Hashes are packed where Redis packs them** (research D-20): one `ByteArray` of length-prefixed
   pairs in insertion order up to 512 fields of at most 64 bytes, then a `Keyspace` table — the
   keyspace's own, so `HSCAN` inherits `SCAN`'s guarantee (B-10). Packed for memory, not for the
@@ -82,7 +86,10 @@ free memory — under a tracing collector nothing does (research D-15).
 * **Lists are chunks of packed items** (research D-21): a deque of `ByteArray`s of up to 8 KiB each,
   Redis's quicklist in role; an item bigger than a chunk has one to itself. A list's encoding never
   shows in a reply, so the size is Redis's for memory reasons alone.
-* **Sets and sorted sets will pack the same way** where small (B-08, B-09).
+* **Sets pack under Redis's listpack limits for sets** (128 members, 64 bytes; research D-22) and
+  have no `intset`: Redis sorts small integer sets, kesh keeps insertion order, and neither order is
+  promised — set replies are compared as multisets.
+* **Sorted sets will pack the same way** where small (B-09).
 
 ## 4. Dependencies
 
@@ -98,7 +105,8 @@ A module of this build; not published.
 
 `proto-max-bulk-len` bounds `APPEND` and `SETRANGE` (`StringCommands.maxStringLength`).
 `hash-max-listpack-entries` and `hash-max-listpack-value` are `HashValue.maxPackedEntries` and
-`maxPackedValue`, and `list-max-listpack-size` is `ListValue.maxChunkBytes` — all at Redis 7.2's
+`maxPackedValue`, `list-max-listpack-size` is `ListValue.maxChunkBytes`, and the set limits are
+`SetValue.maxPackedEntries` and `maxPackedValue` — all at Redis 7.2's
 defaults and not settable yet (`CONFIG`, B-15). `maxmemory`,
 its policy and samples arrive with B-11 and B-12.
 
@@ -109,7 +117,9 @@ its policy and samples arrive with B-11 and B-12.
   x86's extra bits round an error away (`0.1 + 0.2`: Redis `0.3`, kesh `0.30000000000000004`). Redis
   itself answers differently on platforms whose `long double` is a `double`. Hexadecimal floats, which
   Redis's `strtold` accepts, are refused.
-* **A hash never goes back to packed**, however few fields it keeps — as in Redis 7.2.
+* **A hash or a set never goes back to packed**, however little it keeps — as in Redis 7.2.
+* **`SPOP` and `SRANDMEMBER` draw from `SetCommands.random`**, `Random.Default` — not seeded, not
+  reproducible between runs, as Redis's are not.
 * **The table never shrinks** except on `FLUSHALL`. Redis shrinks a table below 10 % full from its
   cron; kesh has no cron yet (B-13 brings the first periodic work).
 * **`used_memory` falls when a key is deleted; resident memory falls only after a GC cycle** — and

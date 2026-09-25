@@ -425,7 +425,10 @@ A normaliser is also a way to hide a real difference, so each one is a line in t
 reviewer sees, and B-04's acceptance includes a deliberately wrong reply that the harness catches.
 
 **Built in B-04** ([conformance](../services/conformance.md)). `unordered` and `shape` exist; `random` and `cursor`
-arrive with `SPOP` (B-08) and `SCAN` (B-10). The planted wrong reply (`SELECT 1` → `DB index out of
+arrive with `SPOP` (B-08) and `SCAN` (B-10). *B-08:* `random` names its population on the line —
+`[random a b c] SRANDMEMBER s 2` — and holds **both** replies to it, so a population written wrong
+fails against Redis; a planted `SRANDMEMBER` one member short failed it. B-06 added `pairs`, for a
+converted hash's `HGETALL`. The planted wrong reply (`SELECT 1` → `DB index out of
 range`) failed the run at byte 14 of both `SELECT` lines and passed once removed. Two things the
 design above did not foresee:
 - **`HELLO 3` cannot be compared at all**: Redis switches to RESP3 and kesh refuses it (D-1). It is
@@ -550,6 +553,19 @@ pause for a memory saving it cannot use.
 Watch: the per-thread cost comes back with threads. kesh's connections run on `Dispatchers.IO`
 (up to 64 threads); at 256 KiB per size class touched, that is on the order of 100 MB at worst —
 small beside the heap, and to be checked in B-17's resident-memory figures.
+
+### D-22. Sets pack under Redis 7.2's listpack limits, and have no intset — *new, B-08*
+
+A set is packed — one `ByteArray` of members — up to 128 members of at most 64 bytes
+(`set-max-listpack-entries`, `set-max-listpack-value`, `redis/redis@7.2.5!/src/config.c`), and a
+`Keyspace` table after, one-way, like a hash (D-20). Redis has a third encoding kesh does not: a
+set of integers up to 512 members is an `intset`, kept sorted, so Redis answers `SMEMBERS` of one in
+ascending order. Reproducing it would make every small integer set's order match — at the cost of a
+third encoding for an order Redis's documentation does not promise. So set replies of several
+members are compared as multisets, which D-5 already planned, and the reference dataset's tags are
+short strings, not integers.
+Rejected: an intset for the byte-exact comparison it would buy — the comparison would test an
+accident of Redis's encoding, not a contract.
 
 ### D-21. Lists are chunks of packed items, 8 KiB each — *new, B-07*
 
