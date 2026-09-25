@@ -20,7 +20,7 @@ heap ceiling of its own and does not see its container's limit (research §1.2),
 accounting is the only thing between a write and an OOM kill.
 
 Built in B-11: `used_memory`, `maxmemory`, `noeviction`. *Target*: the eviction policies (B-12), the
-container check (B-11's open question, below).
+container check (B-26, below).
 
 ## 2. Business rules
 
@@ -39,9 +39,9 @@ container check (B-11's open question, below).
   D-15).
 * *Target* (B-12): `allkeys-lru`, `volatile-lru`, `allkeys-random`, `volatile-random`,
   `volatile-ttl`, `maxmemory-samples`.
-* *Target* (open, B-11): **a `maxmemory` that, with the measured peak ratio, exceeds the container's
+* *Target* (B-26): **a `maxmemory` that, with the measured peak ratio, exceeds the container's
   memory budget is refused** — at startup and on `CONFIG SET`, naming both numbers. Waits on a kore
-  release that has `containerMemoryBudget()`; see B-11's question.
+  release that has `containerMemoryBudget()`.
 
 ## 3. The commands this feature adds
 
@@ -81,7 +81,7 @@ The rest of `CONFIG` and `INFO` is drafted in *endpoint-server*, with B-15.
 * **And:** `evicted_keys` in `INFO stats` grows
 
 ### Scenario: maxmemory beyond the container
-*Target*, B-11's open question.
+*Target*, B-26.
 * **Given:** a container limit of 1 GiB
 * **When:** `CONFIG SET maxmemory 2gb`
 * **Then:** the command is refused with a message naming the requested value and the budget, and `maxmemory` is unchanged

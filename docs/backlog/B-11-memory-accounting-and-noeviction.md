@@ -1,7 +1,7 @@
 ---
 id: B-11
-title: "Memory accounting, maxmemory and noeviction, checked against the container's limit"
-status: question
+title: "Memory accounting, maxmemory and noeviction"
+status: done
 priority: P1
 size: M
 stage: stage-3-memory
@@ -9,7 +9,7 @@ epic: feature-memory-limit
 blocked_by: [B-10]
 ---
 
-# B-11 — Memory accounting, maxmemory and noeviction, checked against the container's limit
+# B-11 — Memory accounting, maxmemory and noeviction
 
 **Feature:** [feature-memory-limit](../features/feature-memory-limit.md).
 
@@ -28,7 +28,8 @@ write and an OOM kill.
 
 - AC: The "refuse when full" scenario of `feature-memory-limit` passes.
 - AC: The ratio of resident memory to `used_memory` on the reference dataset is measured, and research D-10 says what it is and how it was measured.
-- AC: `CONFIG SET maxmemory` above the container's budget is refused, and the refusal names both numbers.
+- ~~AC: `CONFIG SET maxmemory` above the container's budget is refused, and the refusal names both numbers.~~
+  Moved to [B-26](B-26-maxmemory-container-check.md) by the owner's decision below.
 
 ## Code anchors
 
@@ -60,18 +61,11 @@ write and an OOM kill.
 - **On the way:** `CONFIG GET`/`SET maxmemory` and `INFO memory` exist now, ahead of B-15, because
   the ratio could not be read without them.
 
-## Question (for the owner)
+## Decision (owner, 2026-09-25)
 
-The container check needs `containerMemoryBudget()`, which no kore release has. Options:
-
-1. **Release kore** (0.1.5, with #77) and bump kesh to it; the check lands in B-11 as written. A
-   publish of a library of yours — your call to make.
-2. **Split the check out** into a new item blocked on that release, and close B-11 with ACs 1 and 2.
-   B-12 (eviction), blocked by B-11, can then go ahead now.
-3. **Read the cgroup in kesh** until kore is released — duplicating kore's code, which is the thing
-   kore exists to avoid.
-
-Research's recommendation: **2**, and 1 whenever kore is next released. Until then B-11 is not
-merged; its branch `feat/b-11-memory-accounting` holds everything above.
+The container check needs `containerMemoryBudget()`, which no kore release has. Of the three
+options — release kore now, split the check out, read the cgroup in kesh — the owner chose
+**the split**: the check is [B-26](B-26-maxmemory-container-check.md), waiting for a kore release,
+and B-11 closes on ACs 1 and 2. B-12 (eviction) is unblocked by it.
 
 Research: [research-architecture](../research/research-architecture.md).

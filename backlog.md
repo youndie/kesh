@@ -43,7 +43,6 @@ A stage is a field on the item, not a directory.
 | Task | | Priority | Size | Blocked by |
 |---|---|---|---|---|
 | [B-21](docs/backlog/B-21-first-consumer-and-pubsub.md) `[?]` | Who is the first consumer, and does Pub/Sub belong in v1? | P0 | XS | - |
-| [B-11](docs/backlog/B-11-memory-accounting-and-noeviction.md) `[?]` | Memory accounting, maxmemory and noeviction, checked against the container's limit | P1 | M | B-10 |
 | [B-12](docs/backlog/B-12-eviction-policies.md) `[ ]` | Eviction policies with sampled LRU | P1 | M | B-11 |
 | [B-13](docs/backlog/B-13-active-expiry.md) `[ ]` | Active expiry, Redis's algorithm as its source has it | P1 | S | B-05 |
 | [B-14](docs/backlog/B-14-snapshots.md) `[ ]` | Snapshots: the format, SAVE, load at startup, torn-save safety, and their measured cost | P1 | L | B-10 |
@@ -53,8 +52,9 @@ A stage is a field on the item, not a directory.
 | [B-22](docs/backlog/B-22-reference-host.md) `[?]` | Choose the reference host for the load report and the soak | P1 | XS | - |
 | [B-23](docs/backlog/B-23-mutator-assists-stall-writes.md) `[ ]` | Writes stall for seconds while the keyspace grows: decide on the collector's mutator assists | P1 | S | - |
 | [B-18](docs/backlog/B-18-soak-24h.md) `[ ]` | 24 h soak with TTL churn | P2 | S | B-17 |
+| [B-26](docs/backlog/B-26-maxmemory-container-check.md) `[?]` | Refuse a maxmemory above the container's memory budget | P2 | S | B-11 |
 
-## Closed (13)
+## Closed (14)
 
 **Protocol and core**
 
@@ -73,6 +73,10 @@ A stage is a field on the item, not a directory.
 - [B-08](docs/backlog/B-08-sets.md) `[x]` - Sets
 - [B-09](docs/backlog/B-09-sorted-sets.md) `[x]` - Sorted sets with logarithmic rank and range
 - [B-10](docs/backlog/B-10-scan-family.md) `[x]` - SCAN, HSCAN, SSCAN, ZSCAN with the completeness guarantee
+
+**Memory limit and expiry**
+
+- [B-11](docs/backlog/B-11-memory-accounting-and-noeviction.md) `[x]` - Memory accounting, maxmemory and noeviction
 
 **Operations**
 
