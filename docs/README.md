@@ -64,30 +64,33 @@ no file behind it, fails `coverage_map.py`.
 
 ### Research (1)
 
-- [x] [research-architecture](research/research-architecture.md) — verified facts, the deviations from the brief, decisions D-1…D-24, risks, the reference dataset
+- [x] [research-architecture](research/research-architecture.md) — verified facts, the deviations from the brief, decisions D-1…D-31, risks, the reference dataset
 
-### Services (6)
+### Services (7)
 
 - [x] [resp](services/resp.md) — the RESP2 parser and writer
 - [x] [store](services/store.md) — the keyspace, strings and the four collection kinds, keys, lazy expiry
 - [x] [server](services/server.md) — the binary: listener, connections, the store thread, ordered stop
-- [x] [bench](services/bench.md) — the reference dataset generator; heap probe, load profiles and soak *target*
+- [x] [bench](services/bench.md) — the reference dataset, the heap and fork probes, the load generator `kesh-load` and the stand's scripts
 - [x] [conformance](services/conformance.md) — the differential harness against Redis 7.2, and the Lettuce smoke
 - [x] [snapshot](services/snapshot.md) — kesh's snapshot format, `SAVE`, load at startup
+- [x] [deploy](services/deploy.md) — the container image and the Helm chart: probes, memory limit, grace period
 
-### Features (9)
+### Features (11)
 
 - [x] [feature-strings](features/feature-strings.md) — strings and counters
 - [x] [feature-hashes](features/feature-hashes.md) — hashes, packed where Redis packs them
 - [x] [feature-lists](features/feature-lists.md) — lists of packed chunks
 - [x] [feature-sets](features/feature-sets.md) — sets, packed where small
 - [x] [feature-sorted-sets](features/feature-sorted-sets.md) — sorted sets on a skiplist with spans
-- [x] [feature-memory-limit](features/feature-memory-limit.md) — `used_memory`, `maxmemory`, `noeviction`; eviction *target*
+- [x] [feature-memory-limit](features/feature-memory-limit.md) — `used_memory`, `maxmemory` and Redis's eviction policies
 - [x] [feature-snapshots](features/feature-snapshots.md) — `SAVE`, load at startup, torn-save safety
-- [x] [feature-keyspace](features/feature-keyspace.md) — keys, `SCAN` and lazy expiry; active expiry *target*
+- [x] [feature-keyspace](features/feature-keyspace.md) — keys, `SCAN`, lazy and active expiry
 - [x] [feature-resp-connection](features/feature-resp-connection.md) — RESP2 and inline, pipelining, auth, Redis's request limits, the connection ceiling
+- [x] [feature-pubsub](features/feature-pubsub.md) — `PUBLISH`, `SUBSCRIBE`, `PSUBSCRIBE` in RESP2 subscribe mode, the subscriber's output limit
+- [x] [feature-operations](features/feature-operations.md) — `INFO`, probes and metrics, the image and chart, the ordered stop
 
-### API (7)
+### API (9)
 
 - [x] [endpoint-strings](api/endpoint-strings.md) — the twenty string commands
 - [x] [endpoint-hashes](api/endpoint-hashes.md) — the eleven hash commands and `HSCAN`
@@ -96,3 +99,5 @@ no file behind it, fails `coverage_map.py`.
 - [x] [endpoint-sorted-sets](api/endpoint-sorted-sets.md) — the fifteen sorted set commands and `ZSCAN`
 - [x] [endpoint-keyspace](api/endpoint-keyspace.md) — key commands, expiry and `SCAN`
 - [x] [endpoint-connection](api/endpoint-connection.md) — `PING`, `ECHO`, `QUIT`, `AUTH`, `HELLO`, `SELECT`, `CLIENT`, `COMMAND`; protocol errors
+- [x] [endpoint-server](api/endpoint-server.md) — `INFO`, `CONFIG GET`/`SET`, `SAVE`, `LASTSAVE`; `SHUTDOWN`, `TIME`, `MEMORY USAGE` *target*
+- [x] [endpoint-http](api/endpoint-http.md) — the HTTP port: `/health/live`, `/health/started`, `/health/ready`, `/metrics`
