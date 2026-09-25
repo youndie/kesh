@@ -1,5 +1,6 @@
 package io.github.youndie.kesh.store.lists
 
+import io.github.youndie.kesh.store.ByteSlice
 import io.github.youndie.kesh.store.memory.MemoryModel
 import io.github.youndie.kesh.store.packed.Packed
 
@@ -99,6 +100,15 @@ class ListValue {
         if (chunk.bytes.size > maxChunkBytes && chunk.count > 1) {
             chunks.removeAt(c).dropped()
             chunks.addAll(c, rechunk(items(chunk)))
+        }
+    }
+
+    /** Every item, in list order, where it lies — no copy (B-25). */
+    fun forEachSlice(visitor: ByteSlice) {
+        for (c in 0 until chunks.size) {
+            val chunk = chunks[c]
+            var at = 0
+            repeat(chunk.count) { at = Packed.visit(chunk.bytes, at, visitor) }
         }
     }
 

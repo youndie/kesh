@@ -1,5 +1,6 @@
 package io.github.youndie.kesh.store.sets
 
+import io.github.youndie.kesh.store.ByteSlice
 import io.github.youndie.kesh.store.keyspace.Keyspace
 import io.github.youndie.kesh.store.memory.MemoryModel
 import io.github.youndie.kesh.store.packed.Packed
@@ -99,6 +100,16 @@ class SetValue(
             action(Packed.read(packed, at))
             at = Packed.skip(packed, at)
         }
+    }
+
+    /** Every member, in [forEach]'s order, where it lies — no copy (B-25). */
+    fun forEachSlice(visitor: ByteSlice) {
+        table?.let { t ->
+            t.forEach { visitor.accept(it.key, 0, it.key.size) }
+            return
+        }
+        var at = 0
+        while (at < packed.size) at = Packed.visit(packed, at, visitor)
     }
 
     fun members(): List<ByteArray> = ArrayList<ByteArray>(size).also { out -> forEach { out.add(it) } }

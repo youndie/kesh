@@ -1,6 +1,8 @@
 package io.github.youndie.kesh.snapshot
 
+import io.github.youndie.kesh.store.ByteSlice
 import io.github.youndie.kesh.store.Db
+import io.github.youndie.kesh.store.ScoredSlice
 import io.github.youndie.kesh.store.hashes.HashValue
 import io.github.youndie.kesh.store.keyspace.Entry
 import io.github.youndie.kesh.store.lists.ListValue
@@ -86,32 +88,27 @@ object Snapshot {
                     out.blob(value)
                 }
 
+                // The elements are copied from where the store keeps them, never out into arrays of
+                // their own: a background save's child has no collector, and would keep every copy
+                // until it exits (B-25, research R-6).
                 is HashValue -> {
                     out.count(value.size)
-                    value.forEach { field, v ->
-                        out.blob(field)
-                        out.blob(v)
-                    }
+                    value.forEachSlice(out)
                 }
 
                 is ListValue -> {
                     out.count(value.size)
-                    if (value.size > 0) value.range(0, value.size - 1).forEach { out.blob(it) }
+                    value.forEachSlice(out)
                 }
 
                 is SetValue -> {
                     out.count(value.size)
-                    value.forEach { out.blob(it) }
+                    value.forEachSlice(out)
                 }
 
                 is ZSetValue -> {
                     out.count(value.size)
-                    if (value.size > 0) {
-                        value.range(0, value.size - 1).forEach { (member, score) ->
-                            out.blob(member)
-                            out.i64(score.toRawBits())
-                        }
-                    }
+                    value.forEachSlice(out)
                 }
             }
             keys++
@@ -205,10 +202,33 @@ object Snapshot {
             else -> error("no snapshot type for ${value::class}")
         }
 
-    /** A buffered writer that keeps the CRC and the count of what it wrote. */
+    /**
+     * A buffered writer that keeps the CRC and the count of what it wrote. As a [ByteSlice] it writes
+     * the slice as a blob; as a [ScoredSlice], the member as a blob and then its score.
+     */
     private class Out(
         private val sink: ByteSink,
-    ) {
+    ) : ByteSlice,
+        ScoredSlice {
+        override fun accept(
+            data: ByteArray,
+            offset: Int,
+            length: Int,
+        ) {
+            count(length)
+            bytes(data, offset, length)
+        }
+
+        override fun accept(
+            data: ByteArray,
+            offset: Int,
+            length: Int,
+            score: Double,
+        ) {
+            accept(data, offset, length)
+            i64(score.toRawBits())
+        }
+
         val crc = Crc32()
         var written = 0L
         private val buffer = ByteArray(1 shl 20)
@@ -242,11 +262,18 @@ object Snapshot {
             bytes(bytes)
         }
 
-        fun bytes(bytes: ByteArray) {
-            var from = 0
-            while (from < bytes.size) {
+        fun bytes(bytes: ByteArray) = bytes(bytes, 0, bytes.size)
+
+        fun bytes(
+            bytes: ByteArray,
+            offset: Int,
+            length: Int,
+        ) {
+            var from = offset
+            val end = offset + length
+            while (from < end) {
                 if (at == buffer.size) flush()
-                val n = minOf(bytes.size - from, buffer.size - at)
+                val n = minOf(end - from, buffer.size - at)
                 bytes.copyInto(buffer, at, from, from + n)
                 at += n
                 from += n

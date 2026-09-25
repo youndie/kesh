@@ -1,5 +1,6 @@
 package io.github.youndie.kesh.store.zsets
 
+import io.github.youndie.kesh.store.ScoredSlice
 import io.github.youndie.kesh.store.keyspace.Keyspace
 import io.github.youndie.kesh.store.memory.MemoryModel
 import io.github.youndie.kesh.store.packed.Packed
@@ -119,6 +120,26 @@ class ZSetValue(
     /** `zsetTypeMaybeConvert`: a write of more members than a packed set holds converts first. */
     fun prepareFor(incoming: Int) {
         if (list == null && incoming > maxPackedEntries) convert()
+    }
+
+    /** Every member with its score, by rank ascending, where it lies — no copy (B-25). */
+    fun forEachSlice(visitor: ScoredSlice) {
+        list?.let { l ->
+            var node = if (size > 0) l.at(0) else null
+            while (node != null) {
+                visitor.accept(node.member, 0, node.member.size, node.score)
+                node = node.next
+            }
+            return
+        }
+        var at = 0
+        while (at < packed.size) {
+            val h = Packed.header(packed, at + 8)
+            val start = (h and 0xffffffffL).toInt()
+            val length = (h ushr 32).toInt()
+            visitor.accept(packed, start, length, scoreAt(at))
+            at = start + length
+        }
     }
 
     /** The members from rank [from] to [to], both included, ascending — or descending if [reverse]. */

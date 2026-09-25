@@ -1,5 +1,7 @@
 package io.github.youndie.kesh.store.packed
 
+import io.github.youndie.kesh.store.ByteSlice
+
 /**
  * The byte layout of kesh's packed collections — hashes (B-06), list chunks (B-07): items one after
  * another, each an unsigned LEB128 length then its bytes. The role of Redis's listpack, without its
@@ -35,7 +37,7 @@ internal object Packed {
     }
 
     /** The length of the item at [at], and the offset its bytes start at, in one `Long`. */
-    private fun header(
+    fun header(
         data: ByteArray,
         at: Int,
     ): Long {
@@ -66,6 +68,19 @@ internal object Packed {
         var offset = at
         repeat(n) { offset = skip(data, offset) }
         return offset
+    }
+
+    /** Hands [visitor] the item at [at] where it lies, without a copy; the offset of the next item. */
+    fun visit(
+        data: ByteArray,
+        at: Int,
+        visitor: ByteSlice,
+    ): Int {
+        val h = header(data, at)
+        val start = (h and 0xffffffffL).toInt()
+        val length = (h ushr 32).toInt()
+        visitor.accept(data, start, length)
+        return start + length
     }
 
     /** A copy of the item at [at]. */
