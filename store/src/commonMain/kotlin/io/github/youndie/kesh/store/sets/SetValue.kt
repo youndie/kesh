@@ -17,7 +17,10 @@ class SetValue(
 ) {
     private var packed: ByteArray = Packed.EMPTY
     private var packedCount = 0
-    private var table: Keyspace? = null
+
+    /** The table, once the set is no longer packed; `SSCAN` walks it. */
+    internal var table: Keyspace? = null
+        private set
 
     val size: Int get() = table?.size ?: packedCount
 

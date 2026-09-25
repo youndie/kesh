@@ -23,7 +23,10 @@ class ZSetValue(
     private var packed: ByteArray = Packed.EMPTY
     private var packedCount = 0
     private var list: SkipList? = null
-    private var index: Keyspace? = null
+
+    /** Member to [SkipList.Node], once the set is no longer packed; `ZSCAN` walks it. */
+    internal var index: Keyspace? = null
+        private set
 
     val size: Int get() = list?.size ?: packedCount
 

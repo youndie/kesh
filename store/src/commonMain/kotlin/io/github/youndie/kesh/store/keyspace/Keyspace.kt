@@ -129,6 +129,58 @@ class Keyspace(
     }
 
     /**
+     * One step of Redis's `dictScan` (`redis/redis@7.2!/src/dict.c` — `dictScanDefrag`): emits the
+     * entries of the bucket at [cursor] — and, during a resize, of every bucket of the larger table
+     * that bucket expands into — and returns the next cursor, 0 when the table has been covered.
+     *
+     * The cursor counts in **reversed** bits, so it walks the high bits of a bucket index first: a
+     * power-of-two table that doubles in between keeps every bucket not yet visited at a cursor not
+     * yet reached. That is `SCAN`'s guarantee — every entry present for the whole iteration is
+     * emitted at least once — and why the table has power-of-two sizes. The table must not change
+     * during [emit]; no rehash step runs here.
+     */
+    fun scan(
+        cursor: Long,
+        emit: (Entry) -> Unit,
+    ): Long {
+        if (size == 0) return 0
+        var v = cursor
+        if (!isRehashing) {
+            val table = tables[0]!!
+            val m0 = (table.size - 1).toLong()
+            emitBucket(table, (v and m0).toInt(), emit)
+            v = v or m0.inv()
+            v = reverse(reverse(v) + 1)
+        } else {
+            var small = tables[0]!!
+            var large = tables[1]!!
+            if (small.size > large.size) small = large.also { large = small }
+            val m0 = (small.size - 1).toLong()
+            val m1 = (large.size - 1).toLong()
+            emitBucket(small, (v and m0).toInt(), emit)
+            do {
+                emitBucket(large, (v and m1).toInt(), emit)
+                v = v or m1.inv()
+                v = reverse(reverse(v) + 1)
+            } while (v and (m0 xor m1) != 0L)
+        }
+        return v
+    }
+
+    private fun emitBucket(
+        table: Array<Entry?>,
+        bucket: Int,
+        emit: (Entry) -> Unit,
+    ) {
+        var entry = table[bucket]
+        while (entry != null) {
+            val next = entry.next
+            emit(entry)
+            entry = next
+        }
+    }
+
+    /**
      * An entry chosen as Redis's `dictGetFairRandomKey` does in spirit: a random non-empty bucket, then
      * a random entry of its chain. [random] returns a value in `[0, bound)`.
      */
@@ -219,5 +271,16 @@ class Keyspace(
 
         /** Redis's `_dictRehashStep` moves one bucket per operation; so does this. */
         const val REHASH_BUCKETS_PER_STEP = 1
+
+        /** The bits of [v] in reverse order — `rev` in `dict.c`. */
+        fun reverse(v: Long): Long {
+            var x = v
+            var r = 0L
+            repeat(64) {
+                r = (r shl 1) or (x and 1L)
+                x = x ushr 1
+            }
+            return r
+        }
     }
 }

@@ -35,6 +35,14 @@ enum class Normaliser {
      */
     RANDOM,
 
+    /**
+     * For the `SCAN` family (research D-5): cursors differ by design, so a `[cursor] SCAN 0 …` line is
+     * iterated by the harness on each server until the cursor returns to 0, and what is compared is
+     * the sorted, de-duplicated union of what each iteration returned — pairs kept together for
+     * `HSCAN` and `ZSCAN`. The runner hands this normaliser those unions; it compares them exactly.
+     */
+    CURSOR,
+
     ;
 
     fun agree(
@@ -67,6 +75,10 @@ enum class Normaliser {
 
             RANDOM -> {
                 randomAgree(kesh, oracle, population)
+            }
+
+            CURSOR -> {
+                kesh.bytes.contentEquals(oracle.bytes)
             }
         }
 

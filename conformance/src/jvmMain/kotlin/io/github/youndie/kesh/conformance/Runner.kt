@@ -1,5 +1,7 @@
 package io.github.youndie.kesh.conformance
 
+import io.github.youndie.kesh.resp.Reply
+import io.github.youndie.kesh.resp.encode
 import java.io.BufferedInputStream
 import java.io.ByteArrayOutputStream
 import java.io.EOFException
@@ -114,6 +116,7 @@ class Runner(
 
         /** The reply's bytes, and whether the server closed the connection after it. */
         fun exchange(step: Script.Step): Pair<ByteArray, Boolean> {
+            if (step.kind == Script.Kind.CURSOR) return iterate(step)
             socket.getOutputStream().apply {
                 write(step.bytes)
                 flush()
@@ -122,7 +125,46 @@ class Runner(
                 Script.Kind.COMMAND -> RespFrame.read(input).bytes to false
                 Script.Kind.CLOSES -> RespFrame.read(input).bytes to endsNow()
                 Script.Kind.RAW -> drain()
+                Script.Kind.CURSOR -> error("a [cursor] step is iterated, not exchanged once")
             }
+        }
+
+        /**
+         * A `[cursor]` step: the command sent again with each cursor the server returns until it
+         * returns 0, and the union of the elements as one synthetic array reply — sorted, without
+         * repeats, `HSCAN`'s and `ZSCAN`'s pairs kept together. A reply that is not a scan reply (an
+         * error) is returned as it came.
+         */
+        private fun iterate(step: Script.Step): Pair<ByteArray, Boolean> {
+            val args = step.arguments.toMutableList()
+            val name = args[0].decodeToString().lowercase()
+            val cursorAt = if (name == "scan") 1 else 2
+            val group = if (name == "hscan" || name == "zscan") 2 else 1
+            val units = java.util.TreeSet<String>()
+            var bulks = 0
+            repeat(MAX_ROUNDS) {
+                socket.getOutputStream().apply {
+                    write(Reply.Multi(args.map { Reply.Bulk(it) }).encode())
+                    flush()
+                }
+                val frame = RespFrame.read(input)
+                val parts = frame.elements
+                if (frame.type != '*' || parts == null || parts.size != 2 ||
+                    parts[1].elements == null
+                ) {
+                    return frame.bytes to false
+                }
+                for (unit in parts[1].elements!!.chunked(group)) {
+                    if (units.add(unit.joinToString("") { String(it.bytes, Charsets.ISO_8859_1) })) bulks += unit.size
+                }
+                val cursor = parts[0].bulkPayload()!!
+                if (cursor.decodeToString() == "0") {
+                    val body = units.joinToString("").toByteArray(Charsets.ISO_8859_1)
+                    return "*$bulks\r\n".encodeToByteArray() + body to false
+                }
+                args[cursorAt] = cursor
+            }
+            error("no end of iteration after $MAX_ROUNDS rounds")
         }
 
         /** Everything the server sends until it closes (true) or stays quiet for [quietAfter] ms (false). */
@@ -165,6 +207,9 @@ class Runner(
     companion object {
         /** Appended to a reply after which the server closed the connection, so the diff shows it. */
         val CLOSED = "<closed>".encodeToByteArray()
+
+        /** How many calls a `[cursor]` iteration may take before the harness calls it endless. */
+        const val MAX_ROUNDS = 1_000_000
 
         /** Both byte streams from the first offset where they differ, with a little context before it. */
         fun describe(outcome: Outcome): String {

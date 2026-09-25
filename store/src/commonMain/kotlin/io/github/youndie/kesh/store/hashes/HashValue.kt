@@ -23,7 +23,10 @@ class HashValue(
 ) {
     private var packed: ByteArray = Packed.EMPTY
     private var packedCount = 0
-    private var table: Keyspace? = null
+
+    /** The table, once the hash is no longer packed; `HSCAN` walks it. */
+    internal var table: Keyspace? = null
+        private set
 
     val size: Int get() = table?.size ?: packedCount
 

@@ -10,11 +10,7 @@ import io.github.youndie.kesh.store.commands.Replies.SYNTAX
 import io.github.youndie.kesh.store.commands.Replies.ZERO
 import io.github.youndie.kesh.store.commands.Replies.invalidExpireTime
 import io.github.youndie.kesh.store.commands.Replies.long
-import io.github.youndie.kesh.store.hashes.HashValue
 import io.github.youndie.kesh.store.keyspace.Entry
-import io.github.youndie.kesh.store.lists.ListValue
-import io.github.youndie.kesh.store.sets.SetValue
-import io.github.youndie.kesh.store.zsets.ZSetValue
 import kotlin.random.Random
 
 /**
@@ -36,7 +32,7 @@ object KeyCommands {
                 "exists",
                 -2,
             ) { db, a -> Reply.Integer((1 until a.size).count { db.lookup(a[it]) != null }.toLong()) },
-            StoreCommand("type", 2) { db, a -> Reply.Simple(typeName(db.lookup(a[1])?.value)) },
+            StoreCommand("type", 2) { db, a -> Reply.Simple(typeNameOf(db.lookup(a[1])?.value)) },
             StoreCommand(
                 "expire",
                 -3,
@@ -72,18 +68,6 @@ object KeyCommands {
         db: Db,
         a: List<ByteArray>,
     ): Reply = Reply.Integer((1 until a.size).count { db.delete(a[it]) }.toLong())
-
-    /** `getObjectTypeName`. */
-    private fun typeName(value: Any?): String =
-        when (value) {
-            null -> "none"
-            is ByteArray -> "string"
-            is HashValue -> "hash"
-            is ListValue -> "list"
-            is SetValue -> "set"
-            is ZSetValue -> "zset"
-            else -> "unknown"
-        }
 
     /** `expireGenericCommand` with `parseExtendedExpireArgumentsOrReply`. */
     private fun expire(

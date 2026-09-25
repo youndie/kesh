@@ -4,7 +4,11 @@ import io.github.youndie.kesh.resp.Reply
 import io.github.youndie.kesh.resp.parseRedisLong
 import io.github.youndie.kesh.store.Db
 import io.github.youndie.kesh.store.RedisFloat
+import io.github.youndie.kesh.store.hashes.HashValue
 import io.github.youndie.kesh.store.keyspace.Entry
+import io.github.youndie.kesh.store.lists.ListValue
+import io.github.youndie.kesh.store.sets.SetValue
+import io.github.youndie.kesh.store.zsets.ZSetValue
 
 /**
  * A data command: its name and Redis's arity (positive exact, negative minimum, name included), and
@@ -60,9 +64,21 @@ internal inline fun answering(block: () -> Reply): Reply =
         e.reply
     }
 
+/** `getObjectTypeName`: what `TYPE` answers and `SCAN … TYPE` filters by. */
+internal fun typeNameOf(value: Any?): String =
+    when (value) {
+        null -> "none"
+        is ByteArray -> "string"
+        is HashValue -> "hash"
+        is ListValue -> "list"
+        is SetValue -> "set"
+        is ZSetValue -> "zset"
+        else -> "unknown"
+    }
+
 /** Every data command, group by group — what the server's dispatcher and the store's tests register. */
 object StoreCommands {
     val all: List<StoreCommand> =
         StringCommands.all + KeyCommands.all + HashCommands.all + ListCommands.all + SetCommands.all +
-            SortedSetCommands.all
+            SortedSetCommands.all + ScanCommands.all
 }

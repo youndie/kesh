@@ -153,4 +153,128 @@ object RedisFloat {
         out.append(exp)
         return out.toString()
     }
+
+    /**
+     * `ld2string(…, LD_STR_AUTO)`: `%.17Lg` of the score widened to `long double` — the form `ZSCAN`
+     * gives a skiplist-encoded set's scores (`scanCallback` in `db.c`), unlike every other command.
+     * Seventeen significant digits of the double's **exact** value, correctly rounded, so `0.1` prints
+     * `0.10000000000000001`; `%g`'s layout, trailing zeros dropped. The widening is exact, so the
+     * double's own expansion is the one printed.
+     */
+    fun formatLongDoubleAuto(value: Double): String {
+        if (value.isNaN()) return "nan"
+        if (value.isInfinite()) return if (value < 0) "-inf" else "inf"
+        val negative = value < 0 || (value == 0.0 && 1.0 / value < 0)
+        val sign = if (negative) "-" else ""
+        if (value == 0.0) return sign + "0"
+        val (digits, exponent) = exactDecimal(kotlin.math.abs(value))
+        // digits × 10^exponent, digits without leading zeros. Round to 17 significant, half to even.
+        var kept = digits
+        var exp10 = exponent
+        if (digits.length > 17) {
+            val head = digits.substring(0, 17)
+            val tail = digits.substring(17)
+            val roundUp =
+                when {
+                    tail[0] > '5' -> true
+                    tail[0] < '5' -> false
+                    tail.substring(1).any { it != '0' } -> true
+                    else -> (head.last() - '0') % 2 == 1
+                }
+            kept = if (roundUp) incrementDecimal(head) else head
+            exp10 += digits.length - 17
+            if (kept.length > 17) {
+                kept = kept.substring(0, 17)
+                exp10 += 1
+            }
+        }
+        // The decimal exponent of the first significant digit, as %e would print it.
+        val x = kept.length - 1 + exp10
+        val body =
+            if (x < -4 || x >= 17) {
+                val mantissa = (kept.substring(0, 1) + "." + kept.substring(1)).trimEnd('0').trimEnd('.')
+                val e =
+                    kotlin.math
+                        .abs(x)
+                        .toString()
+                        .padStart(2, '0')
+                mantissa + "e" + (if (x < 0) "-" else "+") + e
+            } else if (x >= kept.length - 1) {
+                kept + "0".repeat(x - (kept.length - 1))
+            } else if (x >= 0) {
+                (kept.substring(0, x + 1) + "." + kept.substring(x + 1)).trimEnd('0').trimEnd('.')
+            } else {
+                ("0." + "0".repeat(-x - 1) + kept).trimEnd('0')
+            }
+        return sign + body
+    }
+
+    /** The exact value of a positive finite [value] as decimal digits and a power of ten. */
+    private fun exactDecimal(value: Double): Pair<String, Int> {
+        val bits = value.toRawBits()
+        val biased = ((bits ushr 52) and 0x7ff).toInt()
+        val fraction = bits and 0xfffffffffffffL
+        val mantissa = if (biased == 0) fraction else fraction or (1L shl 52)
+        val e2 = (if (biased == 0) 1 else biased) - 1075
+        // Limbs of 10^9, least significant first.
+        var limbs = IntArray(0)
+        var m = mantissa
+        while (m > 0) {
+            limbs += (m % 1_000_000_000L).toInt()
+            m /= 1_000_000_000L
+        }
+        if (e2 >= 0) {
+            repeat(e2) { limbs = multiply(limbs, 2) }
+            return trimZeros(toDecimal(limbs), 0)
+        }
+        // m / 2^k = m × 5^k / 10^k.
+        repeat(-e2) { limbs = multiply(limbs, 5) }
+        return trimZeros(toDecimal(limbs), e2)
+    }
+
+    private fun multiply(
+        limbs: IntArray,
+        factor: Int,
+    ): IntArray {
+        var carry = 0L
+        val out = IntArray(limbs.size + 1)
+        for (i in limbs.indices) {
+            val product = limbs[i].toLong() * factor + carry
+            out[i] = (product % 1_000_000_000L).toInt()
+            carry = product / 1_000_000_000L
+        }
+        out[limbs.size] = carry.toInt()
+        return if (carry == 0L) out.copyOf(limbs.size) else out
+    }
+
+    private fun toDecimal(limbs: IntArray): String {
+        val out = StringBuilder()
+        out.append(limbs.last())
+        for (i in limbs.size - 2 downTo 0) out.append(limbs[i].toString().padStart(9, '0'))
+        return out.toString()
+    }
+
+    /** Moves trailing zeros of [digits] into the exponent. */
+    private fun trimZeros(
+        digits: String,
+        exponent: Int,
+    ): Pair<String, Int> {
+        val trimmed = digits.trimEnd('0')
+        return trimmed to exponent + (digits.length - trimmed.length)
+    }
+
+    private fun incrementDecimal(digits: String): String {
+        val chars = digits.toCharArray()
+        var i = chars.size - 1
+        while (i >= 0) {
+            if (chars[i] == '9') {
+                chars[i] = '0'
+                i--
+            } else {
+                chars[i] = chars[i] + 1
+                return chars.concatToString()
+            }
+        }
+        return "1" + chars.concatToString()
+    }
 }

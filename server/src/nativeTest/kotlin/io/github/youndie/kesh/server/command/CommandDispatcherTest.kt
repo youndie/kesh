@@ -237,7 +237,7 @@ class CommandDispatcherTest {
 
     @Test
     fun `COMMAND COUNT and INFO describe the table`() {
-        assertEquals(":95\r\n", open.reply(me, "COMMAND", "COUNT"))
+        assertEquals(":99\r\n", open.reply(me, "COMMAND", "COUNT"))
         assertTrue(open.reply(me, "COMMAND", "INFO", "ping")!!.startsWith("*1\r\n*10\r\n$4\r\nping\r\n:-1\r\n"))
         assertEquals("*1\r\n*-1\r\n", open.reply(me, "COMMAND", "INFO", "nope"))
     }
