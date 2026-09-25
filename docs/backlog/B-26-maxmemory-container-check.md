@@ -1,7 +1,7 @@
 ---
 id: B-26
 title: "Refuse a maxmemory above the container's memory budget"
-status: open
+status: wip
 priority: P2
 size: S
 stage: stage-3-memory
