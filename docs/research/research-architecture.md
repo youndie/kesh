@@ -554,6 +554,26 @@ Watch: the per-thread cost comes back with threads. kesh's connections run on `D
 (up to 64 threads); at 256 KiB per size class touched, that is on the order of 100 MB at worst —
 small beside the heap, and to be checked in B-17's resident-memory figures.
 
+### D-23. Sorted sets: Redis's skiplist with spans, the first level in the node — *new, B-09*
+
+B-09 left the structure to the implementer, with the object count per member recorded, because at
+the reference dataset's 10–20 M leaderboard members it matters as much as the complexity. The choice:
+**Redis's skiplist with spans** (`zslInsert`, `zslDelete`, `zslGetRank`, `zslGetElementByRank`) for
+order, rank and position, logarithmic; a `Keyspace` from member to node for `ZSCORE`. Objects per
+member: the node, the member's `ByteArray`, the index entry — and level arrays only on nodes taller
+than one level. The level is drawn with p = 1/4, so three nodes in four keep their single level in
+their own fields: **3.5 objects per member on average**, where a node with arrays on every level, as
+Redis's C layout suggests, is 5.
+Small sorted sets — up to 128 members of 64 bytes, `zset-max-listpack-*` — are one sorted
+`ByteArray`, and store an integral score as Redis's listpack does, which turns `-0` into `0` in a
+packed set only (seen against the oracle). A sorted set's replies are always in its order, so the
+encoding never shows otherwise.
+Measured (`SortedSetScaleTest`, linuxX64, build machine): `ZRANK` on 1 M members 5.8 µs a call,
+on 1 k members 1.4 µs — 4.2×, inside the acceptance's 10×.
+Rejected: an order-statistic B-tree with packed leaves — fewer objects still, but a new structure to
+get right where Redis's has a record, and its reply order would have to be proved equal to Redis's
+by hand instead of by construction.
+
 ### D-22. Sets pack under Redis 7.2's listpack limits, and have no intset — *new, B-08*
 
 A set is packed — one `ByteArray` of members — up to 128 members of at most 64 bytes

@@ -1,8 +1,8 @@
 # CLAUDE.md — kesh
 
 A Redis-compatible (RESP2) in-memory store on Kotlin/Native, `linuxX64`, built with the portfolio's
-sborka conventions and kore. **State: connection commands, strings, hashes, lists, sets and keys (B-01…B-08); the other
-value kinds, persistence and operations are ahead.** Read before writing code — the obvious design is wrong in several documented ways.
+sborka conventions and kore. **State: connection commands, strings, the four collection kinds and keys (B-01…B-09); `SCAN`,
+memory limits, persistence and operations are ahead.** Read before writing code — the obvious design is wrong in several documented ways.
 
 ## Where to start a session
 
