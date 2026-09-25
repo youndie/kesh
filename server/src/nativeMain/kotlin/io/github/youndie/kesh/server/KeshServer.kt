@@ -106,7 +106,10 @@ class KeshServer(
     /** The store's numbers for `/metrics`, copied on the store thread; set once the server has started. */
     private var storeMetrics: (suspend () -> Metrics.Store)? = null
 
-    /** The save the drain ends with when `KESH_SAVE_ON_SHUTDOWN` is on; set once the server has started. */
+    /**
+     * What the drain ends with: kill a background save's child, then save if `KESH_SAVE_ON_SHUTDOWN` is
+     * on; set once the server has started.
+     */
     private var saveOnStop: (suspend () -> Unit)? = null
 
     /** The bound port — the configured one, or the one the OS chose for port 0. */
@@ -175,8 +178,16 @@ class KeshServer(
                 policy = config.maxMemoryPolicy
                 samples = config.maxMemorySamples
             }
-        val persistence = Persistence(file, ::epochMillis, loadedKeys = loaded?.keys ?: 0)
-        if (config.saveOnShutdown) saveOnStop = { withContext(loop) { persistence.save(db) } }
+        val persistence =
+            Persistence(file, ::epochMillis, loadedKeys = loaded?.keys ?: 0) { listOf(listener, httpListener) }
+        // A background save still running at the stop is killed first, as Redis's `prepareForShutdown`
+        // kills it: it would race the stop's own save to the rename (B-25).
+        saveOnStop = {
+            withContext(loop) {
+                persistence.killChild()
+                if (config.saveOnShutdown) persistence.save(db)
+            }
+        }
         val commands =
             CommandDispatcher(
                 clients,
@@ -216,6 +227,7 @@ class KeshServer(
                     db.now = epochMillis()
                     expiry.cycle(db)
                     db.resizeAndRehash()
+                    persistence.reap()
                     httpConnections.filter { it.expired }.forEach { it.close() }
                 }
             }

@@ -39,3 +39,19 @@ Reaping stays `waitpid(WNOHANG)` from the periodic work — no `SIGCHLD` handler
 | server | `server/src/nativeMain/kotlin/io/github/youndie/kesh/server/persistence/` |
 
 Research: [research-architecture](../research/research-architecture.md).
+
+## Findings
+
+### Iteration 1 — 2026-09-25
+
+`BGSAVE` written (`Persistence.backgroundSave`, reaped by `waitpid(WNOHANG)` from the periodic work,
+killed before the stop's own save; `INFO`'s `rdb_bgsave_in_progress`, `rdb_last_bgsave_status`,
+`rdb_last_bgsave_time_sec`, `rdb_current_bgsave_time_sec`) with `BackgroundSaveTest`; it compiles.
+Replies read from `redis/redis@7.2!/src/rdb.c` (`bgsaveCommand`, `saveCommand`). `wait4` and
+`struct rusage` do not resolve in the linuxX64 platform library, so the child's peak resident memory
+is for the bench script to sample from `/proc`, not for kesh to report.
+
+**Stopped:** the build machine stopped answering (not even ping) during the first run of
+`BackgroundSaveTest`, before any result was read. Whether the test caused it is not known — the next
+run goes under a process and memory ceiling (`TasksMax`, `MemoryMax`) and a timeout, so a fork that
+runs away cannot take the machine down again.

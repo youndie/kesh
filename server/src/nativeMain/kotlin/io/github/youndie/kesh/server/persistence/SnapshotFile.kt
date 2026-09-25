@@ -47,7 +47,7 @@ class SnapshotFile(
     /** Writes [db] as of [Db.now]; throws [SnapshotIOException] with the call that failed and why. */
     fun save(db: Db): Outcome {
         val started = TimeSource.Monotonic.markNow()
-        val temporary = "$directory/temp-${getpid()}.kesh"
+        val temporary = temporaryOf(getpid())
         val fd = open(temporary, O_WRONLY or O_CREAT or O_TRUNC, 0x1a4) // 0644
         if (fd < 0) throw SnapshotIOException("open $temporary", errno)
         val written =
@@ -110,6 +110,14 @@ class SnapshotFile(
         } finally {
             close(fd)
         }
+    }
+
+    /** The temporary file a save by process [pid] writes — a background save's child names it by its own. */
+    private fun temporaryOf(pid: Int): String = "$directory/temp-$pid.kesh"
+
+    /** Removes what a killed child left half written. */
+    fun removeTemporaryOf(pid: Int) {
+        unlink(temporaryOf(pid))
     }
 
     private fun syncDirectory() {

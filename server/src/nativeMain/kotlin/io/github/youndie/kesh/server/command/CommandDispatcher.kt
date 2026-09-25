@@ -79,6 +79,7 @@ class CommandDispatcher(
                 Reply.Bulk(info.report(a.drop(1).map { it.decodeToString().lowercase() }).encodeToByteArray())
             },
             CommandSpec("save", 1) { _, _ -> persistence?.save(db) ?: Reply.Error("ERR") },
+            CommandSpec("bgsave", -1) { _, a -> persistence?.backgroundSave(db, a.drop(1)) ?: Reply.Error("ERR") },
             CommandSpec("lastsave", 1) { _, _ -> Reply.Integer(persistence?.lastSave ?: 0) },
             CommandSpec(
                 "client",

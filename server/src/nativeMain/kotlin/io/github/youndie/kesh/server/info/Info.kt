@@ -119,8 +119,11 @@ class Info(
             "Persistence",
             // The snapshot loads before the listener binds (research D-24): nothing can ask while it does.
             "loading" to 0,
-            "rdb_bgsave_in_progress" to 0,
+            "rdb_bgsave_in_progress" to if (persistence?.backgroundSaveInProgress == true) 1 else 0,
             "rdb_last_save_time" to (persistence?.lastSave ?: (startedAt / 1000)),
+            "rdb_last_bgsave_status" to if (persistence?.lastBackgroundSaveOk == false) "err" else "ok",
+            "rdb_last_bgsave_time_sec" to (persistence?.lastBackgroundSaveSeconds ?: -1),
+            "rdb_current_bgsave_time_sec" to (persistence?.currentBackgroundSaveSeconds ?: -1),
             "rdb_saves" to (persistence?.saves ?: 0),
             "rdb_last_load_keys_loaded" to (persistence?.loadedKeys ?: 0),
             "aof_enabled" to 0,
