@@ -14,10 +14,10 @@ tags: [persistence]
 
 ## 1. Overview
 
-The dataset survives a restart. `SAVE` writes a snapshot, the server loads it at startup. At the
-reference dataset's size (~4.3 GB) how long saving and loading take is a design input: the chart's
-grace period and startup budget are derived from it (research R-5). Built in B-14; saving on stop is
-B-16's.
+The dataset survives a restart. `SAVE` writes a snapshot, `BGSAVE` has a forked child write it while
+the server goes on serving, and the server loads it at startup. At the reference dataset's size
+(~4.3 GB) how long saving and loading take is a design input: the chart's grace period and startup
+budget are derived from it (research R-5). Built in B-14; saving on stop is B-16's, `BGSAVE` B-25's.
 
 ## 2. Business rules
 
@@ -32,14 +32,25 @@ B-16's.
   exists. Readiness (B-15) will say the same to the orchestrator.
 * A snapshot that is not whole — cut, damaged, not kesh's — stops the start: one line naming the file
   and the reason, exit status 1. Nothing it held is served.
-* `BGSAVE` is not in v1 (research R-6).
-* *Target* (B-16): saving on `SIGTERM` when configured, and `SHUTDOWN [SAVE|NOSAVE]`.
+* **`BGSAVE` forks, as Redis's does** (research R-6, B-25): it answers `+Background saving started`,
+  and the child writes the dataset as it was at the fork — writes that follow are not in it — through
+  the same temporary file and rename as `SAVE`. `LASTSAVE` moves when the child ends with success, not
+  when it starts; `INFO persistence`'s `rdb_last_bgsave_status` says `err` after one that did not.
+* While a child runs, `BGSAVE` and `SAVE` both answer `-ERR Background save already in progress`.
+  Any argument but `SCHEDULE` is `-ERR syntax error`; `SCHEDULE` changes nothing, since kesh has no other
+  kind of child to wait for — Redis's reply differs only while an AOF rewrite runs.
+* The child is collected by the periodic work, ten times a second — `waitpid(WNOHANG)`, no `SIGCHLD`
+  handler (research R-3). A stop kills a running child first and removes its temporary file, as
+  Redis's `prepareForShutdown` does, so it cannot race the stop's own save to the rename.
+* Saving on `SIGTERM` when configured is B-16's (`KESH_SAVE_ON_SHUTDOWN`); `SHUTDOWN [SAVE|NOSAVE]`
+  is *target*.
 
 ## 3. The commands this feature adds
 
 | Command | Reply | Notes |
 |---|---|---|
 | `SAVE` | `+OK`, or `-ERR` on failure | holds the store thread for the whole write |
+| `BGSAVE [SCHEDULE]` | `+Background saving started` | `-ERR` if the fork fails; the outcome is in `INFO persistence` and the log |
 | `LASTSAVE` | an integer, seconds since the epoch | |
 
 The rest of the server commands is drafted in *endpoint-server*, with B-15 and B-16.
@@ -49,9 +60,10 @@ The rest of the server commands is drafted in *endpoint-server*, with B-15 and B
 | Service | Code |
 |---|---|
 | snapshot | `snapshot/src/commonMain/kotlin/io/github/youndie/kesh/snapshot/Snapshot.kt` — the format |
-| server | `server/src/nativeMain/kotlin/io/github/youndie/kesh/server/persistence/` — the file, `SAVE`, `LASTSAVE` |
+| server | `server/src/nativeMain/kotlin/io/github/youndie/kesh/server/persistence/` — the file, `SAVE`, `BGSAVE`, `LASTSAVE` |
 | server | `server/src/nativeMain/kotlin/io/github/youndie/kesh/server/KeshServer.kt` — the load before the listener |
 | bench | `bench/snapshot/check.py` — the scenarios through the running server |
+| bench | `bench/fork/bgsave.sh` — `BGSAVE` again and again under load, with the memory of both processes |
 
 ## 5. Scenarios
 
@@ -72,6 +84,26 @@ The rest of the server commands is drafted in *endpoint-server*, with B-15 and B
 * **When:** `SAVE`, stop and start
 * **Then:** `EXISTS k` replies `:0`
 * **Automated:** `bench/snapshot/check.py`; in the format, `snapshot/src/commonTest/kotlin/io/github/youndie/kesh/snapshot/SnapshotTest.kt::every kind comes back as it was`
+
+### Scenario: A background save is the dataset at the fork
+* **Given:** 300 000 keys loaded from a snapshot
+* **When:** in one pipeline, `BGSAVE`, `BGSAVE`, `SAVE`, then `SET key:0 changed`, `DEL key:1`, `SET after …`
+* **Then:** `+Background saving started`, twice `-ERR Background save already in progress`, and the
+  writes answered; `LASTSAVE` moves once the child has ended; a restart from the snapshot has
+  300 000 keys, `key:0`'s old value, `key:1`, and no `after`
+* **Automated:** `server/src/nativeTest/kotlin/io/github/youndie/kesh/server/BackgroundSaveTest.kt::BGSAVE writes the dataset as it was at the fork and LASTSAVE moves when it ends`; the replies against Redis 7.2 in `conformance/scripts/server/bgsave.redis`
+
+### Scenario: A stop kills a background save
+* **Given:** a `BGSAVE` whose child is still writing
+* **When:** the server stops
+* **Then:** no child of the process is left, reaped or not, and no temporary file is left beside the snapshot
+* **Automated:** `server/src/nativeTest/kotlin/io/github/youndie/kesh/server/BackgroundSaveTest.kt::a background save still running at the stop is killed and leaves nothing behind`
+
+### Scenario: Every child finishes under load
+* **Given:** the reference load at pipeline 16 against the server
+* **When:** 500 `BGSAVE`s, one after another
+* **Then:** every child ends with `rdb_last_bgsave_status:ok` and moves `LASTSAVE`; the last snapshot loads
+* **Automated:** `bench/fork/bgsave.sh` — a run, not a suite: see research R-6 for where and what it found
 
 ## 6. Out of scope
 

@@ -55,3 +55,31 @@ is for the bench script to sample from `/proc`, not for kesh to report.
 `BackgroundSaveTest`, before any result was read. Whether the test caused it is not known — the next
 run goes under a process and memory ceiling (`TasksMax`, `MemoryMax`) and a timeout, so a fork that
 runs away cannot take the machine down again.
+
+### Iteration 2 — 2026-09-25
+
+The build machine came back at 15:40 with the same boot: its journal is silent from 15:25:23 to
+15:40:19 with no OOM and no kernel message — the host was suspended, not crashed. The first run had
+hung on the test itself (it waited for 20 lines of a 12-line `INFO persistence`), before the host went.
+
+- `BackgroundSaveTest` green, three tests. Mutations: the stop not killing the child — caught by
+  `a background save still running at the stop …`; no refusal while a child runs — caught by
+  `BGSAVE writes the dataset as it was at the fork …`. **The child's `GC.maxHeapBytes` line survives:**
+  with the writer below, the child allocates too little at 300 000 keys to reach an assist, so no test
+  here can see the hang the line prevents; its evidence is B-14's probe (a child that allocated hung at
+  its first assist, every run).
+- **The writer copied every element** out of a packed collection (`Packed.read`), and lists and sorted
+  sets went through `range()` lists and `Pair`s: at 1/64 the child's private dirty memory reached
+  636 MB for an 88 MB snapshot. The packed layout is already the snapshot's blob layout, so the writer
+  now reads slices where the store keeps them (`ByteSlice`, `ScoredSlice`).
+- 500 `BGSAVE`s at 1/64 under the reference load at pipeline 16 (old writer, build machine, kesh in a
+  scope of 64 tasks and 8 GB): **500 ok, 0 failed, 0 hung**; median 1.15 s; `fork()` held the parent
+  11 ms median, 25 ms max; the last snapshot loaded, 246 903 keys. The parent's resident memory went
+  from 511 to 813 MB over the run, the load writing all along; the next run samples `used_memory` to
+  tell the two apart.
+- **Stopped at 1/8:** the build machine had 6 GB available when the run began and 188 MB, with 7 GB
+  of swap in use, twenty seconds into the load — another project's Gradle build and a shared daemon
+  (3.5 GB swapped). The run was killed before its first save; a memory figure from a swapping host
+  counts what is resident, not what is used. Still to take, on a quiet host: 1/8 with the old writer
+  (kept on the build machine as `~/kesh-b25-old-writer.kexe`, md5 `789ad031…`), 1/8 with the new one,
+  and the 500 saves again on the final binary with `used_memory` sampled.

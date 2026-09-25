@@ -73,8 +73,12 @@ limit allows (research D-31).
 * **The snapshot is loaded before the listener binds** (research D-24): a client is refused at
   connect until the load ends; a snapshot that cannot be read stops the start with one line and exit
   status 1 (the same `StartupFailure`). `SAVE` and `LASTSAVE` run on the store thread (`persistence/`).
+* **`BGSAVE` forks the store thread** (B-25, research R-6). The child — one thread, the collector's
+  gone — turns the mutator assists off, closes the listeners and writes; it never returns into the
+  loop, which would be a second server on the same sockets. The periodic work collects it; the drain
+  kills a running one before its own save.
 * **Periodic work runs on the loop too, ten times a second** — Redis's `serverCron` for the data
-  (B-13): the active expiry cycle, then the tables' resizing. The loop is a coroutine dispatcher, and
+  (B-13): the active expiry cycle, then the tables' resizing, then collecting a finished `BGSAVE` child. The loop is a coroutine dispatcher, and
   this is a coroutine on it, so it runs between commands, never inside one, and stops with the drain.
 * **Clients live on the store thread too.** Registration, `CLIENT LIST` and `CLIENT KILL` all run
   there, so the `maxclients` count and the registry are exact without a lock: an accepted socket is

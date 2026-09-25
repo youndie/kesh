@@ -17,8 +17,8 @@ publishes: []
 Writes the whole dataset to a file, consistent as of the moment the save started, and loads it at
 startup. Owns kesh's snapshot format (B-14).
 
-**Deliberately does not:** read or write Redis's RDB or AOF (brief §2), append logs, or save in the
-background — `BGSAVE` is not in v1 (research R-6, D-24).
+**Deliberately does not:** read or write Redis's RDB or AOF (brief §2), or append logs. `BGSAVE`
+(B-25) is the server's: a forked child calls the same `Snapshot.write`.
 
 ## 2. API contracts
 
@@ -37,9 +37,11 @@ background — `BGSAVE` is not in v1 (research R-6, D-24).
 | `snapshot/src/commonMain/kotlin/io/github/youndie/kesh/snapshot/Crc32.kt` | CRC-32, zlib's polynomial |
 | `snapshot/src/commonTest/kotlin/io/github/youndie/kesh/snapshot/SnapshotTest.kt` | every kind round-trips; cut and damaged files are refused |
 | `server/src/nativeMain/kotlin/io/github/youndie/kesh/server/persistence/SnapshotFile.kt` | the file: temporary name, `fsync`, rename, `fsync` of the directory; reading at startup |
-| `server/src/nativeMain/kotlin/io/github/youndie/kesh/server/persistence/Persistence.kt` | `SAVE`, `LASTSAVE` |
+| `server/src/nativeMain/kotlin/io/github/youndie/kesh/server/persistence/Persistence.kt` | `SAVE`, `BGSAVE` (the fork, the child, the reaping), `LASTSAVE` |
+| `store/src/commonMain/kotlin/io/github/youndie/kesh/store/ByteSlice.kt` | how the writer reads a collection without copying it |
 | `bench/snapshot/check.py` | the scenarios through the running server, and R-5's numbers |
-| `bench/src/nativeMain/kotlin/io/github/youndie/kesh/bench/fork/Main.kt` | the fork probe behind R-6's decision |
+| `bench/src/nativeMain/kotlin/io/github/youndie/kesh/bench/fork/Main.kt` | the fork probe behind R-6's first decision |
+| `bench/fork/bgsave.sh`, `bench/fork/bgsave.py` | `BGSAVE` again and again under load, and the memory of both processes (B-25) |
 
 ## 3. How it is built
 
@@ -75,5 +77,9 @@ background — `BGSAVE` is not in v1 (research R-6, D-24).
   Redis leaves its `temp-<pid>.rdb`. It is never loaded; removing it is the operator's.
 * **Loading stalls on the collector's mutator assists** while the heap grows (research R-7): 12 s for
   2 M keys, where writing them took 4.5 s. B-23 decides whether to turn them off.
-* **No `BGSAVE`** (research R-6): a forked child of the runtime hangs in its first mutator assist,
-  and works once assists are off — a finding, not yet a feature (B-25).
+* **The writer allocates nothing per element** (B-25): hashes, sets, lists and sorted sets are written
+  from where the store keeps them (`ByteSlice`, `ScoredSlice`), not copied out first. A background
+  save's child has no collector, so every copy would stay in its heap until it exited (research R-6).
+  Keep it so: a `forEach` that hands out fresh arrays, used here, grows the child again.
+* **A killed background save's temporary file is removed by the server** (`temp-<child pid>.kesh`),
+  as Redis's `rdbRemoveTempFile`; a save killed with the whole process still leaves its own.
