@@ -68,7 +68,9 @@ class ScanTest {
         repeat(50) { r("HSET", "h:$it", "f", "v") }
         val seen = HashSet<String>()
         var cursor = "0"
+        var rounds = 0
         do {
+            check(++rounds < 100_000) { "the cursor never returned to 0" }
             val reply = r("SCAN", cursor, "COUNT", "37", "MATCH", "*:1*", "TYPE", "hash").split("\r\n")
             cursor = reply[2]
             reply
@@ -105,9 +107,12 @@ object ScanCompleteness {
         var cursor = 0L
         var nextAdded = 0
         var nextDeleted = 0
+        var calls = 0L
         do {
             var sampled = 0
             do {
+                // A broken cursor may never come back to 0: that is a failure, not a hang.
+                check(++calls < 20_000_000L) { "the cursor never returned to 0" }
                 cursor =
                     keyspace.scan(cursor) {
                         seen.add(it.key.decodeToString())
