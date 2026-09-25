@@ -30,4 +30,21 @@ drift away from `used_memory` even though nothing leaks.
 | bench | `bench/soak/` |
 | bench | `bench/reports/` |
 
+## Decision (owner, 2026-09-25)
+
+On the two-host stand, **with the subject host's other resident process (an idle database container)
+left running** — the soak's question is memory drift, which a quiet neighbour barely touches; the
+report says it was there.
+
+## Iteration 1 (2026-09-25)
+
+- **Running, detached on the stand, from 2026-09-25 13:09 UTC to about 2026-09-26 13:10 UTC.**
+  kesh at `main` `1245f34` (md5 `26370382…`, the epoll transport and Pub/Sub) on the subject host,
+  loaded at an eighth of §5a; `bench/soak/soak.sh` on the generator host drives `kesh-load` at pipeline
+  1 in 24 runs of an hour, and after each reads `/metrics` into `soak/hours.tsv` (`~/kesh-soak` on
+  the generator host). The subject host samples resident memory every minute into `~/kesh-soak/rss.txt`
+  and kills kesh above 7 GB.
+- **Nothing to act on until it ends**; iterations meanwhile take other items and do not resume this
+  one. The next step: fetch `hours.tsv`, `rss.txt`, the hourly outputs; write the report and R-2.
+
 Research: [research-architecture](../research/research-architecture.md).
