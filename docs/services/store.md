@@ -18,8 +18,8 @@ Owns all data: the keyspace, the value kinds, key expiry, and — later — memo
 eviction. Every data command's semantics lives here; `server` checks existence, arity and
 authentication and dispatches to it.
 
-**Built (B-05, B-06):** kesh's own hash table (research D-12), strings, hashes, the keyspace commands
-except `SCAN`, and lazy expiry. ***Target*:** lists (B-07), sets (B-08), sorted sets (B-09), `SCAN`
+**Built (B-05 to B-07):** kesh's own hash table (research D-12), strings, hashes, lists, the keyspace
+commands except `SCAN`, and lazy expiry. ***Target*:** sets (B-08), sorted sets (B-09), `SCAN`
 (B-10), memory accounting and `maxmemory` (B-11), eviction (B-12), active expiry (B-13).
 
 **Deliberately does not:** do I/O, parse or write the wire, persist anything (that is `snapshot`), or
@@ -28,8 +28,9 @@ free memory — under a tracing collector nothing does (research D-15).
 ## 2. API contracts
 
 * The command groups it implements: [endpoint-strings](../api/endpoint-strings.md),
-  [endpoint-hashes](../api/endpoint-hashes.md) and [endpoint-keyspace](../api/endpoint-keyspace.md).
-  Lists, sets and sorted sets are drafted in the *docs/layer-drafts* branch.
+  [endpoint-hashes](../api/endpoint-hashes.md), [endpoint-lists](../api/endpoint-lists.md) and
+  [endpoint-keyspace](../api/endpoint-keyspace.md). Sets and sorted sets are drafted in the
+  *docs/layer-drafts* branch.
 * **A command** is a `StoreCommand`: Redis's name and arity, and a handler over the `Db` returning a
   RESP reply. Each handler follows its Redis function check by check — the addresses are in the KDoc.
 * **Threading:** single-threaded. Every call happens on the store thread (research D-14); nothing in
@@ -46,6 +47,9 @@ free memory — under a tracing collector nothing does (research D-15).
 | `store/src/commonMain/kotlin/io/github/youndie/kesh/store/commands/StringCommands.kt` | the twenty string commands (`t_string.c`) |
 | `store/src/commonMain/kotlin/io/github/youndie/kesh/store/commands/HashCommands.kt` | the hash commands (`t_hash.c`) |
 | `store/src/commonMain/kotlin/io/github/youndie/kesh/store/hashes/HashValue.kt` | a hash: packed bytes, then a `Keyspace` table (research D-20) |
+| `store/src/commonMain/kotlin/io/github/youndie/kesh/store/commands/ListCommands.kt` | the list commands (`t_list.c`) |
+| `store/src/commonMain/kotlin/io/github/youndie/kesh/store/lists/ListValue.kt` | a list: a deque of 8 KiB packed chunks (research D-21) |
+| `store/src/commonMain/kotlin/io/github/youndie/kesh/store/packed/Packed.kt` | the length-prefixed layout both packed kinds use |
 | `store/src/commonMain/kotlin/io/github/youndie/kesh/store/commands/KeyCommands.kt` | the keyspace commands (`db.c`, `expire.c`) |
 | `store/src/commonMain/kotlin/io/github/youndie/kesh/store/Glob.kt` | `stringmatchlen`, for `KEYS` and later `SCAN … MATCH` |
 | `store/src/commonMain/kotlin/io/github/youndie/kesh/store/RedisFloat.kt` | float parsing and printing — and its known divergence |
@@ -68,14 +72,17 @@ free memory — under a tracing collector nothing does (research D-15).
 * **The expiry lives on the entry**, not in a second table. Active expiry (B-13) needs an index of
   the keys that have one, and adds it then.
 * **Strings are `ByteArray` values; the type of a value is its class.** A command that finds another
-  class answers `WRONGTYPE` (`stringOf`, `hashOf`); lists, sets and sorted sets arrive with B-07 to
-  B-09.
+  class answers `WRONGTYPE` (`stringOf`, `hashOf`, `listValueOf`); sets and sorted sets arrive with
+  B-08 and B-09.
 * **Hashes are packed where Redis packs them** (research D-20): one `ByteArray` of length-prefixed
   pairs in insertion order up to 512 fields of at most 64 bytes, then a `Keyspace` table — the
   keyspace's own, so `HSCAN` inherits `SCAN`'s guarantee (B-10). Packed for memory, not for the
   collector's pause, which follows the allocator's pages (research §1.2, correction found in B-19);
   the limits are Redis's so that reply order is Redis's too.
-* **The other collections will pack the same way** where small (B-07 to B-09).
+* **Lists are chunks of packed items** (research D-21): a deque of `ByteArray`s of up to 8 KiB each,
+  Redis's quicklist in role; an item bigger than a chunk has one to itself. A list's encoding never
+  shows in a reply, so the size is Redis's for memory reasons alone.
+* **Sets and sorted sets will pack the same way** where small (B-08, B-09).
 
 ## 4. Dependencies
 
@@ -91,7 +98,8 @@ A module of this build; not published.
 
 `proto-max-bulk-len` bounds `APPEND` and `SETRANGE` (`StringCommands.maxStringLength`).
 `hash-max-listpack-entries` and `hash-max-listpack-value` are `HashValue.maxPackedEntries` and
-`maxPackedValue`, at Redis 7.2's defaults and not settable yet (`CONFIG`, B-15). `maxmemory`,
+`maxPackedValue`, and `list-max-listpack-size` is `ListValue.maxChunkBytes` — all at Redis 7.2's
+defaults and not settable yet (`CONFIG`, B-15). `maxmemory`,
 its policy and samples arrive with B-11 and B-12.
 
 ## 8. Quirks

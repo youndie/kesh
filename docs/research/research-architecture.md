@@ -551,6 +551,18 @@ Watch: the per-thread cost comes back with threads. kesh's connections run on `D
 (up to 64 threads); at 256 KiB per size class touched, that is on the order of 100 MB at worst —
 small beside the heap, and to be checked in B-17's resident-memory figures.
 
+### D-21. Lists are chunks of packed items, 8 KiB each — *new, B-07*
+
+A list is a deque of chunks, each one `ByteArray` of length-prefixed items, as Redis's quicklist is a
+list of listpacks. A chunk holds up to 8 KiB — `list-max-listpack-size -2`, Redis 7.2's default — and
+an item larger than that has a chunk to itself. Unlike a hash's (D-20), a list's encoding cannot show
+in a reply: every list reply is in list order. So the size is chosen for memory and for the cost of
+rewriting a chunk on a push or a cut, and Redis's own is the one with a record behind it.
+The reference dataset's feeds, 20–200 ids of ~10 bytes, are one chunk each: two objects for the
+collector instead of up to 200 (research §1.2).
+Rejected: `ArrayDeque<ByteArray>` — one object per item, the brief's own objection; and one packed
+array per list — a push to the head of a long list would copy all of it.
+
 ### D-20. Hashes pack under Redis 7.2's listpack limits: 512 fields, 64-byte fields and values — *new, B-06*
 
 B-06 was to take its threshold from B-19's measurement. B-19 gave none: it packed every hash and
