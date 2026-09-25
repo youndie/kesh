@@ -20,7 +20,7 @@ authentication and dispatches to it.
 
 **Built (B-05 to B-11):** kesh's own hash table (research D-12), strings and the four collection
 kinds, the keyspace commands with `SCAN` and its kin, lazy expiry, and `used_memory` with `maxmemory`
-under `noeviction`. ***Target*:** eviction (B-12), active expiry (B-13).
+under `noeviction`, and active expiry (B-13). ***Target*:** eviction (B-12).
 
 **Deliberately does not:** do I/O, parse or write the wire, persist anything (that is `snapshot`), or
 free memory — under a tracing collector nothing does (research D-15).
@@ -45,6 +45,7 @@ free memory — under a tracing collector nothing does (research D-15).
 | File | What is there |
 |---|---|
 | `store/src/commonMain/kotlin/io/github/youndie/kesh/store/keyspace/Keyspace.kt` | the table: bucket chains, incremental rehash, content hashing with a per-process seed |
+| `store/src/commonMain/kotlin/io/github/youndie/kesh/store/expiry/ActiveExpiry.kt` | Redis's slow active expiry cycle over `Db.expires` |
 | `store/src/commonMain/kotlin/io/github/youndie/kesh/store/Db.kt` | lazy expiry against the command's instant; `set` with and without keeping the TTL |
 | `store/src/commonMain/kotlin/io/github/youndie/kesh/store/commands/StringCommands.kt` | the twenty string commands (`t_string.c`) |
 | `store/src/commonMain/kotlin/io/github/youndie/kesh/store/commands/HashCommands.kt` | the hash commands (`t_hash.c`) |
@@ -78,8 +79,14 @@ free memory — under a tracing collector nothing does (research D-15).
 * **Lazy expiry exactly as Redis's.** A key is expired when `now > expireAt` — strictly — and is
   deleted by whatever looks it up first (`Db.lookup`). `DBSIZE` counts expired keys not yet looked
   up, as Redis's `dictSize` does; `KEYS` skips them without deleting them, as Redis's does.
-* **The expiry lives on the entry**, not in a second table. Active expiry (B-13) needs an index of
-  the keys that have one, and adds it then.
+* **The expiry lives on the entry, and an index names the entries that have one** — `Db.expires`,
+  Redis's `db->expires`, kept exact because every expiry change goes through `Db.setExpire` (B-13).
+  Active expiry samples it with the `SCAN` cursor, as Redis 7.2's cycle does (`ActiveExpiry`).
+* **Periodic work, ten times a second** (`KeshServer`, on the store thread between commands): the
+  active expiry cycle, then `Db.resizeAndRehash` — a table under 10 % full starts shrinking, and a
+  resize in progress moves up to 16 384 buckets, Redis's `tryResizeHashTables` and
+  `incrementallyRehash`. The shrink is what keeps active expiry going: Redis's cycle skips a table
+  under 1 % full, which a never-shrinking index becomes after a mass expiry (research D-11).
 * **Strings are `ByteArray` values; the type of a value is its class.** A command that finds another
   class answers `WRONGTYPE` (`stringOf`, `hashOf`, `listValueOf`, `setValueOf`, `zsetOf`).
 * **Hashes are packed where Redis packs them** (research D-20): one `ByteArray` of length-prefixed
@@ -127,8 +134,9 @@ server from `KESH_MAXMEMORY` and `CONFIG SET`; its policy and samples arrive wit
 * **A hash or a set never goes back to packed**, however little it keeps — as in Redis 7.2.
 * **`SPOP` and `SRANDMEMBER` draw from `SetCommands.random`**, `Random.Default` — not seeded, not
   reproducible between runs, as Redis's are not.
-* **The table never shrinks** except on `FLUSHALL`. Redis shrinks a table below 10 % full from its
-  cron; kesh has no cron yet (B-13 brings the first periodic work).
+* **The keyspace and its expiry index shrink; a collection's own table does not** — a hash, set or
+  sorted set that once held millions keeps its buckets. Redis shrinks those on deletes; kesh has not
+  needed to yet.
 * **`used_memory` falls when a key is deleted; resident memory falls only after a GC cycle** — and
   `used_memory` itself is B-11's.
 * **While writes grow the keyspace, commands stall for seconds** — not in the table, which moves one

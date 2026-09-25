@@ -2,7 +2,7 @@
 
 A Redis-compatible (RESP2) in-memory store on Kotlin/Native, `linuxX64`, built with the portfolio's
 sborka conventions and kore. **State: connection commands, strings, the four collection kinds, keys and the `SCAN` family
-(B-01…B-10), `used_memory` and `maxmemory` under `noeviction` (B-11); eviction, persistence and
+(B-01…B-10), `used_memory` and `maxmemory` under `noeviction` (B-11), active expiry (B-13); eviction, persistence and
 operations are ahead.** Read before writing code — the obvious design is wrong in several documented ways.
 
 ## Where to start a session

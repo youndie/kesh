@@ -38,13 +38,12 @@ A stage is a field on the item, not a directory.
 
 <!-- BEGIN INDEX -->
 
-## Open (11)
+## Open (10)
 
 | Task | | Priority | Size | Blocked by |
 |---|---|---|---|---|
 | [B-21](docs/backlog/B-21-first-consumer-and-pubsub.md) `[?]` | Who is the first consumer, and does Pub/Sub belong in v1? | P0 | XS | - |
 | [B-12](docs/backlog/B-12-eviction-policies.md) `[ ]` | Eviction policies with sampled LRU | P1 | M | B-11 |
-| [B-13](docs/backlog/B-13-active-expiry.md) `[~]` | Active expiry, Redis's algorithm as its source has it | P1 | S | B-05 |
 | [B-14](docs/backlog/B-14-snapshots.md) `[ ]` | Snapshots: the format, SAVE, load at startup, torn-save safety, and their measured cost | P1 | L | B-10 |
 | [B-15](docs/backlog/B-15-info-probes-metrics.md) `[ ]` | INFO, HTTP probes and Prometheus metrics | P1 | M | B-11 |
 | [B-16](docs/backlog/B-16-image-chart-graceful-stop.md) `[ ]` | Image, chart, and a graceful stop that survives being repeated | P1 | M | B-14, B-15 |
@@ -54,7 +53,7 @@ A stage is a field on the item, not a directory.
 | [B-18](docs/backlog/B-18-soak-24h.md) `[ ]` | 24 h soak with TTL churn | P2 | S | B-17 |
 | [B-26](docs/backlog/B-26-maxmemory-container-check.md) `[?]` | Refuse a maxmemory above the container's memory budget | P2 | S | B-11 |
 
-## Closed (14)
+## Closed (15)
 
 **Protocol and core**
 
@@ -77,6 +76,7 @@ A stage is a field on the item, not a directory.
 **Memory limit and expiry**
 
 - [B-11](docs/backlog/B-11-memory-accounting-and-noeviction.md) `[x]` - Memory accounting, maxmemory and noeviction
+- [B-13](docs/backlog/B-13-active-expiry.md) `[x]` - Active expiry, Redis's algorithm as its source has it
 
 **Operations**
 

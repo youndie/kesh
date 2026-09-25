@@ -482,7 +482,7 @@ target of twice the live set (§1.2), which holds only if `used_memory` tracks t
 log's `alive` is the check. *Consequence*: a container limit has to hold the peak — `maxmemory` × 2.8
 and the process's base — which is the ratio B-26's container check uses.
 
-### D-11. Active expiry samples keys with a TTL on a timer — *corrected*
+### D-11. Active expiry samples keys with a TTL on a timer — *corrected; built in B-13*
 
 Brief: repeat "while more than 25 % of a sample is expired".
 Corrected to Redis's actual algorithm (§1.5): 20 keys per loop, repeat while more than **10 %** of
@@ -490,6 +490,17 @@ a sample is expired, the slow cycle bounded to **25 % of CPU** time, 10 cycles a
 "Active expiry" scenario of the brief (≥ 99 % of 100 000 `PX 50` keys gone within 2 s) is
 consistent with this and is kept.
 
+**Built in B-13** (`ActiveExpiry`, `Db.expires`): the slow cycle as `activeExpireCycle` has it — the
+expiry index walked with the `dictScan` cursor, 20 keys a loop, again while over 10 % expired, 25 ms
+a cycle checked every 16 loops, a table under 1 % full skipped. Two things the source did not say:
+- **That 1 % rule needs tables that shrink.** Redis shrinks a dictionary under 10 % full from its
+  cron; kesh's never shrank (D-12), so after a mass expiry the index stayed large and nearly empty,
+  and the cycle skipped it for good — 1 292 of 100 000 keys never went. kesh now shrinks the keyspace
+  and the index from the same periodic work, and rehashes 16 384 buckets a call, so a shrink ends
+  before the cycle needs the index again (at 1 000 it took 14 cycles, and the 2 s scenario failed).
+- **Redis's fast cycle** — run before the event loop sleeps when the stale share is high — is left
+  out: a coroutine server has no "before sleep", and the slow cycle alone met the scenario (on the
+  running server, 100 000 `PX 50` keys were gone before their 0.76 s load finished).
 ### D-12. The keyspace is kesh's own hash table, with incremental rehashing — *built in B-05*
 
 Why: §1.3. The stdlib map stalls on growth and cannot give `SCAN` its guarantee.

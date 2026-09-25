@@ -36,7 +36,7 @@ container check (B-26, below).
   `memtoull`'s syntax: a number and an optional unit, `k`/`m`/`g` decimal and `kb`/`mb`/`gb` binary.
   0 is no limit.
 * Deletion lowers `used_memory` at once; resident memory falls when the collector sweeps (research
-  D-15).
+  D-15). The index of keys with an expiry (B-13) is counted too: an entry per volatile key.
 * *Target* (B-12): `allkeys-lru`, `volatile-lru`, `allkeys-random`, `volatile-random`,
   `volatile-ttl`, `maxmemory-samples`.
 * *Target* (B-26): **a `maxmemory` that, with the measured peak ratio, exceeds the container's

@@ -20,7 +20,7 @@ D-12) — it is what makes growth free of stalls and `SCAN` complete.
 
 ## 2. Business rules
 
-Built in B-05, `SCAN` in B-10, `used_memory` in B-11: everything but active expiry (B-13).
+Built in B-05, `SCAN` in B-10, `used_memory` in B-11, active expiry in B-13.
 
 * **`DEL`, `UNLINK` and `FLUSHALL`/`FLUSHDB` with or without `ASYNC` behave the same** (research
   D-15, amending the brief): the keys are gone from the keyspace — and, from B-11, from `used_memory`
@@ -30,10 +30,12 @@ Built in B-05, `SCAN` in B-10, `used_memory` in B-11: everything but active expi
   expired when `now > expireAt`, strictly, against one instant per command, and deleted by whatever
   looks it up first. `DBSIZE` counts expired keys nothing has looked up yet, as Redis's does.
 * `EXPIRE` with a time at or before now deletes the key and answers `1`.
-* Expiry is **lazy** (checked on access) and — *target*, B-13 — **active**: ten times a second a cycle samples 20 keys
+* Expiry is **lazy** (checked on access) and **active**: ten times a second a cycle samples 20 keys
   with an expiry, deletes the expired ones, and repeats while more than **10 %** of the sample was
   expired, within **25 % of CPU** time (research §1.5, D-11 as corrected — the brief's "25 %" was the
-  CPU budget, not the repeat threshold).
+  CPU budget, not the repeat threshold). `expired_keys` in `INFO stats` counts both kinds.
+* Tables under **10 %** full shrink, from the same periodic work — the keyspace and the index of keys
+  with an expiry, as Redis's cron shrinks its two dictionaries.
 * `SCAN` is a cursor iteration with Redis's guarantee: every key present for the whole iteration is
   returned at least once, across resizes — Redis's reverse-binary cursor over the power-of-two table
   (`Keyspace.scan`, a port of `dictScan`). `COUNT`, `MATCH` and `TYPE` are supported; `HSCAN`,
@@ -46,18 +48,19 @@ Built in B-05, `SCAN` in B-10, `used_memory` in B-11: everything but active expi
 | Service | Code |
 |---|---|
 | store | `store/src/commonMain/kotlin/io/github/youndie/kesh/store/keyspace/Keyspace.kt` — the table, incremental rehash |
-| store | `store/src/commonMain/kotlin/io/github/youndie/kesh/store/Db.kt` — lazy expiry |
+| store | `store/src/commonMain/kotlin/io/github/youndie/kesh/store/Db.kt` — lazy expiry, the index of keys with an expiry, the tables' resizing |
+| store | `store/src/commonMain/kotlin/io/github/youndie/kesh/store/expiry/ActiveExpiry.kt` — Redis's slow active expiry cycle |
+| server | `server/src/nativeMain/kotlin/io/github/youndie/kesh/server/KeshServer.kt` — the periodic work, ten times a second on the store thread |
 | store | `store/src/commonMain/kotlin/io/github/youndie/kesh/store/commands/KeyCommands.kt` — the commands |
 | store | `store/src/commonMain/kotlin/io/github/youndie/kesh/store/commands/ScanCommands.kt` — `SCAN`, `HSCAN`, `SSCAN`, `ZSCAN` |
 | conformance | `conformance/scripts/scan/` — full iterations compared with Redis 7.2 as unions |
 | conformance | `conformance/scripts/keyspace/` — every command and refusal here against Redis 7.2 |
 
-The active expiry cycle (B-13) will live beside these.
 
 ## 5. Scenarios
 
 Built in B-05: *TTL*, *Growth without a stall*; in B-10: *Scan completeness*; in B-11: *DEL and
-UNLINK account the same*. *Target*: *Active expiry* (B-13).
+UNLINK account the same*; in B-13: *Active expiry*.
 
 ### Scenario: TTL
 * **Given:** `SET k v EX 10`
@@ -76,6 +79,7 @@ UNLINK account the same*. *Target*: *Active expiry* (B-13).
 * **Given:** 100 000 keys set with `PX 50` that are never read again
 * **When:** 2 s pass
 * **Then:** `DBSIZE` has fallen by at least 99 %
+* **Automated:** `store/src/commonTest/kotlin/io/github/youndie/kesh/store/ActiveExpiryTest.kt::keys never read again are gone within two seconds` — twenty cycles on a clock moved by hand, both targets; against the running server, all 100 000 were gone before their 0.76 s load finished (B-13's findings)
 
 ### Scenario: Growth without a stall
 * **Given:** an empty keyspace

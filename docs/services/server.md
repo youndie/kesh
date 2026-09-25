@@ -66,6 +66,10 @@ can watch (research D-13, from B-02).
 * **A start that cannot go on says why and exits 1** (`StartupFailure`, B-24): a port another
   process listens on stops the start with `kesh: could not listen on <host>:<port>: …` — not an
   uncaught exception and a core dump.
+* **Periodic work runs on the store thread too, ten times a second** — Redis's `serverCron` for the
+  data (B-13): the active expiry cycle, then the tables' resizing. It is a coroutine in the
+  connection scope that hops to the store thread, so it runs between commands, never inside one, and
+  stops with the drain.
 * **Clients live on the store thread too.** Registration, `CLIENT LIST` and `CLIENT KILL` all run
   there, so the `maxclients` count and the registry are exact without a lock: an accepted socket is
   registered in one hand-off, or told `-ERR max number of clients reached` and closed.
