@@ -1,0 +1,8 @@
+The build machine: WSL2, kernel 6.6.87.2-microsoft-standard-WSL2, 20 cores, 16 GB, 8 GB of swap,
+other projects' builds resident. kesh ran in a systemd scope of its own: TasksMax=64, MemoryMax=8G,
+MemorySwapMax=0.
+
+The old writer's run at 1/8, from the journal (the unit is kesh's scope):
+16:12:03 run-<id>.scope: A process of this unit has been killed by the OOM killer.
+16:12:08 run-<id>.scope: Failed with result 'oom-kill'.
+kesh's log: "background saving terminated by signal 9 after 4671 ms" — the child, not the server.

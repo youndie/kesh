@@ -1,0 +1,20 @@
+kesh pid 1368907, snapshots in /tmp/kesh-bgsave-HZH6nT
+loaded: 247166 commands, 0 errors, in 2088 ms
+parent before the first save: rss 511 MB, pss 509 MB, private dirty 507 MB
+save 50: 0.70 s; parent rss 574 MB, private dirty 166 MB; child rss 581 MB, private dirty 180 MB; pss of both 749 MB
+save 100: 1.32 s; parent rss 626 MB, private dirty 358 MB; child rss 638 MB, private dirty 377 MB; pss of both 999 MB
+save 150: 1.02 s; parent rss 658 MB, private dirty 654 MB; child rss 670 MB, private dirty 322 MB; pss of both 977 MB
+save 200: 0.95 s; parent rss 690 MB, private dirty 687 MB; child rss 705 MB, private dirty 422 MB; pss of both 1108 MB
+save 250: 1.60 s; parent rss 716 MB, private dirty 713 MB; child rss 728 MB, private dirty 463 MB; pss of both 1174 MB
+save 300: 1.38 s; parent rss 735 MB, private dirty 732 MB; child rss 747 MB, private dirty 369 MB; pss of both 1101 MB
+save 350: 1.77 s; parent rss 752 MB, private dirty 530 MB; child rss 770 MB, private dirty 556 MB; pss of both 1302 MB
+save 400: 1.34 s; parent rss 775 MB, private dirty 526 MB; child rss 790 MB, private dirty 549 MB; pss of both 1319 MB
+save 450: 1.03 s; parent rss 798 MB, private dirty 794 MB; child rss 814 MB, private dirty 429 MB; pss of both 1223 MB
+save 500: 1.17 s; parent rss 813 MB, private dirty 810 MB; child rss 831 MB, private dirty 464 MB; pss of both 1274 MB
+saves asked 500: finished ok 500, failed 0, hung 0; median 1.15 s
+peaks over the run: parent rss 813 MB, parent private dirty 810 MB, child rss 834 MB, child private dirty 636 MB, pss of both 1443 MB
+children that ended with success, by the log: 500
+fork() held the parent: median 11155 µs, max 25205 µs over 500 forks
+kesh: loaded 246903 keys, 88646445 bytes, from /tmp/kesh-bgsave-HZH6nT/dump.kesh in 1823 ms
+keys before the stop 246903 (the load kept writing after the last save), loaded from the last snapshot 246903
+exit=0

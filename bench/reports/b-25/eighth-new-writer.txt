@@ -1,0 +1,15 @@
+kesh pid 1412621, snapshots in /tmp/kesh-bgsave-wodgDq
+loaded: 1977570 commands, 0 errors, in 22356 ms
+parent before the first save: rss 3169 MB, pss 3168 MB, private dirty 3165 MB
+save 1: 7.22 s; used_memory 1223 MB; parent rss 3542 MB, private dirty 1518 MB; child rss 3172 MB, private dirty 1155 MB; pss of both 4693 MB
+save 2: 4.84 s; used_memory 1227 MB; parent rss 3556 MB, private dirty 1494 MB; child rss 3490 MB, private dirty 1451 MB; pss of both 4995 MB
+save 3: 9.64 s; used_memory 1228 MB; parent rss 3869 MB, private dirty 1879 MB; child rss 3589 MB, private dirty 1605 MB; pss of both 5471 MB
+save 4: 4.93 s; used_memory 1232 MB; parent rss 3802 MB, private dirty 3797 MB; child rss 3801 MB, private dirty 1226 MB; pss of both 5020 MB
+save 5: 5.69 s; used_memory 1234 MB; parent rss 4420 MB, private dirty 4416 MB; child rss 3809 MB, private dirty 1283 MB; pss of both 5657 MB
+saves asked 5: finished ok 5, failed 0, hung 0; median 5.69 s
+peaks over the run: parent rss 4420 MB, parent private dirty 4416 MB, child rss 3809 MB, child private dirty 1605 MB, pss of both 5657 MB
+children that ended with success, by the log: 5
+fork() held the parent: median 59461 µs, max 84509 µs over 5 forks
+kesh: loaded 1975250 keys, 571640952 bytes, from /tmp/kesh-bgsave-wodgDq/dump.kesh in 12239 ms
+keys before the stop 1975250 (the load kept writing after the last save), loaded from the last snapshot 1975250
+exit=0

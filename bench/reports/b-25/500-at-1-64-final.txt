@@ -1,0 +1,20 @@
+kesh pid 1413344, snapshots in /tmp/kesh-bgsave-g9GnzH
+loaded: 247166 commands, 0 errors, in 2446 ms
+parent before the first save: rss 513 MB, pss 511 MB, private dirty 508 MB
+save 50: 0.72 s; used_memory 175 MB; parent rss 550 MB, private dirty 546 MB; child rss 549 MB, private dirty 191 MB; pss of both 739 MB
+save 100: 0.82 s; used_memory 193 MB; parent rss 601 MB, private dirty 596 MB; child rss 600 MB, private dirty 226 MB; pss of both 824 MB
+save 150: 0.70 s; used_memory 209 MB; parent rss 630 MB, private dirty 625 MB; child rss 629 MB, private dirty 244 MB; pss of both 870 MB
+save 200: 0.76 s; used_memory 223 MB; parent rss 658 MB, private dirty 203 MB; child rss 657 MB, private dirty 213 MB; pss of both 864 MB
+save 250: 0.77 s; used_memory 233 MB; parent rss 694 MB, private dirty 690 MB; child rss 693 MB, private dirty 281 MB; pss of both 972 MB
+save 300: 0.98 s; used_memory 243 MB; parent rss 716 MB, private dirty 328 MB; child rss 715 MB, private dirty 337 MB; pss of both 1047 MB
+save 350: 0.86 s; used_memory 252 MB; parent rss 735 MB, private dirty 731 MB; child rss 734 MB, private dirty 314 MB; pss of both 1046 MB
+save 400: 0.84 s; used_memory 260 MB; parent rss 755 MB, private dirty 751 MB; child rss 754 MB, private dirty 329 MB; pss of both 1080 MB
+save 450: 1.12 s; used_memory 267 MB; parent rss 775 MB, private dirty 353 MB; child rss 773 MB, private dirty 363 MB; pss of both 1131 MB
+save 500: 0.88 s; used_memory 275 MB; parent rss 795 MB, private dirty 791 MB; child rss 794 MB, private dirty 350 MB; pss of both 1138 MB
+saves asked 500: finished ok 500, failed 0, hung 0; median 0.85 s
+peaks over the run: parent rss 795 MB, parent private dirty 791 MB, child rss 794 MB, child private dirty 541 MB, pss of both 1322 MB
+children that ended with success, by the log: 500
+fork() held the parent: median 10222 µs, max 15017 µs over 500 forks
+kesh: loaded 246898 keys, 87939165 bytes, from /tmp/kesh-bgsave-g9GnzH/dump.kesh in 1501 ms
+keys before the stop 246899 (the load kept writing after the last save), loaded from the last snapshot 246898
+exit=0

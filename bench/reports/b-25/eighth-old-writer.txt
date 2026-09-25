@@ -1,0 +1,25 @@
+kesh pid 1411589, snapshots in /tmp/kesh-bgsave-1KIJoj
+loaded: 1977570 commands, 0 errors, in 20923 ms
+parent before the first save: rss 3237 MB, pss 3235 MB, private dirty 3233 MB
+save 1: 7.30 s; used_memory 1223 MB; parent rss 3540 MB, private dirty 1339 MB; child rss 3442 MB, private dirty 1243 MB; pss of both 4781 MB
+save 2: 5.24 s; used_memory 1227 MB; parent rss 3658 MB, private dirty 3654 MB; child rss 3590 MB, private dirty 2107 MB; pss of both 5718 MB
+save 3: 4.85 s; used_memory 1229 MB; parent rss 3853 MB, private dirty 3680 MB; child rss 4353 MB, private dirty 4243 MB; pss of both 8032 MB
+save 4: 5.21 s; used_memory 1233 MB; parent rss 3985 MB, private dirty 3981 MB; child rss 3870 MB, private dirty 2462 MB; pss of both 6377 MB
+save 5: status err, LASTSAVE :1790345518 -> :1790345518
+save 5: 4.73 s; used_memory 1236 MB; parent rss 4237 MB, private dirty 4233 MB; child rss 4593 MB, private dirty 3876 MB; pss of both 8093 MB
+saves asked 5: finished ok 4, failed 1, hung 0; median 5.24 s
+peaks over the run: parent rss 4237 MB, parent private dirty 4233 MB, child rss 4593 MB, child private dirty 4243 MB, pss of both 8093 MB
+children that ended with success, by the log: 4
+kesh: background saving terminated by signal 9 after 4671 ms
+fork() held the parent: median 48471 µs, max 59648 µs over 5 forks
+kesh did not start
+kesh: background saving terminated with success in 5156 ms
+kesh: background saving started by pid 1411805; fork() took 59648 µs
+kesh: background saving terminated by signal 9 after 4671 ms
+SIGNAL COMPLETED in 2.674us
+ANNOUNCE COMPLETED in 5.000314477s
+DRAIN COMPLETED in 2.177777ms
+RELEASE_CONSUMERS COMPLETED in 1.089us
+RELEASE_POOLS COMPLETED in 166ns
+RELEASE_TELEMETRY COMPLETED in 61ns
+EXIT COMPLETED in 59ns
