@@ -1,7 +1,7 @@
 ---
 id: B-18
 title: "24 h soak with TTL churn"
-status: open
+status: wip
 priority: P2
 size: S
 stage: stage-6-capacity
