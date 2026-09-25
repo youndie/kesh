@@ -60,21 +60,10 @@ allocation rate (fixable in kesh) or the scheduler's rule (`GC.targetHeapUtiliza
   `core/native/src/SegmentPool.kt` has `MAX_SIZE = 0`, `take()` = `Segment.new()`, and `recycle()` empty.
   Every read and every write takes fresh 8 KB segments, garbage by the next one.
 
-## Question (for the owner)
+## Decision (owner, 2026-09-25)
 
-The allocation that feeds the runaway is in the transport, not in kesh's commands. Options:
-
-1. **kesh's own transport on `epoll`** — non-blocking sockets, buffers reused per connection, and the
-   commands run on the event loop's own thread, as Redis runs them. Removes the 8 KB segments, the
-   hand-off to the store thread and back (B-17's limit), the 1 024-descriptor ceiling (D-13) and the
-   `EINTR` hazard (R-3) at once. Reverses D-6/D-13's choice of `ktor-network`; the largest change (L).
-2. **Keep ktor, and make the garbage cheaper to collect**: fewer live objects (leaderboards as packed
-   runs instead of a skiplist node per member — a third of the 15.7 M objects at an eighth), and the
-   collector's knobs. Leaves 28 KB a request; narrows the window rather than closing it.
-3. **Upstream**: a segment pool for kotlinx-io on Native (an issue or a pull request to Kotlin's
-   repository — the owner's call to file). Nothing changes in kesh until it ships.
-
-Research's recommendation: **1**, with 3 filed alongside — the transport is also what B-17 found
-limiting throughput, and the descriptor ceiling and the signal hazard are documented costs of it.
+**Option 1: kesh's own transport on `epoll`** (research D-31) — no upstream issue for kotlinx-io.
+The event loop's thread is the store thread; the RESP and the HTTP port both move onto it, so
+`ktor-network` leaves the process. Kept: B-02's limits, B-16's drain, B-15's probes.
 
 Research: [research-architecture](../research/research-architecture.md) R-7, D-25.

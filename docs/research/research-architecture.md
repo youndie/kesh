@@ -743,6 +743,25 @@ store thread (a quarter to a half of a core) nor the network, but the transport 
 pool — 64 threads, 82 in the process — and a dispatch to the store thread and back per batch. Whether
 that is worth rebuilding is a question for after B-28, not a capacity target in v1 (D-9).
 
+### D-31. kesh's own transport on `epoll`, replacing `ktor-network` — *the owner's call, 2026-09-25; reverses D-6's transport and D-13's ceiling*
+
+B-28 found what feeds the heap's runaway under load (R-8): **kotlinx-io on Native does not pool
+its 8 KB segments** (`SegmentPool.MAX_SIZE = 0` in `kotlinx-io-core` 0.9.1,
+`Kotlin/kotlinx-io@0.9.1!/core/native/src/SegmentPool.kt`), so every read and write through
+`ktor-network`'s channels is fresh garbage — 28 KB a request at pipeline 1. B-17 found the same
+transport limiting throughput (a pool of some 70 threads, and a hand-off to the store thread and back
+per batch). And the transport carried two documented hazards: the `FD_SETSIZE` ceiling (§1.4, D-13)
+and `EINTR` in `pselect` (R-3).
+
+Decision: one event loop on `epoll`, whose thread is the store thread — non-blocking sockets,
+buffers reused per connection, commands executed where they are read, as Redis runs them. The loop
+is also the store thread's coroutine dispatcher, so what was `withContext(storeThread)` still is.
+The HTTP port moves onto it as well, so no `pselect` selector remains in the process. `maxclients`
+defaults to Redis's rule — 10 000, lowered to what `RLIMIT_NOFILE` allows less 32 — instead of the
+`FD_SETSIZE` ceiling. Rejected: keeping `ktor-network` and shortening the collector's marks (fewer
+live objects) — it narrows the window without removing the 28 KB; waiting for a kotlinx-io pool on
+Native — nothing changes until it ships, and it leaves the other three costs.
+
 ### D-20. Hashes pack under Redis 7.2's listpack limits: 512 fields, 64-byte fields and values — *new, B-06*
 
 B-06 was to take its threshold from B-19's measurement. B-19 gave none: it packed every hash and
