@@ -15,10 +15,14 @@ kore = "0.1.4"
 # The client the portfolio already uses (kompot's realtime bus, research §1.1), as the conformance
 # module's smoke test that an unchanged client connects. Test tooling only; nothing ships with it.
 lettuce = "7.6.0.RELEASE"
+# kesh's first consumer (research D-26): kompot's multi-instance bus, run against kesh by the
+# conformance tool (B-27). Test tooling only.
+kompot = "0.37.0"
 
 [libraries]
 kore-core = { module = "io.github.youndie:kore-core", version.ref = "kore" }
 lettuce = { module = "io.lettuce:lettuce-core", version.ref = "lettuce" }
+kompot-realtime-redis = { module = "io.github.youndie:kompot-realtime-redis", version.ref = "kompot" }
 
 [plugins]
 sborkaKmp = { id = "io.github.youndie.sborka.kmp", version.ref = "sborka" }

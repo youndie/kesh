@@ -1,9 +1,18 @@
 package io.github.youndie.kesh.conformance
 
+import io.github.youndie.kompot.realtime.redis.RedisKompotUpdateBus
+import io.github.youndie.kompot.realtime.server.KompotBusMessage
 import io.lettuce.core.RedisClient
 import io.lettuce.core.RedisURI
+import kotlinx.coroutines.CompletableDeferred
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.withTimeout
 import java.io.File
 import kotlin.system.exitProcess
+import kotlin.time.Duration.Companion.seconds
 
 /**
  * `conformance --kesh HOST:PORT --oracle HOST:PORT --kesh-locked HOST:PORT --oracle-locked HOST:PORT
@@ -62,7 +71,47 @@ fun main(args: Array<String>) {
     val lettuce = lettuceSmoke(Endpoint.parse(options.getValue("kesh")))
     println("lettuce ${RedisClient::class.java.`package`.implementationVersion}: $lettuce")
 
-    exitProcess(if (failed == 0 && lettuce == "PONG") 0 else 1)
+    val kompot = kompotBus(Endpoint.parse(options.getValue("kesh")))
+    println("kompot bus: $kompot")
+
+    exitProcess(if (failed == 0 && lettuce == "PONG" && kompot == DELIVERED) 0 else 1)
+}
+
+private const val DELIVERED = "delivered from one instance to the other"
+
+/**
+ * kesh's first consumer, unchanged (B-27, research D-26): two instances of kompot's
+ * `RedisKompotUpdateBus`, each on its own Lettuce client — two processes, as far as kesh can tell —
+ * with one channel prefix. What one publishes, the other's `PSUBSCRIBE` must receive.
+ */
+private fun kompotBus(kesh: Endpoint): String {
+    val url = "redis://${kesh.host}:${kesh.port}"
+    val prefix = "conformance:${System.nanoTime()}"
+    val a = RedisKompotUpdateBus(RedisClient.create(url), channelPrefix = prefix)
+    val b = RedisKompotUpdateBus(RedisClient.create(url), channelPrefix = prefix)
+    return try {
+        runBlocking {
+            val received = CompletableDeferred<KompotBusMessage>()
+            val listening = launch(Dispatchers.Default) { b.messages().collect { received.complete(it) } }
+            // Subscribing is asynchronous: a message published before the server took the
+            // PSUBSCRIBE goes past, as it would in Redis. Published until one arrives.
+            val message =
+                withTimeout(10.seconds) {
+                    while (!received.isCompleted) {
+                        a.publish("home:user1", "payload")
+                        delay(200)
+                    }
+                    received.await()
+                }
+            listening.cancel()
+            if (message.topic == "home:user1" && message.payload == "payload") DELIVERED else "received $message"
+        }
+    } catch (e: Exception) {
+        "failed: $e"
+    } finally {
+        a.close()
+        b.close()
+    }
 }
 
 /** `redis_version` from the oracle's `INFO server`, so every run names what it was compared with. */

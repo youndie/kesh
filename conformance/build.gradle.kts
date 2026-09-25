@@ -21,6 +21,7 @@ kotlin {
         jvmMain.dependencies {
             implementation(project(":resp"))
             implementation(libs.lettuce)
+            implementation(libs.kompot.realtime.redis)
         }
     }
 }
