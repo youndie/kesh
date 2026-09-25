@@ -38,11 +38,10 @@ A stage is a field on the item, not a directory.
 
 <!-- BEGIN INDEX -->
 
-## Open (8)
+## Open (7)
 
 | Task | | Priority | Size | Blocked by |
 |---|---|---|---|---|
-| [B-12](docs/backlog/B-12-eviction-policies.md) `[~]` | Eviction policies with sampled LRU | P1 | M | B-11 |
 | [B-15](docs/backlog/B-15-info-probes-metrics.md) `[ ]` | INFO, HTTP probes and Prometheus metrics | P1 | M | B-11 |
 | [B-16](docs/backlog/B-16-image-chart-graceful-stop.md) `[ ]` | Image, chart, and a graceful stop that survives being repeated | P1 | M | B-14, B-15 |
 | [B-17](docs/backlog/B-17-reference-load-report.md) `[ ]` | Reference load report on the reference host | P1 | M | B-03, B-12, B-14, B-22 |
@@ -51,7 +50,7 @@ A stage is a field on the item, not a directory.
 | [B-25](docs/backlog/B-25-bgsave-through-fork.md) `[ ]` | BGSAVE through fork, with the child's collector assists off | P2 | M | B-14 |
 | [B-26](docs/backlog/B-26-maxmemory-container-check.md) `[?]` | Refuse a maxmemory above the container's memory budget | P2 | S | B-11 |
 
-## Closed (19)
+## Closed (20)
 
 **Protocol and core**
 
@@ -75,6 +74,7 @@ A stage is a field on the item, not a directory.
 **Memory limit and expiry**
 
 - [B-11](docs/backlog/B-11-memory-accounting-and-noeviction.md) `[x]` - Memory accounting, maxmemory and noeviction
+- [B-12](docs/backlog/B-12-eviction-policies.md) `[x]` - Eviction policies with sampled LRU
 - [B-13](docs/backlog/B-13-active-expiry.md) `[x]` - Active expiry, Redis's algorithm as its source has it
 - [B-23](docs/backlog/B-23-mutator-assists-stall-writes.md) `[x]` - Writes stall for seconds while the keyspace grows: decide on the collector's mutator assists
 

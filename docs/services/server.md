@@ -118,7 +118,10 @@ docker run --rm --network host redis:7.2 redis-cli -p 6379 ping
 
 `ServerConfig.kt` is the list. Today: `KESH_PORT` (6379), `KESH_BIND` (`0.0.0.0`), `KESH_PASSWORD`
 (none), `KESH_MAXCLIENTS` (derived), `KESH_PROTO_MAX_BULK_LEN` (512 MB),
-`KESH_CLIENT_QUERY_BUFFER_LIMIT` (1 GB). The printed configuration never shows the password.
+`KESH_CLIENT_QUERY_BUFFER_LIMIT` (1 GB), `KESH_MAXMEMORY` (0, no limit; B-11),
+`KESH_MAXMEMORY_POLICY` (`noeviction`) and `KESH_MAXMEMORY_SAMPLES` (5; B-12), `KESH_DIR` (`.`) and
+`KESH_DBFILENAME` (`dump.kesh`; B-14), `KESH_GC_ASSISTS` (`on`; B-23). The printed configuration never
+shows the password.
 
 **`KESH_` in upper case, decided in B-01.** The brief spelled the prefix `kesh_`, which read as a
 working-name substitution rather than a decision; environment variables are conventionally upper

@@ -669,6 +669,22 @@ the heap. The subscription registry is on the store thread with the clients (D-1
 (a) keeping the scope and naming a future consumer — no such service is planned; (c) sizing v1 down
 to Pub/Sub alone — the owner kept the capacity target. B-27 builds it.
 
+### D-27. Eviction is Redis's, run against kesh's accounting — *new, B-12*
+
+`performEvictions` and `evictionPoolPopulate` (`redis/redis@7.2!/src/evict.c`) as they are: before
+every command, a pool of 16 candidates fed by `maxmemory-samples` keys drawn with `dictGetSomeKeys`
+(`redis/redis@7.2!/src/dict.c`), the LRU clock in seconds on each entry (24 bits, in the entry's
+padding — no memory), a 500 µs limit checked every 16 keys and rounds between commands after it.
+What differs is what "freed" means: Redis measures `zmalloc_used_memory` around each delete; kesh
+measures `used_memory` (D-10), which a delete lowers at once (D-15). So the policy holds the
+accounting to `maxmemory`, and resident memory stands above it by B-11's ratio.
+The brief's "an access clock per key (a few bits, not a timestamp object)" held as written.
+Rejected: an exact LRU list — two references per key for the collector to mark (§1.2), for an
+ordering Redis itself only approximates; the oracle cannot tell them apart and clients do not rely
+on it. Deviations: the LFU policies are refused, not accepted (the brief leaves them out);
+`maxmemory-eviction-tenacity` is fixed at 10; the rounds between commands start at the periodic
+work's pace (100 ms), not on the next turn of an event loop.
+
 ### D-20. Hashes pack under Redis 7.2's listpack limits: 512 fields, 64-byte fields and values — *new, B-06*
 
 B-06 was to take its threshold from B-19's measurement. B-19 gave none: it packed every hash and

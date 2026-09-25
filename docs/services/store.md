@@ -14,13 +14,13 @@ publishes: []
 
 ## 1. Responsibility
 
-Owns all data: the keyspace, the value kinds, key expiry, memory accounting, and — later —
+Owns all data: the keyspace, the value kinds, key expiry, memory accounting, and
 eviction. Every data command's semantics lives here; `server` checks existence, arity and
 authentication and dispatches to it.
 
 **Built (B-05 to B-11):** kesh's own hash table (research D-12), strings and the four collection
 kinds, the keyspace commands with `SCAN` and its kin, lazy expiry, and `used_memory` with `maxmemory`
-under `noeviction`, and active expiry (B-13). ***Target*:** eviction (B-12).
+under `noeviction`, active expiry (B-13), and eviction by Redis's five policies (B-12).
 
 **Deliberately does not:** do I/O, parse or write the wire, persist anything (that is `snapshot`), or
 free memory — under a tracing collector nothing does (research D-15).
@@ -46,6 +46,7 @@ free memory — under a tracing collector nothing does (research D-15).
 |---|---|
 | `store/src/commonMain/kotlin/io/github/youndie/kesh/store/keyspace/Keyspace.kt` | the table: bucket chains, incremental rehash, content hashing with a per-process seed |
 | `store/src/commonMain/kotlin/io/github/youndie/kesh/store/expiry/ActiveExpiry.kt` | Redis's slow active expiry cycle over `Db.expires` |
+| `store/src/commonMain/kotlin/io/github/youndie/kesh/store/eviction/Eviction.kt` | `performEvictions`: the policies, the pool of sixteen, the 500 µs limit (research D-27) |
 | `store/src/commonMain/kotlin/io/github/youndie/kesh/store/Db.kt` | lazy expiry against the command's instant; `set` with and without keeping the TTL |
 | `store/src/commonMain/kotlin/io/github/youndie/kesh/store/commands/StringCommands.kt` | the twenty string commands (`t_string.c`) |
 | `store/src/commonMain/kotlin/io/github/youndie/kesh/store/commands/HashCommands.kt` | the hash commands (`t_hash.c`) |
@@ -122,7 +123,9 @@ A module of this build; not published.
 `maxPackedValue`, `list-max-listpack-size` is `ListValue.maxChunkBytes`, and the set limits are
 `SetValue.maxPackedEntries` and `maxPackedValue`, the sorted set limits `ZSetValue`'s — all at Redis 7.2's
 defaults and not settable yet (`CONFIG`, B-15). `maxmemory` is `Db.maxMemory` (B-11), set by the
-server from `KESH_MAXMEMORY` and `CONFIG SET`; its policy and samples arrive with B-12.
+server from `KESH_MAXMEMORY` and `CONFIG SET`; `Eviction.policy` and `samples` are
+`maxmemory-policy` and `maxmemory-samples` (B-12). `maxmemory-eviction-tenacity` is fixed at its
+default, 10 (`Eviction.TIME_LIMIT_MICROS`).
 
 ## 8. Quirks
 
