@@ -30,7 +30,8 @@ class Entry internal constructor(
  * chosen from outside cannot be made to collide on purpose.
  *
  * Grows when the entries reach the capacity (load factor 1, as Redis without a fork in progress);
- * never shrinks except on [clear]. Store thread only.
+ * shrinks when the store's periodic work finds it under 10 % full ([shrinkIfSparse], B-13) — both
+ * incrementally. Store thread only.
  */
 class Keyspace(
     private val seed: Int = 0,
@@ -220,15 +221,43 @@ class Keyspace(
         rehashIndex = 0
     }
 
-    /** Moves up to [REHASH_BUCKETS_PER_STEP] non-empty buckets from the old table to the new one. */
+    /** One command's share of a rehash in progress: [REHASH_BUCKETS_PER_STEP] buckets. */
     private fun rehashStep() {
-        bucketsMovedLastStep = 0
-        if (!isRehashing) return
+        bucketsMovedLastStep = rehash(REHASH_BUCKETS_PER_STEP)
+    }
+
+    /**
+     * Redis's `tryResizeHashTables` for one table (`htNeedsResize`): a table more than
+     * [INITIAL_CAPACITY] buckets and under 10 % full starts shrinking to the smallest power of two
+     * that holds its entries, rehashed incrementally like a growth. `true` if it started. Called by
+     * the store's periodic work (B-13), never by a command.
+     */
+    fun shrinkIfSparse(): Boolean {
+        if (isRehashing) return false
+        val capacity = tables[0]!!.size
+        if (capacity <= INITIAL_CAPACITY || size * 100L / capacity >= MIN_FILL_PERCENT) return false
+        var target = INITIAL_CAPACITY
+        while (target < size) target *= 2
+        if (target >= capacity) return false
+        tables[1] = arrayOfNulls(target)
+        rehashIndex = 0
+        return true
+    }
+
+    /**
+     * Moves up to [buckets] non-empty buckets of a rehash in progress — Redis's `incrementallyRehash`,
+     * which the periodic work runs so that a resize finishes while no command touches the table.
+     */
+    fun rehashFor(buckets: Int): Int = rehash(buckets)
+
+    /** Moves up to [limit] non-empty buckets from the old table to the new one, visiting at most ten times as many empty ones. */
+    private fun rehash(limit: Int): Int {
+        if (!isRehashing) return 0
         val old = tables[0]!!
         val new = tables[1]!!
-        var emptyVisits = REHASH_BUCKETS_PER_STEP * 10
+        var emptyVisits = limit * 10
         var moved = 0
-        while (moved < REHASH_BUCKETS_PER_STEP && rehashIndex < old.size) {
+        while (moved < limit && rehashIndex < old.size) {
             var entry = old[rehashIndex]
             if (entry == null) {
                 rehashIndex++
@@ -248,7 +277,6 @@ class Keyspace(
             rehashIndex++
             moved++
         }
-        bucketsMovedLastStep = moved
         if (rehashIndex >= old.size) {
             tables[0] = new
             tables[1] = null
@@ -256,6 +284,7 @@ class Keyspace(
             sizes[1] = 0
             rehashIndex = -1
         }
+        return moved
     }
 
     /** FNV-1a over the key, mixed with the seed and finished like MurmurHash3's fmix32. */
@@ -271,6 +300,9 @@ class Keyspace(
 
     companion object {
         const val INITIAL_CAPACITY = 4
+
+        /** `HASHTABLE_MIN_FILL`: below this per cent full, a table is shrunk. */
+        const val MIN_FILL_PERCENT = 10
 
         /** Redis's `_dictRehashStep` moves one bucket per operation; so does this. */
         const val REHASH_BUCKETS_PER_STEP = 1

@@ -4,8 +4,10 @@ import io.github.youndie.kesh.resp.CommandReader
 import io.github.youndie.kesh.server.client.Clients
 import io.github.youndie.kesh.server.client.DescriptorCeiling
 import io.github.youndie.kesh.server.command.CommandDispatcher
+import io.github.youndie.kesh.server.command.epochMillis
 import io.github.youndie.kesh.server.connection.Connection
 import io.github.youndie.kesh.store.Db
+import io.github.youndie.kesh.store.expiry.ActiveExpiry
 import io.github.youndie.kore.lifecycle.ShutdownParticipant
 import io.ktor.network.selector.SelectorManager
 import io.ktor.network.sockets.InetSocketAddress
@@ -34,6 +36,7 @@ import kotlinx.coroutines.newSingleThreadContext
 import kotlinx.coroutines.withContext
 import kotlin.random.Random
 import kotlin.time.Duration.Companion.milliseconds
+import kotlin.time.TimeSource
 
 /**
  * The RESP listener and everything it owns: the selector, the connections, the client registry, and
@@ -101,12 +104,23 @@ class KeshServer(
         val clients = Clients(maxClients, passwordRequired = config.password != null)
         registry = clients
         // One keyspace, seeded per process so that keys chosen from outside cannot be made to collide.
-        val commands =
-            CommandDispatcher(
-                clients,
-                config.password,
-                Db(seed = Random.nextInt()).apply { maxMemory = config.maxMemory },
-            )
+        val db = Db(seed = Random.nextInt()).apply { maxMemory = config.maxMemory }
+        val started = TimeSource.Monotonic.markNow()
+        val expiry = ActiveExpiry { started.elapsedNow().inWholeMicroseconds }
+        val commands = CommandDispatcher(clients, config.password, db, expiry = expiry)
+
+        // Redis's `serverCron` work for the data (B-13): the slow active expiry cycle and the tables'
+        // resizing, HZ times a second, on the store thread between commands — never inside one.
+        connections.launch {
+            while (true) {
+                delay(1_000L / ActiveExpiry.HZ)
+                withContext(storeThread) {
+                    db.now = epochMillis()
+                    expiry.cycle(db)
+                    db.resizeAndRehash()
+                }
+            }
+        }
 
         connections.launch {
             while (true) {

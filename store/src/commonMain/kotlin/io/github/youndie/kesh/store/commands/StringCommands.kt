@@ -166,7 +166,7 @@ object StringCommands {
         val found = db.lookup(key) != null
         if ((nx && found) || (xx && !found)) return previous ?: abortReply
         val entry = db.set(key, value, keepTtl = keepTtl || expire != null)
-        if (expireAt != null) entry.expireAt = expireAt
+        if (expireAt != null) db.setExpire(entry, expireAt)
         return previous ?: okReply
     }
 
@@ -247,10 +247,10 @@ object StringCommands {
             if (absolute && expireAt <= db.now) {
                 db.remove(a[1])
             } else {
-                entry.expireAt = expireAt
+                db.setExpire(entry, expireAt)
             }
         } else if (persist) {
-            entry.expireAt = io.github.youndie.kesh.store.keyspace.Entry.NO_EXPIRY
+            db.setExpire(entry, io.github.youndie.kesh.store.keyspace.Entry.NO_EXPIRY)
         }
         return Reply.Bulk(value)
     }

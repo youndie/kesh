@@ -24,6 +24,16 @@ class Db(
 ) {
     val keyspace = Keyspace(seed)
 
+    /**
+     * The keys that have an expiry, key to entry — Redis's `db->expires`, what active expiry samples
+     * (B-13). Kept exact by [setExpire], [remove] and [clear]: every expiry change goes through them.
+     */
+    val expires = Keyspace(seed xor 0x5f3759df)
+
+    /** `stat_expiredkeys`: keys deleted because their time had passed, lazily or actively. */
+    var expiredKeys: Long = 0
+        private set
+
     /** The command's instant, in milliseconds since the epoch. Set by the dispatcher per command. */
     var now: Long = 0
 
@@ -31,7 +41,10 @@ class Db(
     val size: Int get() = keyspace.size
 
     /** The dataset's estimated size in bytes: every key's entry, key and value, and the bucket arrays. */
-    val usedMemory: Long get() = entriesBytes + MemoryModel.buckets(keyspace.capacity)
+    val usedMemory: Long
+        get() =
+            entriesBytes + MemoryModel.buckets(keyspace.capacity) +
+                expires.size * MemoryModel.ENTRY + MemoryModel.buckets(expires.capacity)
 
     /** `maxmemory`: 0 for no limit, as in Redis. */
     var maxMemory: Long = 0
@@ -64,7 +77,7 @@ class Db(
     fun lookup(key: ByteArray): Entry? {
         val entry = keyspace.get(key) ?: return null
         if (isExpired(entry)) {
-            remove(key)
+            expire(entry)
             return null
         }
         touch(entry)
@@ -85,7 +98,7 @@ class Db(
         val existing = lookup(key) ?: return put(key, value)
         val before = if (tracking) 0L else MemoryModel.entry(existing)
         existing.value = value
-        if (!keepTtl) existing.expireAt = Entry.NO_EXPIRY
+        if (!keepTtl) setExpire(existing, Entry.NO_EXPIRY)
         if (!tracking) entriesBytes += MemoryModel.entry(existing) - before
         return existing
     }
@@ -112,6 +125,7 @@ class Db(
     /** Removes [key] whatever its expiry — the one way a key leaves the table. `false` if absent. */
     fun remove(key: ByteArray): Boolean {
         val entry = keyspace.remove(key) ?: return false
+        if (entry.expireAt != Entry.NO_EXPIRY) expires.remove(key)
         if (entry in touched) removed.add(entry) else entriesBytes -= MemoryModel.entry(entry)
         return true
     }
@@ -119,8 +133,40 @@ class Db(
     /** Removes [key] if it is live; `false` if it was absent or had expired (then it is gone too). */
     fun delete(key: ByteArray): Boolean = lookup(key) != null && remove(key)
 
+    /** Sets [entry]'s expiry — [Entry.NO_EXPIRY] to clear it — keeping [expires] exact. */
+    fun setExpire(
+        entry: Entry,
+        at: Long,
+    ) {
+        if (at == Entry.NO_EXPIRY) {
+            if (entry.expireAt != Entry.NO_EXPIRY) expires.remove(entry.key)
+        } else if (entry.expireAt == Entry.NO_EXPIRY) {
+            expires.put(entry.key, entry)
+        }
+        entry.expireAt = at
+    }
+
+    /**
+     * The table upkeep of Redis's `databasesCron`, for the store's periodic work (B-13): a table under
+     * 10 % full starts shrinking (`tryResizeHashTables`), and a resize in progress moves up to
+     * [REHASH_BUDGET] buckets (`incrementallyRehash`) so it ends while commands leave it alone. For
+     * the keyspace and the expiry index, as Redis for `dict` and `expires`.
+     */
+    fun resizeAndRehash() {
+        for (table in listOf(keyspace, expires)) {
+            table.shrinkIfSparse()
+            table.rehashFor(REHASH_BUDGET)
+        }
+    }
+
+    /** Deletes [entry], whose time has passed: `deleteExpiredKeyAndPropagate`, counted. */
+    fun expire(entry: Entry) {
+        if (remove(entry.key)) expiredKeys++
+    }
+
     fun clear() {
         keyspace.clear()
+        expires.clear()
         entriesBytes = 0
         touched.clear()
         removed.clear()
@@ -130,7 +176,19 @@ class Db(
     fun recount(): Long {
         var sum = 0L
         keyspace.forEach { sum += MemoryModel.entry(it) }
-        return sum + MemoryModel.buckets(keyspace.capacity)
+        return sum + MemoryModel.buckets(keyspace.capacity) +
+            expires.size * MemoryModel.ENTRY + MemoryModel.buckets(expires.capacity)
+    }
+
+    companion object {
+        /**
+         * Buckets a periodic call moves at most — Redis's millisecond of `dictRehashMilliseconds`,
+         * counted in buckets (about a millisecond of moves here). It has to finish a shrink quickly:
+         * while one is in progress the expiry index counts both tables' buckets, looks sparse, and
+         * active expiry waits (`num*100/slots < 1`, as in Redis). At 1 000 a shrink of a 131 072-bucket
+         * index took 14 cycles, and the feature's 2 s scenario failed on linuxX64.
+         */
+        const val REHASH_BUDGET = 16_384
     }
 
     private fun touch(entry: Entry) {

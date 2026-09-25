@@ -16,6 +16,31 @@ class ScanTest {
         assertEquals(emptyList(), outcome.missed.take(5), "${outcome.missed.size} stable keys never seen")
     }
 
+    @Test
+    fun `every key present for the whole iteration is seen across a shrink`() {
+        // 100 000 keys, 95 000 deleted, then a scan during which the table shrinks: the case the
+        // reversed-bit cursor exists for (B-13 brought shrinking).
+        val keyspace = Keyspace(seed = 8)
+        repeat(100_000) { keyspace.put("key:$it".encodeToByteArray(), it) }
+        repeat(95_000) { keyspace.remove("key:$it".encodeToByteArray()) }
+        val before = keyspace.capacity
+        val seen = HashSet<String>()
+        var cursor = 0L
+        var calls = 0
+        var shrunk = false
+        do {
+            check(++calls < 1_000_000) { "the cursor never returned to 0" }
+            cursor = keyspace.scan(cursor) { seen.add(it.key.decodeToString()) }
+            if (calls == 50) shrunk = keyspace.shrinkIfSparse()
+            keyspace.rehashFor(20)
+        } while (cursor != 0L)
+        assertTrue(shrunk, "the table must start shrinking mid-scan")
+        assertTrue(keyspace.capacity < before, "${keyspace.capacity} buckets, $before before")
+        assertEquals(emptyList(), (95_000 until 100_000).map { "key:$it" }.filter { it !in seen }.take(5))
+        assertEquals(5_000, keyspace.size)
+        repeat(5_000) { assertEquals(95_000 + it, keyspace.get("key:${95_000 + it}".encodeToByteArray())!!.value) }
+    }
+
     private val db = Db().apply { now = 1_000_000 }
     private val commands = StoreCommands.all.associateBy { it.name }
 

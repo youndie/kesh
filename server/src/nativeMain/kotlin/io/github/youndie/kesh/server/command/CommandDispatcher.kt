@@ -7,6 +7,7 @@ import io.github.youndie.kesh.server.client.Clients
 import io.github.youndie.kesh.server.config.MemoryConfig
 import io.github.youndie.kesh.store.Db
 import io.github.youndie.kesh.store.commands.StoreCommands
+import io.github.youndie.kesh.store.expiry.ActiveExpiry
 
 /**
  * Routes a parsed command to its implementation. Runs on the store thread only (research D-14).
@@ -23,6 +24,8 @@ class CommandDispatcher(
     private val db: Db = Db(),
     /** Milliseconds since the epoch; read once per data command (Redis's `commandTimeSnapshot`). */
     private val clock: () -> Long = ::epochMillis,
+    /** The active expiry cycle, for `INFO stats`; the server runs it (B-13). */
+    private val expiry: ActiveExpiry? = null,
 ) {
     private val memoryConfig = MemoryConfig(db)
 
@@ -117,12 +120,29 @@ class CommandDispatcher(
     }
 
     /**
-     * `INFO`, as far as kesh has it: the `memory` section (B-11). The others arrive with B-15; asked
-     * for by name alone, they answer empty, as Redis does for a section it does not know.
+     * `INFO`, as far as kesh has it: the `memory` section (B-11) and the expiry lines of `stats`
+     * (B-13). The rest arrives with B-15; a section asked for by name alone that kesh does not have
+     * answers empty, as Redis does for a section it does not know.
      */
     private fun info(sections: List<String>): Reply {
-        val wanted = sections.isEmpty() || sections.any { it in setOf("memory", "default", "all", "everything") }
-        return Reply.Bulk((if (wanted) memoryConfig.info() else "").encodeToByteArray())
+        fun wanted(section: String) = sections.isEmpty() || sections.any { it == section || it in ALL_SECTIONS }
+        val text = StringBuilder()
+        if (wanted("memory")) text.append(memoryConfig.info())
+        if (wanted("stats")) {
+            if (text.isNotEmpty()) text.append("\r\n")
+            text.append("# Stats\r\n")
+            text.append("expired_keys:${db.expiredKeys}\r\n")
+            text.append("expired_stale_perc:${twoDecimals((expiry?.stalePerc ?: 0.0) * 100)}\r\n")
+            text.append("expired_time_cap_reached_count:${expiry?.timeCapReached ?: 0}\r\n")
+            text.append("expire_cycle_cpu_milliseconds:${(expiry?.timeUsedMicros ?: 0) / 1000}\r\n")
+        }
+        return Reply.Bulk(text.toString().encodeToByteArray())
+    }
+
+    /** `%.2f`, as `INFO` prints a percentage. */
+    private fun twoDecimals(d: Double): String {
+        val hundredths = kotlin.math.round(d * 100).toLong()
+        return "${hundredths / 100}.${(hundredths % 100).toString().padStart(2, '0')}"
     }
 
     private fun ping(args: List<ByteArray>): Reply =
@@ -469,6 +489,9 @@ class CommandDispatcher(
          * Redis drops such a connection without a reply (`securityWarningCommand`), and so does kesh.
          */
         val SECURITY = setOf("post", "host:")
+
+        /** `INFO`'s words for every section. */
+        val ALL_SECTIONS = setOf("default", "all", "everything")
 
         /** `shared.oomerr`, `redis/redis@7.2!/src/server.c`. */
         val OOM: Reply = Reply.Error("OOM command not allowed when used memory > 'maxmemory'.")

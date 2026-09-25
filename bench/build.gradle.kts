@@ -38,5 +38,9 @@ kotlin {
         commonMain.dependencies {
             implementation(project(":resp"))
         }
+        // B-13's second criterion runs the reference dataset's TTL keys through the store's expiry.
+        commonTest.dependencies {
+            implementation(project(":store"))
+        }
     }
 }

@@ -25,6 +25,18 @@ class MemoryAccountingTest {
 
     private fun check(step: Int) {
         assertEquals(db.recount(), db.usedMemory, "used_memory drifted from its recount at step $step")
+        // The expires index holds exactly the keys that have an expiry (B-13).
+        var volatile = 0
+        db.keyspace.forEach { entry ->
+            if (entry.expireAt != io.github.youndie.kesh.store.keyspace.Entry.NO_EXPIRY) {
+                volatile++
+                assertTrue(
+                    db.expires.get(entry.key)?.value === entry,
+                    "${entry.key.decodeToString()} missing from expires",
+                )
+            }
+        }
+        assertEquals(volatile, db.expires.size, "expires holds keys without an expiry at step $step")
         db.keyspace.forEach { entry ->
             when (val v = entry.value) {
                 is HashValue -> assertEquals(v.recountBytes(), v.estimatedBytes, "hash ${entry.key.decodeToString()}")
@@ -45,7 +57,7 @@ class MemoryAccountingTest {
 
         fun value() = "v".repeat(random.nextInt(1, 90))
         repeat(20_000) { step ->
-            when (random.nextInt(22)) {
+            when (random.nextInt(26)) {
                 0 -> r("SET", key(), value())
                 1 -> r("APPEND", key(), value())
                 2 -> r("DEL", key(), key())
@@ -68,6 +80,10 @@ class MemoryAccountingTest {
                 19 -> r("RENAME", key(), key())
                 20 -> r("LSET", "l" + key(), "0", value())
                 21 -> r("GET", key())
+                22 -> r("EXPIRE", key(), "3")
+                23 -> r("PERSIST", key())
+                24 -> r("SET", key(), value(), "KEEPTTL")
+                25 -> r("GETEX", key(), "PX", "4")
             }
             if (step % 250 == 0) check(step)
         }
@@ -98,7 +114,10 @@ class MemoryAccountingTest {
         val keys = ArrayList<String>()
         db.keyspace.forEach { keys.add(it.key.decodeToString()) }
         keys.chunked(50).forEach { chunk -> r("DEL", *chunk.toTypedArray()) }
-        assertEquals(MemoryModel.buckets(db.keyspace.capacity), db.usedMemory)
+        assertEquals(
+            MemoryModel.buckets(db.keyspace.capacity) + MemoryModel.buckets(db.expires.capacity),
+            db.usedMemory,
+        )
         assertEquals(db.recount(), db.usedMemory)
     }
 
