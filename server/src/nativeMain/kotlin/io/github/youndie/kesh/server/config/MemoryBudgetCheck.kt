@@ -44,9 +44,17 @@ class MemoryBudgetCheck(
     /** The startup line: the budget and what it allows, or why nothing is checked. */
     fun describe(maxMemory: Long): String =
         when {
-            budget !is MemoryBudget.Bounded -> "memory budget ${budget.render()}: maxmemory is not checked against it"
-            maxMemory == 0L -> "memory budget ${budget.render()}: maxmemory 0 sets no limit, so nothing keeps the dataset inside it"
-            else -> "memory budget ${budget.render()}: maxmemory $maxMemory fits, up to $largestFitting"
+            budget !is MemoryBudget.Bounded -> {
+                "memory budget ${budget.render()}: maxmemory is not checked against it"
+            }
+
+            maxMemory == 0L -> {
+                "memory budget ${budget.render()}: maxmemory 0 sets no limit, so nothing keeps the dataset inside it"
+            }
+
+            else -> {
+                "memory budget ${budget.render()}: maxmemory $maxMemory fits, up to $largestFitting"
+            }
         }
 
     companion object {
