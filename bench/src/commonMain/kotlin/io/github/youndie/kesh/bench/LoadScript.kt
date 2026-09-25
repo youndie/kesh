@@ -61,7 +61,12 @@ class LoadScript(
 
     fun finish() = flush()
 
+    /** Commands written so far — how many replies a loader waits for. */
+    var commands = 0L
+        private set
+
     private fun command(args: List<ByteArray>) {
+        commands++
         writer.write(Reply.Multi(args.map { Reply.Bulk(it) }))
         if (writer.length >= flushAt) flush()
     }

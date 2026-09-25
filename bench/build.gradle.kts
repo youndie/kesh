@@ -26,6 +26,11 @@ kotlin {
             binaryOption("fixedBlockPageSize", "256")
             freeCompilerArgs += "-Xruntime-logs=gc=info"
         }
+        // The reference load (B-17): the dataset's own keys, §5a's mix, closed-loop pipelines.
+        binaries.executable("load") {
+            entryPoint = "io.github.youndie.kesh.bench.load.main"
+            baseName = "kesh-load"
+        }
         binaries.executable("heapProbe") {
             entryPoint = "io.github.youndie.kesh.bench.heap.main"
             baseName = "kesh-heap-probe"
@@ -47,6 +52,11 @@ kotlin {
             // The dataset loaded into a store in-process: B-13's expiry test and B-14's fork probe.
             implementation(project(":store"))
             implementation(project(":snapshot"))
+        }
+        // The load generator talks to the server as a client: the server's own transport.
+        nativeMain.dependencies {
+            implementation(wip.kotlinx.coroutines.core)
+            implementation("io.ktor:ktor-network:${wip.versions.ktor.get()}")
         }
     }
 }
