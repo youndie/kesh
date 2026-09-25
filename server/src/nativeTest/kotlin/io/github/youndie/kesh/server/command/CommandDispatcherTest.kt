@@ -276,4 +276,67 @@ class CommandDispatcherTest {
         )
         assertEquals("-ERR syntax error\r\n", open.reply(me, "CONFIG", "SET", "maxmemory", "1", "x"))
     }
+
+    @Test
+    fun `a client that keeps writing under allkeys-lru stays near maxmemory and evicted_keys grows`() {
+        assertEquals("+OK\r\n", open.reply(me, "CONFIG", "SET", "maxmemory-policy", "allkeys-lru"))
+        assertEquals("+OK\r\n", open.reply(me, "CONFIG", "SET", "maxmemory", "64kb"))
+
+        fun info(field: String) =
+            open
+                .reply(me, "INFO")!!
+                .lines()
+                .first { it.startsWith("$field:") }
+                .substringAfter(':')
+                .trim()
+                .toLong()
+        var worst = 0L
+        for (i in 0 until 5_000) {
+            assertEquals("+OK\r\n", open.reply(me, "SET", "key:$i", "x".repeat(100)), "write $i is never refused")
+            if (i % 250 == 0) worst = maxOf(worst, info("used_memory"))
+        }
+        assertTrue(worst < 64L * 1024 + 4 * 1024, "used_memory peaked at $worst")
+        assertTrue(info("evicted_keys") > 4_000, "evicted_keys ${info("evicted_keys")}")
+        assertEquals("$100\r\n${"x".repeat(100)}\r\n", open.reply(me, "GET", "key:4999"), "the newest key stays")
+        assertTrue(open.reply(me, "INFO", "memory")!!.contains("maxmemory_policy:allkeys-lru\r\n"))
+    }
+
+    @Test
+    fun `CONFIG takes the policy and the samples in Redis's words and refuses LFU in kesh's`() {
+        assertEquals(
+            "*2\r\n$16\r\nmaxmemory-policy\r\n$10\r\nnoeviction\r\n",
+            open.reply(me, "CONFIG", "GET", "maxmemory-policy"),
+        )
+        assertEquals(
+            "+OK\r\n",
+            open.reply(me, "CONFIG", "SET", "maxmemory-policy", "Volatile-TTL", "maxmemory-samples", "9"),
+        )
+        assertEquals(
+            "*4\r\n$16\r\nmaxmemory-policy\r\n$12\r\nvolatile-ttl\r\n$17\r\nmaxmemory-samples\r\n$1\r\n9\r\n",
+            open.reply(me, "CONFIG", "GET", "maxmemory-policy", "maxmemory-samples"),
+        )
+        assertEquals(
+            "-ERR CONFIG SET failed (possibly related to argument 'maxmemory-policy') - " +
+                "argument(s) must be one of the " +
+                "following: volatile-lru, volatile-lfu, volatile-random, volatile-ttl, allkeys-lru, allkeys-lfu, " +
+                "allkeys-random, noeviction\r\n",
+            open.reply(me, "CONFIG", "SET", "maxmemory-samples", "3", "maxmemory-policy", "lru"),
+        )
+        assertEquals(
+            "-ERR CONFIG SET failed (possibly related to argument 'maxmemory-policy') - " +
+                "kesh does not implement the LFU policies\r\n",
+            open.reply(me, "CONFIG", "SET", "maxmemory-policy", "allkeys-lfu"),
+        )
+        assertEquals(
+            "-ERR CONFIG SET failed (possibly related to argument 'maxmemory-samples') - " +
+                "argument must be between 1 and " +
+                "2147483647 inclusive\r\n",
+            open.reply(me, "CONFIG", "SET", "maxmemory-samples", "0"),
+        )
+        assertEquals(
+            "*2\r\n$17\r\nmaxmemory-samples\r\n$1\r\n9\r\n",
+            open.reply(me, "CONFIG", "GET", "maxmemory-samples"),
+            "a refused CONFIG SET changes nothing, the values before the refusal included",
+        )
+    }
 }

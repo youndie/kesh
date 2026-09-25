@@ -2,6 +2,8 @@ package io.github.youndie.kesh.server
 
 import io.github.youndie.kesh.resp.RequestLimits
 import io.github.youndie.kesh.server.config.MemoryConfig
+import io.github.youndie.kesh.store.eviction.Eviction
+import io.github.youndie.kesh.store.eviction.EvictionPolicy
 import kotlinx.cinterop.ExperimentalForeignApi
 import kotlinx.cinterop.toKString
 import platform.posix.getenv
@@ -26,6 +28,10 @@ data class ServerConfig(
     val queryBufferLimit: Long = 1L shl 30,
     /** `maxmemory`, `memtoull`'s syntax (`100mb`); 0 for no limit (B-11). */
     val maxMemory: Long = 0,
+    /** `maxmemory-policy` (B-12); `noeviction` by default, as in Redis. */
+    val maxMemoryPolicy: EvictionPolicy = EvictionPolicy.NOEVICTION,
+    /** `maxmemory-samples` (B-12). */
+    val maxMemorySamples: Int = Eviction.DEFAULT_SAMPLES,
     /** Where the snapshot lives (`dir`, `dbfilename`; B-14). */
     val dir: String = ".",
     val dbFilename: String = "dump.kesh",
@@ -38,7 +44,7 @@ data class ServerConfig(
     override fun toString(): String =
         "ServerConfig(host=$host, port=$port, password=${if (password == null) "none" else "set"}, " +
             "maxClients=${maxClients ?: "derived"}, limits=$limits, queryBufferLimit=$queryBufferLimit, " +
-            "maxMemory=$maxMemory, snapshot=$dir/$dbFilename, gcAssists=$gcAssists)"
+            "maxMemory=$maxMemory, policy=${maxMemoryPolicy.configName}/$maxMemorySamples, snapshot=$dir/$dbFilename, gcAssists=$gcAssists)"
 
     companion object {
         fun fromEnvironment(read: (String) -> String? = ::environmentVariable): ServerConfig {
@@ -70,6 +76,16 @@ data class ServerConfig(
                     read("KESH_MAXMEMORY")?.let { raw ->
                         requireNotNull(MemoryConfig.memtoull(raw)) { "KESH_MAXMEMORY is not a memory value: $raw" }
                     } ?: defaults.maxMemory,
+                maxMemoryPolicy =
+                    read("KESH_MAXMEMORY_POLICY")?.let { raw ->
+                        requireNotNull(EvictionPolicy.byName(raw)) {
+                            "KESH_MAXMEMORY_POLICY is not one of ${EvictionPolicy.entries.joinToString {
+                                it.configName
+                            }}: $raw"
+                        }
+                    } ?: defaults.maxMemoryPolicy,
+                maxMemorySamples =
+                    number("KESH_MAXMEMORY_SAMPLES", 1L..Int.MAX_VALUE.toLong())?.toInt() ?: defaults.maxMemorySamples,
                 dir = read("KESH_DIR")?.takeIf { it.isNotEmpty() } ?: defaults.dir,
                 dbFilename = read("KESH_DBFILENAME")?.takeIf { it.isNotEmpty() } ?: defaults.dbFilename,
                 gcAssists =

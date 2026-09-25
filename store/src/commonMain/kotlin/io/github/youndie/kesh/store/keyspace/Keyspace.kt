@@ -11,6 +11,12 @@ class Entry internal constructor(
     var expireAt: Long,
     internal var next: Entry?,
 ) {
+    /**
+     * When the key was last created or looked up, in seconds of the LRU clock — Redis's 24-bit
+     * `robj->lru`, what the LRU policies evict by (B-12). Fits the entry's padding: no cost.
+     */
+    internal var lru: Int = 0
+
     companion object {
         const val NO_EXPIRY: Long = -1
     }
@@ -211,6 +217,64 @@ class Keyspace(
             while (pick-- > 0) e = e!!.next
             return e
         }
+    }
+
+    /**
+     * Up to [count] entries from a random stretch of the table, for the eviction pool (B-12) —
+     * Redis's `dictGetSomeKeys` (`redis/redis@7.2!/src/dict.c`): a random bucket, then the buckets
+     * after it, every entry of each chain, jumping elsewhere after a run of empty ones, at most
+     * `count * 10` steps. Not a uniform sample and not meant to be; entries may repeat across calls.
+     * [random] returns a value in `[0, bound)`.
+     */
+    fun sample(
+        count: Int,
+        random: (Int) -> Int,
+    ): List<Entry> {
+        val wanted = minOf(count, size)
+        if (wanted == 0) return emptyList()
+        if (isRehashing) rehashStep()
+        val tableCount = if (isRehashing) 2 else 1
+        var mask = tables[0]!!.size - 1
+        if (tableCount == 2) mask = maxOf(mask, tables[1]!!.size - 1)
+        val out = ArrayList<Entry>(wanted)
+        var stored = 0
+        var i = random(mask + 1)
+        var emptyRun = 0
+        var steps = wanted.toLong() * 10
+        while (stored < wanted && steps-- > 0) {
+            for (t in 0 until tableCount) {
+                // Below the rehash index the old table is already empty (`dictGetSomeKeys`' invariant).
+                if (tableCount == 2 && t == 0 && i < rehashIndex) {
+                    if (i >= tables[1]!!.size) i = rehashIndex else continue
+                }
+                val table = tables[t]!!
+                if (i >= table.size) continue
+                var entry = table[i]
+                if (entry == null) {
+                    emptyRun++
+                    if (emptyRun >= 5 && emptyRun > wanted) {
+                        i = random(mask + 1)
+                        emptyRun = 0
+                    }
+                } else {
+                    emptyRun = 0
+                    while (entry != null) {
+                        // Reservoir sampling past the count, so the end of a long chain can be drawn too.
+                        if (stored < wanted) {
+                            out.add(entry)
+                        } else {
+                            val r = random(stored + 1)
+                            if (r < wanted) out[r] = entry
+                        }
+                        entry = entry.next
+                        stored++
+                    }
+                    if (stored >= wanted) return out
+                }
+            }
+            i = (i + 1) and mask
+        }
+        return out
     }
 
     private fun expandIfNeeded() {

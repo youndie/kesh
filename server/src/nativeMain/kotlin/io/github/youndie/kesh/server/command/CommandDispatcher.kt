@@ -8,6 +8,7 @@ import io.github.youndie.kesh.server.config.MemoryConfig
 import io.github.youndie.kesh.server.persistence.Persistence
 import io.github.youndie.kesh.store.Db
 import io.github.youndie.kesh.store.commands.StoreCommands
+import io.github.youndie.kesh.store.eviction.Eviction
 import io.github.youndie.kesh.store.expiry.ActiveExpiry
 
 /**
@@ -29,8 +30,13 @@ class CommandDispatcher(
     private val expiry: ActiveExpiry? = null,
     /** `SAVE` and `LASTSAVE`; none in tests that do not save (B-14). */
     private val persistence: Persistence? = null,
+    /** `maxmemory-policy` and its work (B-12); the server also runs it between commands. */
+    private val eviction: Eviction = Eviction(),
 ) {
-    private val memoryConfig = MemoryConfig(db)
+    private val memoryConfig = MemoryConfig(db, eviction)
+
+    /** Redis's `pre_command_oom_state`: over `maxmemory` with nothing left to evict, at this command's start. */
+    private var outOfMemory = false
 
     private val table: Map<String, CommandSpec> =
         listOf(
@@ -85,8 +91,9 @@ class CommandDispatcher(
             StoreCommands.all.map { command ->
                 CommandSpec(command.name, command.arity) { _, args ->
                     // `processCommand`: a command that may add data is refused while the dataset is over
-                    // `maxmemory`, under `noeviction` (B-11); reads and deletes still run.
-                    if (command.denyOom && db.overLimit) {
+                    // `maxmemory` and the policy could evict nothing more (B-11, B-12); reads and deletes
+                    // still run.
+                    if (command.denyOom && outOfMemory) {
                         OOM
                     } else {
                         db.now = clock()
@@ -121,6 +128,12 @@ class CommandDispatcher(
 
         client.startCommand(fullName)
         val handler = spec.handler ?: return unknownCommand(args)
+        // `processCommand` evicts before every command that got this far, whatever it is (B-12).
+        outOfMemory = false
+        if (db.maxMemory != 0L) {
+            db.now = clock()
+            outOfMemory = eviction.perform(db) == Eviction.Result.FAIL
+        }
         return handler(client, args)
     }
 
@@ -140,6 +153,7 @@ class CommandDispatcher(
             text.append("expired_stale_perc:${twoDecimals((expiry?.stalePerc ?: 0.0) * 100)}\r\n")
             text.append("expired_time_cap_reached_count:${expiry?.timeCapReached ?: 0}\r\n")
             text.append("expire_cycle_cpu_milliseconds:${(expiry?.timeUsedMicros ?: 0) / 1000}\r\n")
+            text.append("evicted_keys:${eviction.evictedKeys}\r\n")
         }
         return Reply.Bulk(text.toString().encodeToByteArray())
     }

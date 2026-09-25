@@ -20,7 +20,7 @@ object MemoryModel {
     /** A reference or a `Long`/`Double` field. */
     const val WORD = 8L
 
-    /** An [Entry]: header, key, value, next, expiry, hash (padded). */
+    /** An [Entry]: header, key, value, next, expiry, then the hash and the LRU clock in one word. */
     const val ENTRY = OBJECT + 4 * WORD + 8
 
     /** An array of [payload] bytes: header and length word, then the payload, to 8 bytes. */

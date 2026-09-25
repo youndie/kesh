@@ -70,6 +70,23 @@ class HarnessTest {
     }
 
     @Test
+    fun `info compares the named fields and holds the oracle to having them`() {
+        fun report(vararg lines: String): RespFrame {
+            val text = lines.joinToString("\r\n", postfix = "\r\n")
+            return frame("$${text.length}\r\n$text\r\n")
+        }
+        val redis = report("# Stats", "expired_keys:0", "evicted_keys:3", "evicted_clients:0")
+        val fields = listOf("evicted_keys")
+        assertTrue(Normaliser.INFO.agree(report("# Stats", "evicted_keys:3"), redis, fields = fields))
+        assertFalse(Normaliser.INFO.agree(report("# Stats", "evicted_keys:2"), redis, fields = fields))
+        assertFalse(Normaliser.INFO.agree(report("# Stats"), redis, fields = fields), "missing in kesh")
+        assertFalse(
+            Normaliser.INFO.agree(report("evicted_key:3"), report("evicted_key:3"), fields = fields),
+            "a field the oracle lacks is a broken line, not agreement",
+        )
+    }
+
+    @Test
     fun `shape ignores content and keeps types, lengths and nulls`() {
         assertTrue(Normaliser.SHAPE.agree(frame("*2\r\n$4\r\nkesh\r\n:1\r\n"), frame("*2\r\n$5\r\nredis\r\n:9\r\n")))
         assertFalse(Normaliser.SHAPE.agree(frame("*2\r\n$4\r\nkesh\r\n:1\r\n"), frame("*2\r\n$4\r\nkesh\r\n+1\r\n")))

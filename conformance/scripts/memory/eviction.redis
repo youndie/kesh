@@ -1,0 +1,113 @@
+# Eviction policies (B-12). The two servers account memory differently, so which key goes first
+# under a partial limit is not compared here (store's EvictionTest is); at maxmemory 1 both are over
+# from the start, every key the policy may take goes before the next command, and what remains, what
+# is refused and evicted_keys are compared. This is the only script that evicts: evicted_keys counts
+# from a fresh server.
+FLUSHALL
+CONFIG GET maxmemory-policy
+CONFIG GET maxmemory-samples
+CONFIG SET maxmemory-policy allkeys-lru
+CONFIG GET maxmemory-policy
+CONFIG SET maxmemory-policy ALLKEYS-RANDOM
+CONFIG GET maxmemory-policy
+CONFIG GET Maxmemory-Policy
+CONFIG SET maxmemory-policy nothing
+CONFIG SET maxmemory-policy "allkeys-lru volatile-lru"
+CONFIG SET maxmemory-policy ""
+CONFIG SET maxmemory-samples 10
+CONFIG GET maxmemory-samples
+CONFIG SET maxmemory-samples 0
+CONFIG SET maxmemory-samples -1
+CONFIG SET maxmemory-samples 2147483648
+CONFIG SET maxmemory-samples abc
+CONFIG SET maxmemory-samples 007
+CONFIG SET maxmemory-samples +5
+CONFIG SET maxmemory-samples 2147483647
+CONFIG GET maxmemory-samples
+CONFIG SET maxmemory-policy volatile-lru maxmemory-samples 7
+[pairs] CONFIG GET maxmemory-policy maxmemory-samples
+CONFIG SET maxmemory-policy nothing maxmemory-samples 3
+CONFIG SET maxmemory-samples 3 maxmemory-policy nothing
+CONFIG GET maxmemory-samples
+CONFIG GET maxmemory-policy
+CONFIG SET maxmemory-samples 1 MAXMEMORY-SAMPLES 2
+CONFIG SET maxmemory-samples 1 nothing 2
+CONFIG SET nothing 2 maxmemory-samples 1 maxmemory-samples 2
+[info maxmemory_policy] INFO memory
+[info evicted_keys] INFO stats
+# volatile-lru: only the keys with an expiry go.
+SET p1 v
+SET p2 v
+SET v1 v EX 100
+SET v2 v PX 100000
+HSET vh f v
+EXPIRE vh 100
+CONFIG SET maxmemory 1
+DBSIZE
+[unordered] KEYS *
+[info evicted_keys] INFO stats
+GET p1
+SET p3 v
+SET v3 v EX 100
+DEL p1
+EXISTS p1
+# volatile-random and volatile-ttl: nothing volatile left, so writes are refused and nothing goes.
+CONFIG SET maxmemory-policy volatile-random
+SET p3 v
+CONFIG SET maxmemory-policy volatile-ttl
+SET p3 v
+DBSIZE
+[info evicted_keys] INFO stats
+# The limit lifted, volatile keys again, and volatile-ttl takes them all.
+CONFIG SET maxmemory 0
+SET t1 v EX 50
+SET t2 v EX 500
+RPUSH t3 a b c
+PEXPIRE t3 70000
+CONFIG SET maxmemory 1
+TTL t1
+DBSIZE
+[unordered] KEYS *
+[info evicted_keys] INFO stats
+# volatile-random the same.
+CONFIG SET maxmemory 0
+SET r1 v EX 50
+SADD r2 a
+EXPIRE r2 60
+CONFIG SET maxmemory-policy volatile-random
+CONFIG SET maxmemory 1
+[unordered] KEYS *
+[info evicted_keys] INFO stats
+# allkeys-lru and allkeys-random take everything, and then refuse writes too.
+CONFIG SET maxmemory-policy allkeys-lru
+DBSIZE
+GET p2
+SET p2 v
+[info evicted_keys] INFO stats
+CONFIG SET maxmemory 0
+MSET a 1 b 2 c 3
+ZADD z 1 m
+CONFIG SET maxmemory-policy allkeys-random
+CONFIG SET maxmemory 1
+PING
+DBSIZE
+[info evicted_keys] INFO stats
+INCR a
+# A read evicts as well, before it runs.
+CONFIG SET maxmemory 0
+SET g v
+CONFIG SET maxmemory 1
+GET g
+[info evicted_keys] INFO stats
+# noeviction again: nothing goes, writes are refused.
+CONFIG SET maxmemory 0
+SET n v
+CONFIG SET maxmemory-policy noeviction
+CONFIG SET maxmemory 1
+DBSIZE
+SET n2 v
+[info evicted_keys] INFO stats
+CONFIG SET maxmemory 0
+CONFIG SET maxmemory-samples 5
+[info maxmemory_policy] INFO memory
+FLUSHALL

@@ -15,6 +15,7 @@ import java.io.File
  * [unordered] SMEMBERS s      a normaliser, named on the line it applies to
  * [shape] CLIENT ID
  * [random a b c] SPOP s 2     a random reply: members of the population named, as many as Redis's
+ * [info evicted_keys] INFO     only these fields' lines of the report are compared
  * [cursor] SCAN 0 COUNT 5     iterated to cursor 0 on each server; the unions are compared
  * [closes] QUIT               one reply, then both servers must close the connection
  * [raw] *1\r\n$x\r\n          these bytes as they are; everything until the server closes (or goes
@@ -38,6 +39,8 @@ class Script(
         val population: Set<List<Byte>> = emptySet(),
         /** The command's arguments, for a [Kind.CURSOR] step that rewrites its cursor as it goes. */
         val arguments: List<ByteArray> = emptyList(),
+        /** The fields a [Normaliser.INFO] step compares. */
+        val fields: List<String> = emptyList(),
     )
 
     enum class Kind { COMMAND, CLOSES, RAW, CURSOR }
@@ -84,7 +87,13 @@ class Script(
                     ?.filter { it.isNotEmpty() }
                     .orEmpty()
             val name = tag?.groupValues?.get(1)
-            require(arguments.isEmpty() || name == "random") { "line $number: only [random] takes a population" }
+            require(arguments.isEmpty() || name == "random" || name == "info") {
+                "line $number: only [random] and [info] take arguments"
+            }
+            if (name == "info") {
+                require(arguments.isNotEmpty()) { "line $number: [info] needs the fields it compares" }
+                return Step(number, line, command(body, number), Kind.COMMAND, Normaliser.INFO, fields = arguments)
+            }
             if (name == "cursor") {
                 val args = splitInlineArguments(body.encodeToByteArray()) ?: error("line $number: unbalanced quotes")
                 return Step(number, line, command(body, number), Kind.CURSOR, Normaliser.CURSOR, arguments = args)

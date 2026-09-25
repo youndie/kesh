@@ -11,6 +11,7 @@ import io.github.youndie.kesh.server.persistence.SnapshotFile
 import io.github.youndie.kesh.server.persistence.SnapshotIOException
 import io.github.youndie.kesh.snapshot.SnapshotException
 import io.github.youndie.kesh.store.Db
+import io.github.youndie.kesh.store.eviction.Eviction
 import io.github.youndie.kesh.store.expiry.ActiveExpiry
 import io.github.youndie.kore.lifecycle.ShutdownParticipant
 import io.ktor.network.selector.SelectorManager
@@ -38,6 +39,7 @@ import kotlinx.coroutines.job
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.newSingleThreadContext
 import kotlinx.coroutines.withContext
+import kotlinx.coroutines.yield
 import kotlin.random.Random
 import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.TimeSource
@@ -126,8 +128,21 @@ class KeshServer(
         // One keyspace, seeded per process so that keys chosen from outside cannot be made to collide.
         val started = TimeSource.Monotonic.markNow()
         val expiry = ActiveExpiry { started.elapsedNow().inWholeMicroseconds }
+        val eviction =
+            Eviction(clock = { started.elapsedNow().inWholeMicroseconds }).apply {
+                policy = config.maxMemoryPolicy
+                samples = config.maxMemorySamples
+            }
         val persistence = Persistence(file, ::epochMillis)
-        val commands = CommandDispatcher(clients, config.password, db, expiry = expiry, persistence = persistence)
+        val commands =
+            CommandDispatcher(
+                clients,
+                config.password,
+                db,
+                expiry = expiry,
+                persistence = persistence,
+                eviction = eviction,
+            )
 
         // Redis's `serverCron` work for the data (B-13): the slow active expiry cycle and the tables'
         // resizing, HZ times a second, on the store thread between commands — never inside one.
@@ -139,6 +154,22 @@ class KeshServer(
                     expiry.cycle(db)
                     db.resizeAndRehash()
                 }
+            }
+        }
+
+        // Redis's `evictionTimeProc` (B-12): an eviction that stopped at its time limit, or one that
+        // `CONFIG SET maxmemory` asked for, goes on in rounds between commands until it is done. Redis
+        // arms a timer for it; kesh looks at the flag at the periodic work's pace, and every command
+        // evicts for itself meanwhile.
+        connections.launch {
+            while (true) {
+                val more =
+                    withContext(storeThread) {
+                        if (!eviction.running) return@withContext false
+                        db.now = epochMillis()
+                        eviction.proceed(db)
+                    }
+                if (more) yield() else delay(1_000L / ActiveExpiry.HZ)
             }
         }
 

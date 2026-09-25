@@ -68,6 +68,7 @@ class Runner(
                                         RespFrame.read(kReply.inputStream()),
                                         RespFrame.read(oReply.inputStream()),
                                         step.population,
+                                        step.fields,
                                     )
                                 }.getOrDefault(false)
                             }

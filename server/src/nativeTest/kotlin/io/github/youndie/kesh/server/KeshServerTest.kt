@@ -9,6 +9,7 @@ import io.ktor.utils.io.readAvailable
 import io.ktor.utils.io.writeFully
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.IO
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withTimeout
 import kotlin.test.Test
@@ -56,6 +57,35 @@ class KeshServerTest {
             } finally {
                 second.close()
             }
+        }
+
+    @Test
+    fun `eviction that CONFIG SET maxmemory starts goes on between commands`() =
+        withServer { port, selector ->
+            val socket = aSocket(selector).tcp().connect("127.0.0.1", port)
+            val output = socket.openWriteChannel(autoFlush = true)
+            val input = socket.openReadChannel()
+
+            suspend fun command(vararg args: String) {
+                output.writeFully(
+                    ("*${args.size}\r\n" + args.joinToString("") { "$${it.length}\r\n$it\r\n" }).encodeToByteArray(),
+                )
+            }
+            val batches = 100
+            for (b in 0 until batches) command("MSET", *Array(2_000) { if (it % 2 == 0) "k$b:${it / 2}" else "v" })
+            assertEquals("+OK\r\n".repeat(batches), input.readExactly(5 * batches))
+            command("CONFIG", "SET", "maxmemory-policy", "allkeys-random")
+            command("CONFIG", "SET", "maxmemory", "1")
+            assertEquals("+OK\r\n+OK\r\n", input.readExactly(10))
+            // No command for a while: only the server's own rounds can evict. INFO then evicts at most
+            // one 500 µs round of its own before it answers — far from 100 000 keys.
+            delay(1_000)
+            command("INFO", "stats")
+            val header = StringBuilder()
+            while (!header.endsWith("\r\n")) header.append(input.readExactly(1))
+            val report = input.readExactly(header.substring(1, header.length - 2).toInt() + 2)
+            assertTrue("evicted_keys:100000\r\n" in report, report)
+            socket.close()
         }
 
     @Test

@@ -31,8 +31,8 @@ object KeyCommands {
             StoreCommand(
                 "exists",
                 -2,
-            ) { db, a -> Reply.Integer((1 until a.size).count { db.lookup(a[it]) != null }.toLong()) },
-            StoreCommand("type", 2) { db, a -> Reply.Simple(typeNameOf(db.lookup(a[1])?.value)) },
+            ) { db, a -> Reply.Integer((1 until a.size).count { db.lookup(a[it], touch = false) != null }.toLong()) },
+            StoreCommand("type", 2) { db, a -> Reply.Simple(typeNameOf(db.lookup(a[1], touch = false)?.value)) },
             StoreCommand(
                 "expire",
                 -3,
@@ -123,7 +123,7 @@ object KeyCommands {
         millis: Boolean,
         absolute: Boolean,
     ): Reply {
-        val entry = db.lookup(key) ?: return Reply.Integer(-2)
+        val entry = db.lookup(key, touch = false) ?: return Reply.Integer(-2)
         if (entry.expireAt == Entry.NO_EXPIRY) return Reply.Integer(-1)
         val value = (if (absolute) entry.expireAt else entry.expireAt - db.now).coerceAtLeast(0)
         return Reply.Integer(if (millis) value else (value + 500) / 1000)

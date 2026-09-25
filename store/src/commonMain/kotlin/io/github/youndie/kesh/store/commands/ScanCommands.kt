@@ -52,7 +52,7 @@ object ScanCommands {
         // a key of another type is left out.
         val keys =
             found.filter { key ->
-                val entry = db.lookup(key) ?: return@filter false
+                val entry = db.lookup(key, touch = false) ?: return@filter false
                 options.type == null || typeNameOf(entry.value) == options.type
             }
         return reply(next, keys)

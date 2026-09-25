@@ -43,12 +43,20 @@ enum class Normaliser {
      */
     CURSOR,
 
+    /**
+     * For `INFO`, whose report has many lines kesh does not have: the line names the fields —
+     * `[info evicted_keys maxmemory_policy] INFO` — and only their `field:value` lines are compared,
+     * each of which must be in the oracle's reply, so a misspelled field fails against Redis too.
+     */
+    INFO,
+
     ;
 
     fun agree(
         kesh: RespFrame,
         oracle: RespFrame,
         population: Set<List<Byte>> = emptySet(),
+        fields: List<String> = emptyList(),
     ): Boolean =
         when (this) {
             EXACT -> {
@@ -80,7 +88,23 @@ enum class Normaliser {
             CURSOR -> {
                 kesh.bytes.contentEquals(oracle.bytes)
             }
+
+            INFO -> {
+                val a = infoLines(kesh, fields)
+                val b = infoLines(oracle, fields)
+                a != null && b != null && b.size == fields.size && a == b
+            }
         }
+
+    /** The `field:value` lines of an `INFO` report for [fields], in their order; `null` if not a report. */
+    private fun infoLines(
+        frame: RespFrame,
+        fields: List<String>,
+    ): List<String>? {
+        if (frame.type != '$') return null
+        val lines = frame.bulkPayload()?.decodeToString()?.split("\r\n") ?: return null
+        return fields.mapNotNull { field -> lines.firstOrNull { it.startsWith("$field:") } }
+    }
 
     private fun randomAgree(
         kesh: RespFrame,

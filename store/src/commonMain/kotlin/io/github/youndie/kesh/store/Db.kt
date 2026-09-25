@@ -49,9 +49,6 @@ class Db(
     /** `maxmemory`: 0 for no limit, as in Redis. */
     var maxMemory: Long = 0
 
-    /** Redis's `used_memory > maxmemory`, the condition a `denyoom` command is refused under. */
-    val overLimit: Boolean get() = maxMemory > 0 && usedMemory > maxMemory
-
     private var entriesBytes = 0L
     private var tracking = false
     private val touched = HashMap<Entry, Long>()
@@ -73,15 +70,34 @@ class Db(
         tracking = false
     }
 
-    /** The live entry for [key], deleting it first if it has expired. */
-    fun lookup(key: ByteArray): Entry? {
+    /**
+     * The live entry for [key], deleting it first if it has expired. A lookup is an access for the
+     * LRU policies (B-12) unless [touch] is false — Redis's `LOOKUP_NOTOUCH`, which `EXISTS`, `TYPE`,
+     * the `TTL` family and `SCAN`'s `TYPE` filter pass.
+     */
+    fun lookup(
+        key: ByteArray,
+        touch: Boolean = true,
+    ): Entry? {
         val entry = keyspace.get(key) ?: return null
         if (isExpired(entry)) {
             expire(entry)
             return null
         }
-        touch(entry)
+        if (touch) entry.lru = lruClock
+        track(entry)
         return entry
+    }
+
+    /** Redis's `LRU_CLOCK()`: [now] in seconds, 24 bits, wrapping every 194 days. */
+    val lruClock: Int get() = ((now / LRU_CLOCK_RESOLUTION) and LRU_CLOCK_MAX).toInt()
+
+    /** `estimateObjectIdleTime`: milliseconds since [entry] was last accessed, at the clock's resolution. */
+    fun idleMillis(entry: Entry): Long {
+        val clock = lruClock.toLong()
+        val lru = entry.lru.toLong()
+        val seconds = if (clock >= lru) clock - lru else clock + (LRU_CLOCK_MAX - lru)
+        return seconds * LRU_CLOCK_RESOLUTION
     }
 
     fun isExpired(entry: Entry): Boolean = entry.expireAt != Entry.NO_EXPIRY && now > entry.expireAt
@@ -112,9 +128,10 @@ class Db(
         value: Any,
     ): Entry {
         val existing = keyspace.get(key)
-        existing?.let { touch(it) }
+        existing?.let { track(it) }
         val before = if (!tracking && existing != null) MemoryModel.entry(existing) else 0L
         val entry = keyspace.put(key, value)
+        entry.lru = lruClock
         when {
             !tracking -> entriesBytes += MemoryModel.entry(entry) - before
             entry !in touched -> touched[entry] = 0L
@@ -189,9 +206,15 @@ class Db(
          * index took 14 cycles, and the feature's 2 s scenario failed on linuxX64.
          */
         const val REHASH_BUDGET = 16_384
+
+        /** `LRU_CLOCK_RESOLUTION`: the LRU clock counts seconds. */
+        const val LRU_CLOCK_RESOLUTION = 1_000L
+
+        /** `LRU_CLOCK_MAX`: 24 bits, as `robj->lru` has. */
+        const val LRU_CLOCK_MAX = (1L shl 24) - 1
     }
 
-    private fun touch(entry: Entry) {
+    private fun track(entry: Entry) {
         if (tracking && entry !in touched) touched[entry] = MemoryModel.entry(entry)
     }
 }
