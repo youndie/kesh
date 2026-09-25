@@ -1,0 +1,5 @@
+subject host busy: 14% of 4 cores
+generator host busy: 57% of 4 cores
+used_memory:481315720
+used_memory_rss:504729600
+used_memory_peak:483278520

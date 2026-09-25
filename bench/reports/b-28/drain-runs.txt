@@ -1,0 +1,11 @@
+run 1: ok — {"connections": 200, "replies": 982924, "truncated_connections": 0, "leftover_bytes": 0, "errors": [], "seconds": 9.1}; saved 982924; transcript DRAIN COMPLETED in 12.132598ms EXIT COMPLETED in 92ns 
+run 2: ok — {"connections": 200, "replies": 1031952, "truncated_connections": 0, "leftover_bytes": 0, "errors": [], "seconds": 8.8}; saved 1031952; transcript DRAIN COMPLETED in 14.683411ms EXIT COMPLETED in 84ns 
+run 3: ok — {"connections": 200, "replies": 1014892, "truncated_connections": 0, "leftover_bytes": 0, "errors": [], "seconds": 8.7}; saved 1014892; transcript DRAIN COMPLETED in 10.241466ms EXIT COMPLETED in 83ns 
+run 4: ok — {"connections": 200, "replies": 1001096, "truncated_connections": 0, "leftover_bytes": 0, "errors": [], "seconds": 8.8}; saved 1001096; transcript DRAIN COMPLETED in 12.471321ms EXIT COMPLETED in 238ns 
+run 5: ok — {"connections": 200, "replies": 1055136, "truncated_connections": 0, "leftover_bytes": 0, "errors": [], "seconds": 8.8}; saved 1055136; transcript DRAIN COMPLETED in 12.573246ms EXIT COMPLETED in 194ns 
+run 6: ok — {"connections": 200, "replies": 1035524, "truncated_connections": 0, "leftover_bytes": 0, "errors": [], "seconds": 8.7}; saved 1035524; transcript DRAIN COMPLETED in 11.388599ms EXIT COMPLETED in 101ns 
+run 7: ok — {"connections": 200, "replies": 1016612, "truncated_connections": 0, "leftover_bytes": 0, "errors": [], "seconds": 8.7}; saved 1016612; transcript DRAIN COMPLETED in 10.993534ms EXIT COMPLETED in 124ns 
+run 8: ok — {"connections": 200, "replies": 989068, "truncated_connections": 0, "leftover_bytes": 0, "errors": [], "seconds": 8.8}; saved 989068; transcript DRAIN COMPLETED in 12.430269ms EXIT COMPLETED in 194ns 
+run 9: ok — {"connections": 200, "replies": 999316, "truncated_connections": 0, "leftover_bytes": 0, "errors": [], "seconds": 8.8}; saved 999316; transcript DRAIN COMPLETED in 11.281861ms EXIT COMPLETED in 97ns 
+run 10: ok — {"connections": 200, "replies": 978164, "truncated_connections": 0, "leftover_bytes": 0, "errors": [], "seconds": 8.7}; saved 978164; transcript DRAIN COMPLETED in 12.249720ms EXIT COMPLETED in 166ns 
+passed 10 of 10

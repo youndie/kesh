@@ -40,7 +40,7 @@ Auth tier `password` means: answered only after `AUTH` when `requirepass` is set
 | Group | Handler |
 |---|---|
 | Connection commands | `server/src/nativeMain/kotlin/io/github/youndie/kesh/server/command/CommandDispatcher.kt` — the command table, the order of checks, every command above |
-| Connection commands | `server/src/nativeMain/kotlin/io/github/youndie/kesh/server/connection/Connection.kt` — `QUIT`, closing, the query-buffer limit |
+| Connection commands | `server/src/nativeMain/kotlin/io/github/youndie/kesh/server/net/RespConnection.kt` — `QUIT`, closing, the query-buffer limit |
 | Connection commands | `server/src/nativeMain/kotlin/io/github/youndie/kesh/server/KeshServer.kt` — `maxclients` refusal |
 | Connection commands | `resp/src/commonMain/kotlin/io/github/youndie/kesh/resp/CommandReader.kt` — protocol errors and request limits |
 

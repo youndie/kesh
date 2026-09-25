@@ -445,6 +445,10 @@ design above did not foresee:
 
 ### D-6. TCP through `ktor-network` 3.6.0 — *decision (owner, 2026-09-24), verified, with a ceiling* (§1.4, D-13)
 
+*Superseded 2026-09-25 by D-31:* kesh's transport is its own `epoll` loop; `ktor-network` stays only
+as the tests' client and in `kesh-load`. It was replaced because kotlinx-io on Native does not pool its
+segments (28 KB a request, B-28), not because of the ceiling below.
+
 The brief named 3.5.2. The owner chose 3.6.0, the current release, which is also what kore is built
 and researched against — so kesh and the library that owns its shutdown resolve the same ktor. Its
 dependencies are compatible with 2.4.20 (stdlib 2.3.21; coroutines unchanged).
@@ -515,6 +519,9 @@ is asserted on every step while a table grows to a million keys (`KeyspaceTest`)
 
 ### D-13. A connection ceiling below `FD_SETSIZE`, refused the way Redis refuses it — *built in B-02*
 
+*Superseded 2026-09-25 by D-31:* `epoll` has no `FD_SETSIZE`; `maxclients` follows Redis's rule —
+10 000, lowered to `RLIMIT_NOFILE` less 32 reserved. The refusal is unchanged.
+
 Why: §1.4. Without it, the connection that crosses 1024 descriptors throws inside the selector.
 The refusal is `-ERR max number of clients reached`, then close.
 
@@ -532,6 +539,9 @@ Rejected: raising the limit (`FD_SETSIZE` is compiled into glibc's `fd_set`) or 
 transport now (a second network stack before the first one has a user).
 
 ### D-14. One thread owns the keyspace — *taken in B-01; confirmed or amended in B-05*
+
+*Amended 2026-09-25 (D-31):* the thread that owns the keyspace now also does the I/O — the hand-off
+to it and back per batch, which B-17 found limiting throughput, is gone.
 
 Built as `newSingleThreadContext("kesh-store")` in `server/src/nativeMain/kotlin/io/github/youndie/kesh/server/KeshServer.kt`;
 every command, `PING` included, reaches it through one hand-off per read batch (`services/server.md`).
@@ -704,6 +714,10 @@ The harness holds the shape (`[fields]`), not the values.
 
 ### D-29. The drain answers what it read, and saves inside the drain stage — *new, B-16*
 
+*Amended 2026-09-25 (D-31):* on kesh's own loop a command runs where it is read, so none is ever
+half done when the drain starts; `NonCancellable` is gone with the coroutine per connection, and the
+drain closes each connection once its replies are written. `DrainTest`'s ledger still holds.
+
 **What a drain interrupts.** kore cancels the drain participant at its deadline; within it, kesh
 interrupts only a connection's *wait for its next read*. A batch already read runs on the store
 thread and its replies are written under `NonCancellable`: a command whose bytes arrived is either
@@ -762,6 +776,10 @@ defaults to Redis's rule — 10 000, lowered to what `RLIMIT_NOFILE` allows less
 live objects) — it narrows the window without removing the 28 KB; waiting for a kotlinx-io pool on
 Native — nothing changes until it ships, and it leaves the other three costs.
 
+*Measured in B-28* (`bench/reports/b-28/`, the two-host stand): 1.4 KB allocated a request instead of
+28 KB; at a sixteenth 14.2–14.7 k operations/s at pipeline 1 (97 % of Redis 7.2) and 77–80 k at
+pipeline 16 (58 %), where the store thread is now the limit at three quarters of a core; 5 threads.
+
 ### D-20. Hashes pack under Redis 7.2's listpack limits: 512 fields, 64-byte fields and values — *new, B-06*
 
 B-06 was to take its threshold from B-19's measurement. B-19 gave none: it packed every hash and
@@ -810,7 +828,8 @@ different size class cannot reuse. Mitigation: B-18 reports resident memory per 
 selector. Mitigation: the graceful-stop scenario runs repeatedly (not once) under load in B-16; no
 in-process signal-based profiler is ever used on kesh (profile with `perf`, from outside); no
 `SIGCHLD` handler (which rules out one form of fork-based `BGSAVE`). If B-16 reproduces it, the fix
-belongs upstream in ktor — and filing that is the owner's call.
+belongs upstream in ktor — and filing that is the owner's call. *Closed 2026-09-25 by D-31:* kesh's loop retries
+`epoll_wait`, `read` and `write` on `EINTR`; no `pselect` remains in the process.
 
 **R-4. The connection ceiling is hit in production.** Mechanism: D-13. Mitigation: `maxclients`
 refuses cleanly, `connected_clients` and `rejected_connections` are in `INFO` and in the metrics
@@ -840,6 +859,9 @@ scheduler sets the next target at twice that; resident memory reached 5.8 GB fro
 `used_memory` and the host killed the process. kesh allocates about 200 objects per operation.
 Mitigation: B-28 (P0); until then the chart's limit and every capacity claim hold only at a
 sixteenth, measured.
+*Mitigated 2026-09-25 (B-28, D-31):* the allocation came from the transport (28 KB a request); on
+kesh's own loop it is 1.4 KB, and the same load at an eighth held 4.3 GB for twenty minutes on the host
+that killed it. Peak resident under load is 2.9–3.2 × `used_memory`; the chart uses 3.3.
 
 **R-6. `BGSAVE` without fork** (the brief's §10 question 1). Carried unchanged, with two facts added:
 a forked child of a multi-threaded Kotlin/Native process has one thread and a runtime whose other

@@ -38,17 +38,16 @@ A stage is a field on the item, not a directory.
 
 <!-- BEGIN INDEX -->
 
-## Open (5)
+## Open (4)
 
 | Task | | Priority | Size | Blocked by |
 |---|---|---|---|---|
-| [B-28](docs/backlog/B-28-heap-runaway-under-load.md) `[~]` | The heap runs away under the reference load: an epoch that sweeps nothing doubles the target | P0 | M | B-17 |
 | [B-27](docs/backlog/B-27-pubsub.md) `[ ]` | Pub/Sub: PUBLISH, SUBSCRIBE and PSUBSCRIBE in RESP2 subscribe mode | P1 | M | B-21 |
 | [B-18](docs/backlog/B-18-soak-24h.md) `[ ]` | 24 h soak with TTL churn | P2 | S | B-17 |
 | [B-25](docs/backlog/B-25-bgsave-through-fork.md) `[ ]` | BGSAVE through fork, with the child's collector assists off | P2 | M | B-14 |
 | [B-26](docs/backlog/B-26-maxmemory-container-check.md) `[ ]` | Refuse a maxmemory above the container's memory budget | P2 | S | B-11 |
 
-## Closed (23)
+## Closed (24)
 
 **Protocol and core**
 
@@ -90,6 +89,7 @@ A stage is a field on the item, not a directory.
 
 - [B-17](docs/backlog/B-17-reference-load-report.md) `[x]` - Reference load report on the reference host
 - [B-22](docs/backlog/B-22-reference-host.md) `[x]` - Choose the reference host for the load report and the soak
+- [B-28](docs/backlog/B-28-heap-runaway-under-load.md) `[x]` - The heap runs away under the reference load: an epoch that sweeps nothing doubles the target
 
 <!-- END INDEX -->
 

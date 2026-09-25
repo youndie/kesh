@@ -31,8 +31,10 @@ persistence:
 # taken; none is a choice. Taken on the build machine, not a reference host (research Q-3), which is
 # why the templates add margins, and why B-17 may replace them.
 measured:
-  # B-11 (bench/reports/b-11): resident memory is 2.8 x used_memory at a load's peak, in tenths.
-  residentPeakRatioTenths: 28
+  # Resident memory at its peak under the reference load, over used_memory, in tenths: 3.2 x at a
+  # sixteenth and 2.9 x at an eighth of §5a on the two-host stand (B-28, bench/reports/b-28), rounded
+  # up. B-11's 2.8 was taken with no traffic, and under traffic the ktor transport reached 5.3 x.
+  residentPeakRatioTenths: 33
   # PLACEHOLDER until B-18 measures what a day of TTL churn adds on top of the peak, in per cent.
   dailyDriftPercent: 20
   # The process with an empty store: 30.6 MB resident, 9 threads, in this image at startup (B-16,

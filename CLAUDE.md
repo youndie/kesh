@@ -4,8 +4,8 @@ A Redis-compatible (RESP2) in-memory store on Kotlin/Native, `linuxX64`, built w
 sborka conventions and kore. **State: connection commands, strings, the four collection kinds, keys and the `SCAN` family
 (B-01…B-10), `used_memory` and `maxmemory` (B-11) with Redis's eviction policies (B-12), active expiry
 (B-13), snapshots with `SAVE` (B-14), `INFO`, probes and metrics on the HTTP port (B-15), the image, the chart and a drain that answers what
-it read (B-16), the reference load measured at a sixteenth (B-17 — and the heap runaway it found, B-28);
-Pub/Sub is ahead.** Read before writing code — the obvious design is wrong in several documented ways.
+it read (B-16), the reference load measured (B-17), and kesh's own `epoll` transport that stopped the heap's runaway
+under it (B-28); Pub/Sub is ahead.** Read before writing code — the obvious design is wrong in several documented ways.
 
 ## Where to start a session
 
@@ -13,9 +13,9 @@ Pub/Sub is ahead.** Read before writing code — the obvious design is wrong in 
    the ten places where research disagreed with the brief. The ones that change code:
    - **the keyspace is not a `HashMap`** (§1.3, D-12): the stdlib map rehashes everything in one
      call and cannot give `SCAN` its guarantee; `ByteArray` keys compare by identity;
-   - **`ktor-network` on Native refuses descriptors ≥ 1024 and dies on `EINTR`** (§1.4, D-13, R-3):
-     cap connections below it with Redis's error; never profile kesh with an in-process sampler;
-     never install a `SIGCHLD` handler;
+   - **the transport is kesh's own `epoll` loop, not `ktor-network`** (D-31, B-28): kotlinx-io on
+     Native does not pool its 8 KB segments, and ktor's channels fed the heap's runaway under load;
+     the loop's thread is the store thread, so commands run where they are read;
    - **nothing is freed synchronously** (D-15): `DEL`/`UNLINK`/`FLUSHALL ASYNC` differ only in
      `used_memory`;
    - **the heap is measured before the keyspace is built** (D-17, B-19).

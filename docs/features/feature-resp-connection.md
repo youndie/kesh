@@ -49,8 +49,8 @@ All built (B-01, B-02), each against Redis 7.2's source; the addresses are in re
 * `QUIT` answers `+OK` and closes; what was pipelined after it is dropped.
 * `POST` or `Host:` as a command — an HTTP request aimed at the port — closes the connection without
   a reply, as Redis does against cross-protocol scripting.
-* **At most `maxclients` connections**, by default what keeps every descriptor under the transport's
-  `FD_SETSIZE` (research D-13; 986 on the build machine). The connection over it gets
+* **At most `maxclients` connections**, by default Redis's 10 000, lowered to the descriptor limit
+  less 32 (research D-31). The connection over it gets
   `-ERR max number of clients reached` and is closed, and the others keep being served.
 
 ## 3. Flow
@@ -67,7 +67,7 @@ All built (B-01, B-02), each against Redis 7.2's source; the addresses are in re
 |---|---|
 | resp | `resp/src/commonMain/kotlin/io/github/youndie/kesh/resp/CommandReader.kt` — the parser and its limits |
 | resp | `resp/src/commonMain/kotlin/io/github/youndie/kesh/resp/InlineArguments.kt` — `sdssplitargs` |
-| server | `server/src/nativeMain/kotlin/io/github/youndie/kesh/server/connection/Connection.kt` — the per-connection loop |
+| server | `server/src/nativeMain/kotlin/io/github/youndie/kesh/server/net/RespConnection.kt` — the per-connection read, execute, write |
 | server | `server/src/nativeMain/kotlin/io/github/youndie/kesh/server/command/CommandDispatcher.kt` — the connection commands |
 | server | `server/src/nativeMain/kotlin/io/github/youndie/kesh/server/client/Clients.kt` — the registry and the ceiling |
 | conformance | `conformance/scripts/connection/` — every command here against Redis 7.2, byte for byte (B-04) |
@@ -180,8 +180,8 @@ byte by `conformance/run.sh` — 78 comparisons, all agreeing, at B-04.
   `NOAUTH`: the existence check comes first, in Redis too.
 * **Before `AUTH` a pipeline is parsed one command at a time**, and so is slower — deliberately, so
   that `AUTH` takes effect for the command right after it.
-* **Any signal can kill the process through the selector's `pselect`** (research R-3) — relevant to
-  anyone who reaches for an in-process profiler.
+* **Until B-28 any signal could kill the process through the selector's `pselect`** (research R-3);
+  kesh's own loop retries on `EINTR` (D-31).
 
 ---
 

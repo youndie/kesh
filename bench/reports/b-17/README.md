@@ -1,5 +1,8 @@
 # B-17: the reference load on a two-host stand
 
+> **Superseded for kesh's numbers by B-28** (`bench/reports/b-28/`): the transport measured here was
+> replaced. The method, the generator and Redis's numbers stand.
+
 **Not a reference host, not the reference dataset.** Two 4-core, 7.7 GB hosts; kesh on one, the load
 generator on the other, a private network between them (RTT 0.6–2.3 ms). A sixteenth of §5a
 (988 787 keys loaded), because an eighth did not survive the load (below). Redis 7.2 on the same

@@ -1,7 +1,7 @@
 ---
 id: B-28
 title: "The heap runs away under the reference load: an epoch that sweeps nothing doubles the target"
-status: wip
+status: done
 priority: P0
 size: M
 stage: stage-6-capacity
@@ -66,4 +66,20 @@ allocation rate (fixable in kesh) or the scheduler's rule (`GC.targetHeapUtiliza
 The event loop's thread is the store thread; the RESP and the HTTP port both move onto it, so
 `ktor-network` leaves the process. Kept: B-02's limits, B-16's drain, B-15's probes.
 
-Research: [research-architecture](../research/research-architecture.md) R-7, D-25.
+## Findings (2026-09-25)
+
+- **AC 1 — met.** On the stand that killed it, kesh on its own transport ran ten minutes at an
+  eighth at pipeline 1 and ten at pipeline 16: peak resident 4.3 GB, never above 4.2 GB sampled, no
+  kill (`bench/reports/b-28/`). **What bounded the heap: a lower allocation rate** — 1.4 KB a request
+  instead of 28 KB — not a runtime setting; the collector's rules are unchanged.
+- **AC 2 — met.** The chart's `residentPeakRatioTenths` is 33 now: peak resident 3.2 × `used_memory`
+  at a sixteenth and 2.9 × at an eighth under the load, rounded up. The drift stays a placeholder
+  until B-18, which is what it was for.
+- **On the way, because the transport was the cause** (research D-31): kesh serves 97 % of Redis's
+  operations at pipeline 1 (was 43 %) and 58 % at pipeline 16 (was 42 %), in 5 threads instead of 82;
+  the `FD_SETSIZE` ceiling and the `EINTR` hazard are gone. B-16's graceful stop passes again, 10 of
+  10 on kind.
+- **Not closed:** the tail near a second at pipeline 16 — the collector's assists at 80 000
+  operations a second (R-7, D-25) — and the store thread as the ceiling at pipeline 16.
+
+Research: [research-architecture](../research/research-architecture.md) R-7, R-8, D-25, D-31.

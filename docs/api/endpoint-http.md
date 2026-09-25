@@ -15,7 +15,8 @@ parent_feature: feature-operations
 Probes and metrics on a separate port for the cluster's internal network. Part of [feature-operations](../features/feature-operations.md).
 
 > **Built (B-15).** `KESH_HTTP_PORT`, 8080 by default, `off` for none; bound on `KESH_BIND`, **before**
-> the snapshot loads, so the probes answer while it does. One request per connection
+> the snapshot loads, so the probes answer while it does — on the same `epoll` loop as RESP since
+> B-28 (research D-31). One request per connection
 > (`Connection: close`), `GET` only; the request line and headers must arrive within 5 s and 8 KiB.
 > kore's gates decide the probes' answers (`kore-core`, `io.github.youndie.kore.health`).
 
@@ -48,7 +49,7 @@ completed; before that, only the process's two.
 
 | Group | Handler |
 |---|---|
-| HTTP port | `server/src/nativeMain/kotlin/io/github/youndie/kesh/server/http/HttpPort.kt` |
+| HTTP port | `server/src/nativeMain/kotlin/io/github/youndie/kesh/server/net/HttpConnection.kt` |
 | Routes | `server/src/nativeMain/kotlin/io/github/youndie/kesh/server/KeshServer.kt` — `route` |
 | Metrics | `server/src/nativeMain/kotlin/io/github/youndie/kesh/server/http/Metrics.kt` |
 

@@ -1,0 +1,18 @@
+loaded: 1977570 commands, 0 errors, in 47319 ms
+p1: throughput: 14421 operations/s, 14710 commands/s; error replies: 0 | ALL  100  8654942  2559  6527  184319  326019
+VmHWM:	 3208076 kB
+VmRSS:	 2833304 kB
+Threads:	5
+kesh_resident_memory_bytes 2901307392
+kesh_threads 5
+kesh_used_memory_bytes 1267373896
+kesh_keys 1676722
+p16: throughput: 85896 operations/s, 87614 commands/s; error replies: 0 | ALL  100  51539088  8063  22015  129023  250564
+VmHWM:	 4306480 kB
+VmRSS:	 4222940 kB
+Threads:	5
+kesh_resident_memory_bytes 4324290560
+kesh_threads 5
+kesh_used_memory_bytes 1470316872
+kesh_keys 1839849
+rss max: 4202 MB; watchdog: 0

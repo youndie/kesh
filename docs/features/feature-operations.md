@@ -59,7 +59,7 @@ engines, and the RESP listener is not one → the release stages, empty → exit
 | server | `server/src/nativeMain/kotlin/io/github/youndie/kesh/server/Main.kt` — kore's plan: announce, then drain |
 | conformance | `conformance/scripts/server/info.redis` — `INFO`'s shape against Redis 7.2 |
 | bench | `bench/http/probe.sh` — the release binary's port: `promtool`, and readiness across `SIGTERM` |
-| server | `server/src/nativeMain/kotlin/io/github/youndie/kesh/server/connection/Connection.kt` — a batch read is answered whole, whatever cancels the connection |
+| server | `server/src/nativeMain/kotlin/io/github/youndie/kesh/server/net/RespConnection.kt` — a batch read is answered whole; the drain closes a connection after its replies |
 | deploy | `deploy/Dockerfile`, `deploy/chart/` — the image and the chart, every sizing value derived ([deploy](../services/deploy.md)) |
 | bench | `bench/drain/run.sh` — the graceful stop, repeated, in a kind cluster |
 
@@ -109,15 +109,17 @@ engines, and the RESP listener is not one → the release stages, empty → exit
 
 ## 7. Quirks
 
-* **The graceful stop is tested repeatedly because one green run proves little**: a signal that
-  lands on the selector thread kills the process through `pselect`'s `EINTR` (research R-3).
+* **The graceful stop is tested repeatedly because one green run proves little**: until B-28 a signal
+  that landed on the selector thread killed the process through `pselect`'s `EINTR` (research R-3);
+  kesh's own loop retries it (D-31).
 * **Never profile kesh with an in-process, signal-based sampler** — same mechanism. Use `perf` from
   outside.
 * **`SIGTERM` takes five seconds before the drain even starts** — kore's announce dwell
   (`ShutdownDeadlines.preDrainWait`), so a load balancer stops sending first. Measured on the release
   binary: `ANNOUNCE COMPLETED in 5.0 s`, `DRAIN` in 0.4 ms. B-16's grace period starts from it.
 * **The HTTP port takes a descriptor from the connection ceiling's reserve** (research D-13):
-  `maxclients` was 986 on the build machine without it and is 985 with it.
+  `maxclients` was 986 on the build machine without it and 985 with it — until B-28 replaced the
+  `FD_SETSIZE` ceiling with Redis's rule (research D-31).
 * **Every launcher inherits the 8080 default**; the conformance and bench scripts start kesh with
   `KESH_HTTP_PORT=off`, and two kesh processes on one host need two ports.
 

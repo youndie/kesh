@@ -1,0 +1,17 @@
+catalogue: 625000 sessions, 125000 profiles, 187500 counters, 18750 feeds, 31250 tag sets, 125 boards
+connections 50, pipeline 1, measured 60.005s after 10s of warm-up
+throughput: 14683 operations/s, 14978 commands/s; error replies: 0
+latency in µs, per operation (from its pipeline's write to its last reply):
+operation  weight  count  p50  p99  p99.9  max
+GET  40  353287  2559  9727  100351  208429
+HGET  15  131424  2559  8703  100351  118354
+HGETALL  5  43819  2559  13311  102399  119440
+LRANGE  10  87726  2559  8703  100351  118087
+SISMEMBER  5  44359  2559  9215  102399  208485
+ZREVRANGE  5  44118  2559  8703  100351  117582
+SET  8  70452  2559  8447  100351  118046
+HSET  4  35424  2559  18431  102399  117828
+INCR  4  35169  2559  11519  102399  117148
+LPUSH  2  17690  2559  8063  100351  117312
+ZINCRBY  2  17601  2559  9983  102399  117790
+ALL  100  881069  2559  9215  100351  208485

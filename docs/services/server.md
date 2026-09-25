@@ -4,9 +4,9 @@ title: "server — the binary: TCP listener, connections, dispatch, lifecycle"
 type: service
 status: active
 module: server
-tech_stack: [Kotlin/Native linuxX64, ktor-network 3.6.0, kore 0.1.4]
+tech_stack: [Kotlin/Native linuxX64, epoll, kore 0.1.4]
 owner: unassigned
-depends_on: [resp, kore, ktor-network]
+depends_on: [resp, kore]
 publishes: [native binary kesh]
 ---
 
@@ -14,19 +14,20 @@ publishes: [native binary kesh]
 
 ## 1. Responsibility
 
-The process: accepts TCP connections, owns each connection, hands parsed commands to the store
-thread in order and writes the replies back, and stops in order on `SIGTERM` through kore.
+The process: accepts TCP connections, owns each connection, executes parsed commands in order on
+the store thread — which is also its only I/O thread — and writes the replies back, and stops in
+order on `SIGTERM` through kore.
 
 **Built (B-01, B-02):** the listener, connections, the store thread, the client registry, every
 command of [endpoint-connection](../api/endpoint-connection.md), `requirepass`, the `maxclients`
-ceiling below `FD_SETSIZE` (research D-13), and kore's shutdown plan with the listener as its drain
-participant.
+ceiling, and kore's shutdown plan with the listener as its drain participant. **Since B-28 the
+transport is kesh's own `epoll` loop** (research D-31), not `ktor-network`.
 
 ***Target*:** the HTTP port with probes and metrics (B-15); snapshot load and save (B-14); `CONFIG`
 (B-11); `INFO` (B-15). The data commands go to the `store` module (B-05).
 
-**Deliberately does not:** implement any data command, or accept more connections than its selector
-can watch (research D-13, from B-02).
+**Deliberately does not:** implement any data command, or accept more connections than its descriptor
+limit allows (research D-31).
 
 ## 2. API contracts
 
@@ -41,11 +42,12 @@ can watch (research D-13, from B-02).
 |---|---|
 | `server/src/nativeMain/kotlin/io/github/youndie/kesh/server/Main.kt` | `main`: start, then kore's `runUntilSignal`: readiness off, then the listener as the drain |
 | `server/src/nativeMain/kotlin/io/github/youndie/kesh/server/KeshServer.kt` | the listener, the store thread, the connection scope, the drain |
-| `server/src/nativeMain/kotlin/io/github/youndie/kesh/server/connection/Connection.kt` | read → parse → execute on the store thread → write, per read |
+| `server/src/nativeMain/kotlin/io/github/youndie/kesh/server/net/EventLoop.kt` | the loop: `epoll`, an `eventfd` to wake it, the store thread's coroutine dispatcher |
+| `server/src/nativeMain/kotlin/io/github/youndie/kesh/server/net/RespConnection.kt` | read → parse → execute → write, per connection, on the loop; a buffer kept per connection |
+| `server/src/nativeMain/kotlin/io/github/youndie/kesh/server/net/HttpConnection.kt` | the HTTP port on the same loop: `GET`, one request per connection |
+| `server/src/nativeMain/kotlin/io/github/youndie/kesh/server/net/Sockets.kt` | non-blocking listen and accept, `SO_REUSEADDR`, `TCP_NODELAY`, the descriptor limit |
 | `server/src/nativeMain/kotlin/io/github/youndie/kesh/server/command/CommandDispatcher.kt` | the command table and the connection commands; store thread only |
 | `server/src/nativeMain/kotlin/io/github/youndie/kesh/server/client/Clients.kt` | the client registry and the `maxclients` count; store thread only |
-| `server/src/nativeMain/kotlin/io/github/youndie/kesh/server/client/DescriptorCeiling.kt` | the default `maxclients`, from the descriptors open at startup |
-| `server/src/nativeMain/kotlin/io/github/youndie/kesh/server/http/HttpPort.kt` | the HTTP port: `GET`, one request per connection, on the RESP listener's selector (research D-28) |
 | `server/src/nativeMain/kotlin/io/github/youndie/kesh/server/info/Info.kt` | `INFO`'s six sections |
 | `server/src/nativeTest/kotlin/io/github/youndie/kesh/server/ConnectionScenariosTest.kt` | the feature's scenarios through a real socket |
 | `server/src/nativeMain/kotlin/io/github/youndie/kesh/server/ServerConfig.kt` | environment |
@@ -54,42 +56,38 @@ can watch (research D-13, from B-02).
 
 ## 3. How it is built
 
-* **One store thread executes every command** (research D-14, taken in B-01). A connection reads
-  and parses on the I/O dispatcher; every command completed by one read is executed in **one**
-  hand-off to the store thread (`newSingleThreadContext("kesh-store")`), and the replies are written
-  in one write. Order holds because a batch runs in order and the next read waits for the write.
-  Even `PING` goes through the hand-off, so the atomicity guarantee is structural, not something the
-  data commands add later.
-* **The drain cancels, then closes.** `stop()` cancels the accept loop and the connections, then
-  closes the listener. The other order let `IOException: Accept failed` escape while the socket did
-  not yet report itself closed, and an uncaught coroutine exception terminates a Kotlin/Native
-  process — 4 of 8 test runs before the fix, 0 of 20 after. Letting in-flight commands finish and
-  their replies flush first is B-16's graceful stop.
+* **One thread reads, executes and writes** (research D-14, D-31). The `EventLoop` waits on `epoll`;
+  a readable connection is read into a buffer it keeps for its life, every complete command is
+  executed where it is read, and the replies are written at once — `EPOLLOUT` is asked for only
+  while the socket has not taken them all. Order and atomicity are structural: nothing else touches
+  the data. Until B-28 connections read on ktor's I/O pool and handed each batch to a separate store
+  thread and back; that transport allocated 28 KB a request (research D-31).
+* **The drain stops accepting, then lets each connection write what it was told** (B-16): a
+  connection with nothing pending closes at once — no command of it is ever half done, because
+  commands run where they are read; one that is still writing closes when it has; one that does not
+  read its replies is closed after 5 s. Then the save, if configured.
 * **A start that cannot go on says why and exits 1** (`StartupFailure`, B-24): a port another
   process listens on stops the start with `kesh: could not listen on <host>:<port>: …` — not an
   uncaught exception and a core dump.
 * **The snapshot is loaded before the listener binds** (research D-24): a client is refused at
   connect until the load ends; a snapshot that cannot be read stops the start with one line and exit
   status 1 (the same `StartupFailure`). `SAVE` and `LASTSAVE` run on the store thread (`persistence/`).
-* **Periodic work runs on the store thread too, ten times a second** — Redis's `serverCron` for the
-  data (B-13): the active expiry cycle, then the tables' resizing. It is a coroutine in the
-  connection scope that hops to the store thread, so it runs between commands, never inside one, and
-  stops with the drain.
+* **Periodic work runs on the loop too, ten times a second** — Redis's `serverCron` for the data
+  (B-13): the active expiry cycle, then the tables' resizing. The loop is a coroutine dispatcher, and
+  this is a coroutine on it, so it runs between commands, never inside one, and stops with the drain.
 * **Clients live on the store thread too.** Registration, `CLIENT LIST` and `CLIENT KILL` all run
   there, so the `maxclients` count and the registry are exact without a lock: an accepted socket is
-  registered in one hand-off, or told `-ERR max number of clients reached` and closed.
-* **Batch when authenticated, one at a time before.** The parser applies Redis's unauthenticated
-  limits before `AUTH`, and `AUTH` can change that between two commands of one read — so until the
-  client is authenticated, each command is parsed only after the previous one ran.
-* **The default `maxclients` is measured, not typed** (research D-13). After binding, the server
-  counts `/proc/self/fd` and sets the ceiling to `FD_SETSIZE` − open − 32 reserved: 986 on the build
-  machine. A configured value above it is refused at startup, naming both numbers.
-* **A connection's failure stays in the connection.** The connection scope has a
-  `CoroutineExceptionHandler` that reports and carries on; without it one failing socket would end
-  the process for the same reason.
-* **`SO_REUSEADDR`, as Redis sets it** (`redis/redis@7.2!/src/anet.c` — `anetSetReuseAddr`). A
-  connection the server closed leaves the server's port in TIME-WAIT; ktor's default is off, and
-  without the flag a restart inside that window died at startup with `EADDRINUSE`.
+  registered at once, or told `-ERR max number of clients reached` and closed.
+* **One command at a time before `AUTH`.** The parser applies Redis's unauthenticated limits before
+  `AUTH`, and `AUTH` changes that for the very next command of the same read.
+* **The default `maxclients` is Redis's rule** (research D-31, amending D-13): 10 000, lowered to the
+  descriptor limit (`RLIMIT_NOFILE`) less 32 reserved. A configured value above it is refused at
+  startup, naming both numbers.
+* **A descriptor's failure stays in the descriptor.** A handler that throws is reported and its
+  descriptor dropped; the loop carries on, since an uncaught exception on its thread would end the
+  process.
+* **`SO_REUSEADDR` and `TCP_NODELAY`, as Redis sets them** (`redis/redis@7.2!/src/anet.c`). Without the
+  first, a restart inside `TIME-WAIT` died at startup with `EADDRINUSE`.
 
 ## 4. Dependencies
 
@@ -97,7 +95,7 @@ can watch (research D-13, from B-02).
 |---|---|---|
 | Module | [resp](resp.md) | parsing and writing |
 | Library | kore-core 0.1.4 | `runUntilSignal`, the shutdown plan |
-| Library | `ktor-network` 3.6.0, from the shared `wip` catalog | TCP (research D-6) |
+| Library | kotlinx-coroutines, from the shared `wip` catalog | the loop is a coroutine dispatcher; the tests' clients use `ktor-network` |
 
 ## 5. Infrastructure and deploy
 
@@ -134,11 +132,9 @@ case.
 
 ## 8. Quirks
 
-* **Any signal is a hazard** (research R-3). `pselect` is never restarted after a signal handler, and
-  `ktor-network` does not retry `EINTR` — the process dies with `PosixException.InterruptedException`.
-  Do not profile kesh with an in-process, signal-based sampler; use `perf` from outside. Do not
-  install a `SIGCHLD` handler. Ten `SIGTERM`s with a client connected all exited 0 in B-01, which is
-  consistent with the handler rarely landing on the selector thread and proves nothing stronger.
+* **Signals are no longer a hazard to the transport** (research R-3, closed by D-31): the loop
+  retries `epoll_wait`, `read` and `write` on `EINTR`. Until B-28, `ktor-network`'s `pselect` did not,
+  and a signal on its thread killed the process.
 * **A stop takes five seconds even with nothing to announce.** kore's announce stage waits its
   default `preDrainWait` (5 s) for readiness to propagate, and kesh has no readiness gate until B-15.
   Harmless now; B-16 sizes it with the rest of the grace period.

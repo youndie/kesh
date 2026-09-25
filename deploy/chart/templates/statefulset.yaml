@@ -24,7 +24,7 @@ spec:
     spec:
       # announce {{ .Values.measured.announceSeconds }} s + drain {{ include "kesh.drainSeconds" . }} s
       # (connections {{ .Values.measured.connectionDrainSeconds }} s + 2 x SAVE {{ include "kesh.saveSeconds" . }} s:
-      # {{ .Values.measured.saveMillisPerGiB }} ms/GiB x maxmemory {{ .Values.maxmemory }} B, B-14) + release
+      # {{ .Values.measured.saveMillisPerGiB }} ms/GiB x maxmemory {{ .Values.maxmemory | int64 }} B, B-14) + release
       # {{ .Values.measured.releaseSeconds }} s + 2 s to exit. kesh is told the same number, and kore
       # refuses to start a plan that does not fit it.
       terminationGracePeriodSeconds: {{ include "kesh.graceSeconds" . }}
@@ -92,9 +92,9 @@ spec:
               {{- toYaml .Values.resources.requests | nindent 14 }}
               memory: {{ include "kesh.memoryLimit" . | quote }}
             limits:
-              # maxmemory {{ .Values.maxmemory }} B x {{ .Values.measured.residentPeakRatioTenths }}/10 (B-11's peak ratio)
+              # maxmemory {{ .Values.maxmemory | int64 }} B x {{ .Values.measured.residentPeakRatioTenths }}/10 (peak ratio under load, B-28)
               # x (100 + {{ .Values.measured.dailyDriftPercent }})/100 (drift: PLACEHOLDER until B-18)
-              # + {{ .Values.measured.processBaseBytes }} B for the empty process.
+              # + {{ .Values.measured.processBaseBytes | int64 }} B for the empty process.
               memory: {{ include "kesh.memoryLimit" . | quote }}
           securityContext:
             allowPrivilegeEscalation: false
