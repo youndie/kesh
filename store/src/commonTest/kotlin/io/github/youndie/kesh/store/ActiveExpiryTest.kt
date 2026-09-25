@@ -37,6 +37,20 @@ class ActiveExpiryTest {
     }
 
     @Test
+    fun `avg_ttl follows the time the sampled keys have left and is 0 with none`() {
+        assertEquals(0L, expiry.avgTtl)
+        repeat(200) { r("SET", "k$it", "v", "PX", "100000") }
+        expiry.cycle(db)
+        assertEquals(100_000L, expiry.avgTtl, "the first loop's average is taken whole")
+        db.now += 50_000
+        repeat(30) { expiry.cycle(db) }
+        assertTrue(expiry.avgTtl in 50_001 until 100_000, "moves toward 50 000 by 2 % a loop: ${expiry.avgTtl}")
+        r("FLUSHALL")
+        expiry.cycle(db)
+        assertEquals(0L, expiry.avgTtl)
+    }
+
+    @Test
     fun `a key with time left is not touched and a persisted one leaves the index`() {
         r("SET", "later", "v", "EX", "100")
         r("SET", "soon", "v", "PX", "10")
