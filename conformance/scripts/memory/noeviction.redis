@@ -1,0 +1,58 @@
+# maxmemory under noeviction (B-11). The two servers account differently, so where each fills up is
+# not compared; with maxmemory 1 both are over from the start, and which commands are refused is.
+FLUSHALL
+SET k v
+HSET h f v
+RPUSH l a
+SADD s a
+ZADD z 1 a
+CONFIG GET maxmemory
+CONFIG GET MaxMemory
+CONFIG SET maxmemory 1
+CONFIG GET maxmemory
+SET k2 v
+SET k v
+SETNX n v
+MSET a 1 b 2
+APPEND k x
+INCR c
+HSET h g v
+HINCRBY h n 1
+RPUSH l b
+LPUSH l b
+LSET l 0 b
+SADD s b
+ZADD z 2 b
+ZINCRBY z 1 a
+GET k
+HGET h f
+LRANGE l 0 -1
+SMEMBERS s
+ZRANGE z 0 -1
+EXPIRE k 100
+PERSIST k
+HDEL h f
+LPOP l
+SREM s a
+ZREM z a
+DEL k
+EXISTS k
+CONFIG SET maxmemory 0
+SET k v
+CONFIG SET maxmemory 100mb
+CONFIG GET maxmemory
+CONFIG SET maxmemory 1gb
+CONFIG GET maxmemory
+CONFIG SET maxmemory 5k
+CONFIG GET maxmemory
+CONFIG SET maxmemory 5KB
+CONFIG GET maxmemory
+CONFIG SET maxmemory 12xb
+CONFIG SET maxmemory -1
+CONFIG SET maxmemory 1 maxmemory 2
+CONFIG SET nothing 1
+CONFIG SET maxmemory
+CONFIG GET maxmemory nothing maxmemory
+CONFIG SET maxmemory 0
+CONFIG GET maxmemory
+CONFIG GET maxmemory MAXMEMORY maxmemory

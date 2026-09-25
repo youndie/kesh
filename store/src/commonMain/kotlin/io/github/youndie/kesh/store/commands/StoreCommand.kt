@@ -19,7 +19,27 @@ class StoreCommand(
     val name: String,
     val arity: Int,
     val handler: (Db, List<ByteArray>) -> Reply,
-)
+) {
+    /** Redis's `write` flag: the command may change the dataset, so it is accounted (research D-10). */
+    val write: Boolean get() = name in StoreCommands.WRITE
+
+    /** Redis's `denyoom` flag: refused while `used_memory > maxmemory` (B-11). */
+    val denyOom: Boolean get() = name in StoreCommands.DENY_OOM
+
+    /** Runs the command, accounting what a write changes — the way to call [handler]. */
+    fun run(
+        db: Db,
+        args: List<ByteArray>,
+    ): Reply {
+        if (!write) return handler(db, args)
+        db.begin()
+        try {
+            return handler(db, args)
+        } finally {
+            db.settle()
+        }
+    }
+}
 
 /** The replies and argument readers every command group shares, worded as Redis words them. */
 internal object Replies {
@@ -78,6 +98,87 @@ internal fun typeNameOf(value: Any?): String =
 
 /** Every data command, group by group — what the server's dispatcher and the store's tests register. */
 object StoreCommands {
+    /** The commands flagged `write` in `redis/redis@7.2.5!/src/commands.def`, among kesh's. */
+    val WRITE: Set<String> =
+        setOf(
+            "set",
+            "setnx",
+            "setex",
+            "psetex",
+            "mset",
+            "msetnx",
+            "append",
+            "setrange",
+            "incr",
+            "incrby",
+            "decr",
+            "decrby",
+            "incrbyfloat",
+            "getset",
+            "getdel",
+            "getex",
+            "del",
+            "unlink",
+            "expire",
+            "pexpire",
+            "expireat",
+            "pexpireat",
+            "persist",
+            "rename",
+            "renamenx",
+            "flushall",
+            "flushdb",
+            "hset",
+            "hdel",
+            "hincrby",
+            "hincrbyfloat",
+            "lpush",
+            "rpush",
+            "lpop",
+            "rpop",
+            "lset",
+            "ltrim",
+            "lrem",
+            "sadd",
+            "srem",
+            "spop",
+            "zadd",
+            "zincrby",
+            "zrem",
+            "zremrangebyscore",
+            "zremrangebyrank",
+            "zpopmin",
+            "zpopmax",
+        )
+
+    /** The commands flagged `denyoom` there: those that may add data. */
+    val DENY_OOM: Set<String> =
+        setOf(
+            "set",
+            "setnx",
+            "setex",
+            "psetex",
+            "mset",
+            "msetnx",
+            "append",
+            "setrange",
+            "incr",
+            "incrby",
+            "decr",
+            "decrby",
+            "incrbyfloat",
+            "getset",
+            "hset",
+            "hincrby",
+            "hincrbyfloat",
+            "lpush",
+            "rpush",
+            "lset",
+            "sadd",
+            "zadd",
+            "zincrby",
+        )
+
     val all: List<StoreCommand> =
         StringCommands.all + KeyCommands.all + HashCommands.all + ListCommands.all + SetCommands.all +
             SortedSetCommands.all + ScanCommands.all

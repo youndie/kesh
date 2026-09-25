@@ -1,5 +1,6 @@
 package io.github.youndie.kesh.store.zsets
 
+import io.github.youndie.kesh.store.memory.MemoryModel
 import kotlin.random.Random
 
 /**
@@ -56,6 +57,10 @@ internal class SkipList(
     var size: Int = 0
         private set
 
+    /** Running total of the nodes and their members (research D-10). */
+    var bytes: Long = 0
+        private set
+
     val first: Node? get() = header.next0
     val last: Node? get() = tail
 
@@ -98,6 +103,7 @@ internal class SkipList(
         val after = node.next0
         if (after != null) after.backward = node else tail = node
         size++
+        bytes += nodeBytes(node)
         return node
     }
 
@@ -127,6 +133,7 @@ internal class SkipList(
         if (after != null) after.backward = node.backward else tail = node.backward
         while (level > 1 && header.next(level - 1) == null) level--
         size--
+        bytes -= nodeBytes(node)
     }
 
     /** The 0-based rank of [node], which must be in this list. */
@@ -193,6 +200,14 @@ internal class SkipList(
     companion object {
         /** `ZSKIPLIST_MAXLEVEL`. */
         const val MAX_LEVEL = 32
+
+        /** A node: header, member, score, backward, next, span, two level arrays when taller than one. */
+        fun nodeBytes(node: Node): Long {
+            val upper = node.level - 1
+            val arrays =
+                if (upper == 0) 0L else MemoryModel.array(MemoryModel.WORD * upper) + MemoryModel.array(4L * upper)
+            return MemoryModel.OBJECT + 7 * MemoryModel.WORD + arrays + MemoryModel.array(node.member.size.toLong())
+        }
 
         /** Whether [node] sorts before ([score], [member]): by score, then by member bytes. */
         fun before(

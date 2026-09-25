@@ -1,6 +1,7 @@
 package io.github.youndie.kesh.server
 
 import io.github.youndie.kesh.resp.RequestLimits
+import io.github.youndie.kesh.server.config.MemoryConfig
 import kotlinx.cinterop.ExperimentalForeignApi
 import kotlinx.cinterop.toKString
 import platform.posix.getenv
@@ -23,10 +24,13 @@ data class ServerConfig(
     val maxClients: Int? = null,
     val limits: RequestLimits = RequestLimits(),
     val queryBufferLimit: Long = 1L shl 30,
+    /** `maxmemory`, `memtoull`'s syntax (`100mb`); 0 for no limit (B-11). */
+    val maxMemory: Long = 0,
 ) {
     override fun toString(): String =
         "ServerConfig(host=$host, port=$port, password=${if (password == null) "none" else "set"}, " +
-            "maxClients=${maxClients ?: "derived"}, limits=$limits, queryBufferLimit=$queryBufferLimit)"
+            "maxClients=${maxClients ?: "derived"}, limits=$limits, queryBufferLimit=$queryBufferLimit, " +
+            "maxMemory=$maxMemory)"
 
     companion object {
         fun fromEnvironment(read: (String) -> String? = ::environmentVariable): ServerConfig {
@@ -54,6 +58,10 @@ data class ServerConfig(
                     ),
                 queryBufferLimit =
                     number("KESH_CLIENT_QUERY_BUFFER_LIMIT", 1L..Long.MAX_VALUE) ?: defaults.queryBufferLimit,
+                maxMemory =
+                    read("KESH_MAXMEMORY")?.let { raw ->
+                        requireNotNull(MemoryConfig.memtoull(raw)) { "KESH_MAXMEMORY is not a memory value: $raw" }
+                    } ?: defaults.maxMemory,
             )
         }
     }

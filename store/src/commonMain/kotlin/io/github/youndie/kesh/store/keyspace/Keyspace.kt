@@ -47,6 +47,9 @@ class Keyspace(
 
     val isRehashing: Boolean get() = rehashIndex >= 0
 
+    /** Buckets across both tables — what the table itself costs beyond its entries. */
+    val capacity: Int get() = (tables[0]?.size ?: 0) + (tables[1]?.size ?: 0)
+
     fun get(key: ByteArray): Entry? {
         if (size == 0) return null
         rehashStep()

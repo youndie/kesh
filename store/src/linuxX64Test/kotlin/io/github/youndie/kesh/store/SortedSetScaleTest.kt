@@ -26,7 +26,7 @@ class SortedSetScaleTest {
             commands
                 .getValue(
                     args[0].lowercase(),
-                ).handler(db, args.map { it.encodeToByteArray() })
+                ).run(db, args.map { it.encodeToByteArray() })
                 .encode()
                 .decodeToString()
         val top = r("ZREVRANGE", "board:2026-09", "0", "9", "WITHSCORES").split("\r\n")

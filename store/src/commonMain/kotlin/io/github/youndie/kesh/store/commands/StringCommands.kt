@@ -245,7 +245,7 @@ object StringCommands {
             val expireAt =
                 expireMillis(db, "getex", expire, unitSeconds = unit == "ex" || unit == "exat", relative = !absolute)
             if (absolute && expireAt <= db.now) {
-                db.keyspace.remove(a[1])
+                db.remove(a[1])
             } else {
                 entry.expireAt = expireAt
             }

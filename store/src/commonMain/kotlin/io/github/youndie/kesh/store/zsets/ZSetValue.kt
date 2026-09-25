@@ -1,6 +1,7 @@
 package io.github.youndie.kesh.store.zsets
 
 import io.github.youndie.kesh.store.keyspace.Keyspace
+import io.github.youndie.kesh.store.memory.MemoryModel
 import io.github.youndie.kesh.store.packed.Packed
 
 /**
@@ -29,6 +30,24 @@ class ZSetValue(
         private set
 
     val size: Int get() = list?.size ?: packedCount
+
+    /**
+     * The sorted set's estimated size (research D-10): this object, and its packed bytes — or its
+     * skiplist's nodes and members, an index entry per member, and the index's buckets.
+     */
+    val estimatedBytes: Long
+        get() {
+            val l = list ?: return SELF + MemoryModel.array(packed.size.toLong())
+            return SELF + l.bytes + l.size * MemoryModel.ENTRY + MemoryModel.buckets(index!!.capacity)
+        }
+
+    /** [estimatedBytes] summed from scratch, for tests. */
+    internal fun recountBytes(): Long {
+        val l = list ?: return estimatedBytes
+        var sum = 0L
+        index!!.forEach { sum += SkipList.nodeBytes(it.value as SkipList.Node) + MemoryModel.ENTRY }
+        return SELF + sum + MemoryModel.buckets(index!!.capacity)
+    }
 
     /** Whether the set is still packed. Invisible to clients; for tests. */
     val isPacked: Boolean get() = list == null
@@ -251,6 +270,9 @@ class ZSetValue(
     }
 
     companion object {
+        /** This object: header, seed, packed array, count, skiplist, index. */
+        private const val SELF = MemoryModel.OBJECT + 5 * MemoryModel.WORD
+
         /** `zset-max-listpack-entries`, Redis 7.2's default. */
         var maxPackedEntries: Int = 128
 

@@ -1,5 +1,6 @@
 package io.github.youndie.kesh.store.lists
 
+import io.github.youndie.kesh.store.memory.MemoryModel
 import io.github.youndie.kesh.store.packed.Packed
 
 /**
@@ -15,12 +16,39 @@ import io.github.youndie.kesh.store.packed.Packed
  * Indexes here are already normalised: `0 until size`. Store thread only.
  */
 class ListValue {
-    private class Chunk(
-        var bytes: ByteArray,
+    /** A chunk. Inner, so that replacing its bytes keeps the list's running total ([chunkBytes]). */
+    private inner class Chunk(
+        bytes: ByteArray,
         var count: Int,
-    )
+    ) {
+        var bytes: ByteArray = bytes
+            set(value) {
+                chunkBytes += MemoryModel.array(value.size.toLong()) - MemoryModel.array(field.size.toLong())
+                field = value
+            }
+
+        init {
+            chunkBytes += CHUNK + MemoryModel.array(bytes.size.toLong())
+        }
+
+        /** Takes this chunk's cost off the total, when it leaves the list. */
+        fun dropped() {
+            chunkBytes -= CHUNK + MemoryModel.array(bytes.size.toLong())
+        }
+    }
+
+    /** Running total of the chunks: their objects and byte arrays (research D-10). */
+    private var chunkBytes = 0L
 
     private val chunks = ArrayDeque<Chunk>()
+
+    /** The list's estimated size: this object, its deque's array, its chunks. */
+    val estimatedBytes: Long get() = SELF + MemoryModel.array(MemoryModel.WORD * chunks.size) + chunkBytes
+
+    /** [estimatedBytes] summed from scratch, for tests. */
+    internal fun recountBytes(): Long =
+        SELF + MemoryModel.array(MemoryModel.WORD * chunks.size) +
+            chunks.sumOf { CHUNK + MemoryModel.array(it.bytes.size.toLong()) }
 
     var size: Int = 0
         private set
@@ -69,7 +97,7 @@ class ListValue {
         val at = Packed.skip(chunk.bytes, 0, position)
         chunk.bytes = Packed.splice(chunk.bytes, at, Packed.skip(chunk.bytes, at), Packed.encode(item))
         if (chunk.bytes.size > maxChunkBytes && chunk.count > 1) {
-            chunks.removeAt(c)
+            chunks.removeAt(c).dropped()
             chunks.addAll(c, rechunk(items(chunk)))
         }
     }
@@ -105,7 +133,7 @@ class ListValue {
             val head = chunks.first()
             if (head.count <= left) {
                 left -= head.count
-                chunks.removeFirst()
+                chunks.removeFirst().dropped()
             } else {
                 head.bytes = head.bytes.copyOfRange(Packed.skip(head.bytes, 0, left), head.bytes.size)
                 head.count -= left
@@ -122,7 +150,7 @@ class ListValue {
             val tail = chunks.last()
             if (tail.count <= left) {
                 left -= tail.count
-                chunks.removeLast()
+                chunks.removeLast().dropped()
             } else {
                 tail.bytes = tail.bytes.copyOfRange(0, Packed.skip(tail.bytes, 0, tail.count - left))
                 tail.count -= left
@@ -162,7 +190,7 @@ class ListValue {
                 chunk.count = kept.size
             }
         }
-        chunks.removeAll { it.count == 0 }
+        chunks.removeAll { chunk -> (chunk.count == 0).also { if (it) chunk.dropped() } }
         return removed
     }
 
@@ -217,6 +245,12 @@ class ListValue {
     }
 
     companion object {
+        /** This object: header, deque, size, running total. */
+        private const val SELF = MemoryModel.OBJECT + 3 * MemoryModel.WORD
+
+        /** A chunk object: header, bytes, count, the reference to its list. */
+        private const val CHUNK = MemoryModel.OBJECT + 3 * MemoryModel.WORD
+
         /** `list-max-listpack-size -2`: 8 KiB of packed items per chunk, Redis 7.2's default. */
         var maxChunkBytes: Int = 8 * 1024
     }

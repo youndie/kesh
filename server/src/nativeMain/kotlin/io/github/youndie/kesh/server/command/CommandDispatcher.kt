@@ -4,6 +4,7 @@ import io.github.youndie.kesh.resp.Reply
 import io.github.youndie.kesh.resp.parseRedisLong
 import io.github.youndie.kesh.server.client.ClientState
 import io.github.youndie.kesh.server.client.Clients
+import io.github.youndie.kesh.server.config.MemoryConfig
 import io.github.youndie.kesh.store.Db
 import io.github.youndie.kesh.store.commands.StoreCommands
 
@@ -23,6 +24,8 @@ class CommandDispatcher(
     /** Milliseconds since the epoch; read once per data command (Redis's `commandTimeSnapshot`). */
     private val clock: () -> Long = ::epochMillis,
 ) {
+    private val memoryConfig = MemoryConfig(db)
+
     private val table: Map<String, CommandSpec> =
         listOf(
             CommandSpec("ping", -1) { _, a -> ping(a) },
@@ -31,6 +34,16 @@ class CommandDispatcher(
             CommandSpec("auth", -2, noAuth = true) { c, a -> auth(c, a) },
             CommandSpec("hello", -1, noAuth = true) { c, a -> hello(c, a) },
             CommandSpec("select", 2) { _, a -> select(a) },
+            CommandSpec(
+                "config",
+                -2,
+                subcommands =
+                    listOf(
+                        CommandSpec("get", -3) { _, a -> memoryConfig.get(a.drop(2).map { it.decodeToString() }) },
+                        CommandSpec("set", -4) { _, a -> memoryConfig.set(a.drop(2).map { it.decodeToString() }) },
+                    ),
+            ),
+            CommandSpec("info", -1) { _, a -> info(a.drop(1).map { it.decodeToString().lowercase() }) },
             CommandSpec(
                 "client",
                 -2,
@@ -63,8 +76,14 @@ class CommandDispatcher(
         ).plus(
             StoreCommands.all.map { command ->
                 CommandSpec(command.name, command.arity) { _, args ->
-                    db.now = clock()
-                    command.handler(db, args)
+                    // `processCommand`: a command that may add data is refused while the dataset is over
+                    // `maxmemory`, under `noeviction` (B-11); reads and deletes still run.
+                    if (command.denyOom && db.overLimit) {
+                        OOM
+                    } else {
+                        db.now = clock()
+                        command.run(db, args)
+                    }
                 }
             },
         ).associateBy { it.name }
@@ -95,6 +114,15 @@ class CommandDispatcher(
         client.startCommand(fullName)
         val handler = spec.handler ?: return unknownCommand(args)
         return handler(client, args)
+    }
+
+    /**
+     * `INFO`, as far as kesh has it: the `memory` section (B-11). The others arrive with B-15; asked
+     * for by name alone, they answer empty, as Redis does for a section it does not know.
+     */
+    private fun info(sections: List<String>): Reply {
+        val wanted = sections.isEmpty() || sections.any { it in setOf("memory", "default", "all", "everything") }
+        return Reply.Bulk((if (wanted) memoryConfig.info() else "").encodeToByteArray())
     }
 
     private fun ping(args: List<ByteArray>): Reply =
@@ -441,6 +469,9 @@ class CommandDispatcher(
          * Redis drops such a connection without a reply (`securityWarningCommand`), and so does kesh.
          */
         val SECURITY = setOf("post", "host:")
+
+        /** `shared.oomerr`, `redis/redis@7.2!/src/server.c`. */
+        val OOM: Reply = Reply.Error("OOM command not allowed when used memory > 'maxmemory'.")
 
         val DEFAULT_USER = "default".encodeToByteArray()
 

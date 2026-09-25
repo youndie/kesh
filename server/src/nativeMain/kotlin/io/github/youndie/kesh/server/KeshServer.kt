@@ -101,7 +101,12 @@ class KeshServer(
         val clients = Clients(maxClients, passwordRequired = config.password != null)
         registry = clients
         // One keyspace, seeded per process so that keys chosen from outside cannot be made to collide.
-        val commands = CommandDispatcher(clients, config.password, Db(seed = Random.nextInt()))
+        val commands =
+            CommandDispatcher(
+                clients,
+                config.password,
+                Db(seed = Random.nextInt()).apply { maxMemory = config.maxMemory },
+            )
 
         connections.launch {
             while (true) {

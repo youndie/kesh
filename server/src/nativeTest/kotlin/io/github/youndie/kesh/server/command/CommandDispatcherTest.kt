@@ -237,8 +237,39 @@ class CommandDispatcherTest {
 
     @Test
     fun `COMMAND COUNT and INFO describe the table`() {
-        assertEquals(":99\r\n", open.reply(me, "COMMAND", "COUNT"))
+        assertEquals(":101\r\n", open.reply(me, "COMMAND", "COUNT"))
         assertTrue(open.reply(me, "COMMAND", "INFO", "ping")!!.startsWith("*1\r\n*10\r\n$4\r\nping\r\n:-1\r\n"))
         assertEquals("*1\r\n*-1\r\n", open.reply(me, "COMMAND", "INFO", "nope"))
+    }
+
+    @Test
+    fun `a full dataset refuses writes under noeviction and still reads and deletes`() {
+        assertEquals("+OK\r\n", open.reply(me, "CONFIG", "SET", "maxmemory", "20kb"))
+        var written = 0
+        while (open.reply(me, "SET", "k$written", "x".repeat(500)) == "+OK\r\n") written++
+        assertTrue(written in 10..100, "$written writes before the limit")
+        assertEquals("-OOM command not allowed when used memory > 'maxmemory'.\r\n", open.reply(me, "SET", "more", "x"))
+        assertEquals("-OOM command not allowed when used memory > 'maxmemory'.\r\n", open.reply(me, "RPUSH", "l", "x"))
+        assertEquals("$500\r\n${"x".repeat(500)}\r\n", open.reply(me, "GET", "k0"))
+        assertEquals(":5\r\n", open.reply(me, "DEL", "k0", "k1", "k2", "k3", "k4"))
+        assertEquals("+OK\r\n", open.reply(me, "SET", "more", "x"), "room again after the deletes")
+        assertTrue(open.reply(me, "INFO", "memory")!!.contains("maxmemory:20480\r\n"))
+    }
+
+    @Test
+    fun `CONFIG answers maxmemory in Redis's words`() {
+        assertEquals("*2\r\n$9\r\nmaxmemory\r\n$1\r\n0\r\n", open.reply(me, "CONFIG", "GET", "MAXMEMORY"))
+        assertEquals("*0\r\n", open.reply(me, "CONFIG", "GET", "nothing"))
+        assertEquals("+OK\r\n", open.reply(me, "CONFIG", "SET", "maxmemory", "1mb"))
+        assertEquals("*2\r\n$9\r\nmaxmemory\r\n$7\r\n1048576\r\n", open.reply(me, "CONFIG", "GET", "maxmemory"))
+        assertEquals(
+            "-ERR CONFIG SET failed (possibly related to argument 'maxmemory') - argument must be a memory value\r\n",
+            open.reply(me, "CONFIG", "SET", "maxmemory", "12xb"),
+        )
+        assertEquals(
+            "-ERR Unknown option or number of arguments for CONFIG SET - 'nothing'\r\n",
+            open.reply(me, "CONFIG", "SET", "nothing", "1"),
+        )
+        assertEquals("-ERR syntax error\r\n", open.reply(me, "CONFIG", "SET", "maxmemory", "1", "x"))
     }
 }

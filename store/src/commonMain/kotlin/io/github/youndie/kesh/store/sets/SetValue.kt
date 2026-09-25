@@ -1,6 +1,7 @@
 package io.github.youndie.kesh.store.sets
 
 import io.github.youndie.kesh.store.keyspace.Keyspace
+import io.github.youndie.kesh.store.memory.MemoryModel
 import io.github.youndie.kesh.store.packed.Packed
 import kotlin.random.Random
 
@@ -24,6 +25,30 @@ class SetValue(
 
     val size: Int get() = table?.size ?: packedCount
 
+    /** Running total of the table's entries and members; 0 while packed (research D-10). */
+    private var tableBytes = 0L
+
+    /** The set's estimated size: this object, and its packed bytes or its table. */
+    val estimatedBytes: Long
+        get() =
+            SELF +
+                (
+                    table?.let {
+                        tableBytes +
+                            MemoryModel.buckets(
+                                it.capacity,
+                            )
+                    } ?: MemoryModel.array(packed.size.toLong())
+                )
+
+    /** [estimatedBytes] summed from scratch, for tests. */
+    internal fun recountBytes(): Long {
+        val t = table ?: return estimatedBytes
+        var sum = 0L
+        t.forEach { sum += memberBytes(it.key) }
+        return SELF + sum + MemoryModel.buckets(t.capacity)
+    }
+
     /** Whether the set is still packed. Invisible to clients; for tests. */
     val isPacked: Boolean get() = table == null
 
@@ -35,6 +60,7 @@ class SetValue(
         table?.let { t ->
             if (t.get(member) != null) return false
             t.put(member, Unit)
+            tableBytes += memberBytes(member)
             return true
         }
         if (find(member) >= 0) return false
@@ -46,7 +72,11 @@ class SetValue(
 
     /** Removes [member]; `true` if it was there. A set never goes back to packed. */
     fun remove(member: ByteArray): Boolean {
-        table?.let { return it.remove(member) != null }
+        table?.let { t ->
+            val gone = t.remove(member) ?: return false
+            tableBytes -= memberBytes(gone.key)
+            return true
+        }
         val at = find(member)
         if (at < 0) return false
         packed = Packed.splice(packed, at, Packed.skip(packed, at))
@@ -82,7 +112,11 @@ class SetValue(
 
     private fun convert() {
         val converted = Keyspace(seed)
-        forEach { converted.put(it, Unit) }
+        tableBytes = 0
+        forEach {
+            converted.put(it, Unit)
+            tableBytes += memberBytes(it)
+        }
         table = converted
         packed = Packed.EMPTY
         packedCount = 0
@@ -98,6 +132,12 @@ class SetValue(
     }
 
     companion object {
+        /** This object: header, seed, packed array, count, table, running total. */
+        private const val SELF = MemoryModel.OBJECT + 5 * MemoryModel.WORD
+
+        /** One member in the table: its entry and its bytes. */
+        private fun memberBytes(bytes: ByteArray): Long = MemoryModel.ENTRY + MemoryModel.array(bytes.size.toLong())
+
         /** `set-max-listpack-entries`, Redis 7.2's default. */
         var maxPackedEntries: Int = 128
 

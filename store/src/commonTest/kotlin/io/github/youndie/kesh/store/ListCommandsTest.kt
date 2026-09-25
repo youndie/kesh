@@ -16,7 +16,7 @@ class ListCommandsTest {
     private fun r(vararg args: String): String =
         commands
             .getValue(args[0].lowercase())
-            .handler(db, args.map { it.encodeToByteArray() })
+            .run(db, args.map { it.encodeToByteArray() })
             .encode()
             .decodeToString()
 

@@ -112,7 +112,7 @@ object KeyCommands {
         if (lt && current != Entry.NO_EXPIRY && `when` >= current) return ZERO
 
         // `checkAlreadyExpired`: a time at or before now deletes the key, and still answers 1.
-        if (`when` <= db.now) db.keyspace.remove(a[1]) else entry.expireAt = `when`
+        if (`when` <= db.now) db.remove(a[1]) else entry.expireAt = `when`
         return ONE
     }
 
@@ -149,10 +149,10 @@ object KeyCommands {
         if (a[1].contentEquals(a[2])) return if (nx) ZERO else Reply.OK
         if (db.lookup(a[2]) != null) {
             if (nx) return ZERO
-            db.keyspace.remove(a[2])
+            db.remove(a[2])
         }
-        db.keyspace.remove(a[1])
-        val target = db.keyspace.put(a[2], source.value)
+        db.remove(a[1])
+        val target = db.put(a[2], source.value)
         target.expireAt = source.expireAt
         return if (nx) ONE else Reply.OK
     }
@@ -175,7 +175,7 @@ object KeyCommands {
         while (true) {
             val entry = db.keyspace.randomEntry { random.nextInt(it) } ?: return Reply.NULL_BULK
             if (!db.isExpired(entry)) return Reply.Bulk(entry.key)
-            db.keyspace.remove(entry.key)
+            db.remove(entry.key)
         }
     }
 

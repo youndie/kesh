@@ -1,6 +1,7 @@
 package io.github.youndie.kesh.store.hashes
 
 import io.github.youndie.kesh.store.keyspace.Keyspace
+import io.github.youndie.kesh.store.memory.MemoryModel
 import io.github.youndie.kesh.store.packed.Packed
 
 /**
@@ -30,6 +31,30 @@ class HashValue(
 
     val size: Int get() = table?.size ?: packedCount
 
+    /** Running total of the table's entries, fields and values; 0 while packed (research D-10). */
+    private var tableBytes = 0L
+
+    /** The hash's estimated size: this object, and its packed bytes or its table. */
+    val estimatedBytes: Long
+        get() =
+            SELF +
+                (
+                    table?.let {
+                        tableBytes +
+                            MemoryModel.buckets(
+                                it.capacity,
+                            )
+                    } ?: MemoryModel.array(packed.size.toLong())
+                )
+
+    /** [estimatedBytes] summed from scratch, for tests. */
+    internal fun recountBytes(): Long {
+        val t = table ?: return estimatedBytes
+        var sum = 0L
+        t.forEach { sum += pair(it.key, it.value as ByteArray) }
+        return SELF + sum + MemoryModel.buckets(t.capacity)
+    }
+
     /** Whether the hash is still in its packed encoding. Invisible to clients; for tests. */
     val isPacked: Boolean get() = table == null
 
@@ -51,9 +76,17 @@ class HashValue(
     ): Boolean {
         if (table == null && (field.size > maxPackedValue || value.size > maxPackedValue)) convert()
         table?.let { t ->
-            val created = t.get(field) == null
+            val existing = t.get(field)
+            if (existing != null) {
+                tableBytes +=
+                    MemoryModel.array(value.size.toLong()) -
+                    MemoryModel.array((existing.value as ByteArray).size.toLong())
+                existing.value = value
+                return false
+            }
             t.put(field, value)
-            return created
+            tableBytes += pair(field, value)
+            return true
         }
         val at = find(field)
         if (at >= 0) {
@@ -69,7 +102,11 @@ class HashValue(
 
     /** Removes [field]; `true` if it was there. A hash never goes back to packed, as in Redis 7.2. */
     fun delete(field: ByteArray): Boolean {
-        table?.let { return it.remove(field) != null }
+        table?.let { t ->
+            val gone = t.remove(field) ?: return false
+            tableBytes -= pair(gone.key, gone.value as ByteArray)
+            return true
+        }
         val at = find(field)
         if (at < 0) return false
         packed = Packed.splice(packed, at, Packed.skip(packed, at, 2))
@@ -106,7 +143,11 @@ class HashValue(
 
     private fun convert() {
         val converted = Keyspace(seed)
-        forEach { field, value -> converted.put(field, value) }
+        tableBytes = 0
+        forEach { field, value ->
+            converted.put(field, value)
+            tableBytes += pair(field, value)
+        }
         table = converted
         packed = Packed.EMPTY
         packedCount = 0
@@ -123,6 +164,15 @@ class HashValue(
     }
 
     companion object {
+        /** This object: header, seed, packed array, count, table, running total. */
+        private const val SELF = MemoryModel.OBJECT + 5 * MemoryModel.WORD
+
+        /** One field in the table: its entry, field and value arrays. */
+        private fun pair(
+            field: ByteArray,
+            value: ByteArray,
+        ): Long = MemoryModel.ENTRY + MemoryModel.array(field.size.toLong()) + MemoryModel.array(value.size.toLong())
+
         /** `hash-max-listpack-entries`, Redis 7.2's default. */
         var maxPackedEntries: Int = 512
 
