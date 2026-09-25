@@ -91,5 +91,5 @@ sixteenth of a 256 KiB one, so the same heap has sixteen times as many.
   peak RSS ran at 2.2× `alive`. Packed at full scale: ~8 GB live, ~17 GB resident — the reference
   host needs more than 16 GB (B-22).
 
-The earlier preliminary rows, including three runs made on bench-a without asking, are in
+The earlier preliminary rows, including three runs made on the 4-core host without asking, are in
 `../b-19-preliminary/`.

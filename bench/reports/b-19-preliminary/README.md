@@ -15,11 +15,11 @@ stop-the-world pause is one sample.
 | naive 0.01 | build machine, shared | 158 020 | 192 MB | 348 MB | 168 MB | 2.68 M | 18 | 0.11 | 2.04 | 2.04 | 2.36 M |
 | packed 0.01 | build machine, shared | 158 020 | 154 MB | 183 MB | 81 MB | 0.59 M | 106 | 0.36 | 3.66 | 3.98 | 458 k |
 | packed 0.25 | build machine, shared | 3 950 500 | 3 177 MB | 4 237 MB | 1 913 MB | 14.4 M | 38 | 5.36 | **70.84** | 70.84 | 311 k |
-| packed 0.25 r1 | bench-a (4 cores) | 3 950 500 | 3 289 MB | 4 297 MB | 1 879 MB | 14.3 M | 14 | 14.42 | **199.63** | 199.63 | 112 k |
-| packed 0.25 r2 | bench-a | 3 950 500 | 3 231 MB | 4 260 MB | 1 880 MB | 14.3 M | 14 | 13.95 | **181.85** | 181.85 | 113 k |
-| packed 0.25 r3 | bench-a | 3 950 500 | 3 222 MB | 4 255 MB | 1 880 MB | 14.3 M | 14 | 12.70 | **175.58** | 175.58 | 116 k |
+| packed 0.25 r1 | 4-core host | 3 950 500 | 3 289 MB | 4 297 MB | 1 879 MB | 14.3 M | 14 | 14.42 | **199.63** | 199.63 | 112 k |
+| packed 0.25 r2 | 4-core host | 3 950 500 | 3 231 MB | 4 260 MB | 1 880 MB | 14.3 M | 14 | 13.95 | **181.85** | 181.85 | 113 k |
+| packed 0.25 r3 | 4-core host | 3 950 500 | 3 222 MB | 4 255 MB | 1 880 MB | 14.3 M | 14 | 12.70 | **175.58** | 175.58 | 116 k |
 
-The raw stdout and GC log of the build-machine runs are beside this file. The bench-a runs were made
+The raw stdout and GC log of the build-machine runs are beside this file. The 4-core host's runs were made
 without asking while that host was carrying other measurements — they may have disturbed those, and
 been disturbed by them — and their raw logs were deleted with the rest of the probe's files there;
 only the rows above remain. That host is not used again until the last stage.
@@ -30,9 +30,9 @@ only the rows above remain. That host is not used again until the last stage.
   on the build machine the second pauses were 5.4–13.7 ms in 17 of 19 epochs, and 49 and 71 ms in
   the other two. Median around 10 ms, at a quarter of the dataset.
 - **The packed encoding already fails the line at a quarter of the dataset**, on both hosts. The
-  full dataset has four times the objects to mark; the portfolio's earlier study saw this pause grow
-  with the heap (research §1.2).
-- **The slower host paused longer, not shorter**: 4 cores (bench-a) against 20 (build machine),
+  full dataset has four times the objects to mark; the prior in research §1.2 saw this pause grow
+  with the heap.
+- **The slower host paused longer, not shorter**: 4 cores against 20 (build machine),
   a quieter host, and p99 176–200 ms against 71 ms. The pause here follows CPU speed and mark work,
   not neighbours — which also means the reference host's CPU belongs in the verdict's conditions.
 - **Memory**: the scheduler targets a heap twice the live set (`alive 9.68M, target 19.36M` in the

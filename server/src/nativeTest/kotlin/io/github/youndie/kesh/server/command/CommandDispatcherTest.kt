@@ -217,7 +217,7 @@ class CommandDispatcherTest {
         assertEquals(":1\r\n", open.reply(me, "CLIENT", "KILL", "ID", other.id.toString()))
         assertTrue(other.killed)
         assertEquals(1, open.closed)
-        assertEquals("-ERR No such client\r\n", open.reply(me, "CLIENT", "KILL", "10.0.0.1:1"))
+        assertEquals("-ERR No such client\r\n", open.reply(me, "CLIENT", "KILL", "192.0.2.1:1"))
         assertEquals(":0\r\n", open.reply(me, "CLIENT", "KILL", "ID", me.id.toString()))
         assertEquals("+OK\r\n", open.reply(me, "CLIENT", "KILL", "127.0.0.1:5000"))
         assertTrue(me.closeAfterReply)

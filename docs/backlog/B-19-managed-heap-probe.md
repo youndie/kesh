@@ -46,13 +46,13 @@ fails on an empty window). Preliminary rows: `bench/reports/b-19-preliminary/REA
 What stopped it: full scale needs a host with more than 16 GB (packed ~17 GB RSS extrapolated), and
 the build machine was shared — another session's builds and containers, later load 10.9 with 2.6 GB
 free, at which point the probe's own guard skipped every run. **The owner deferred the full-scale
-measurement to the last stage, on the reference host (B-22), and asked that bench-a and bench-b not
-be used before then**; three runs had already been made on bench-a without asking (recorded in the
+measurement to the last stage, on the reference host (B-22), and asked that the two-host stand not
+be used before then**; three runs had already been made on its subject host without asking (recorded in the
 report).
 
 What the preliminary rows already say: the packed encoding's end-of-mark pause is ~10 ms median and
 71 ms p99 at **a quarter** of the dataset on the 20-core build machine, 176–200 ms on the 4-core
-bench-a. Unless something changes the collector's behaviour, D-3 does not meet its threshold at full
+host. Unless something changes the collector's behaviour, D-3 does not meet its threshold at full
 scale. That is the owner's to weigh now, before B-05 builds the store on D-3 — see the report.
 
 Next, when the build machine is quiet: packed at 1/8 and 1/4 three times each, naive at 1/8, to have

@@ -90,16 +90,17 @@ services already use"): `PUBLISH`, `PSUBSCRIBE`, and the handshake above. Nothin
 
 ### 1.2 The Kotlin/Native heap at the sizes §5a implies
 
-Verified from a portfolio study of the Kotlin/Native collector on Kotlin 2.4.20, `linuxX64`, a
-four-core host with one subject resident (the study's repository is private; the figures and
-protocol are summarised here so that nothing depends on reading it).
+The first rows are **priors** kesh started from: figures measured on Kotlin 2.4.20, `linuxX64`, a
+four-core host with one subject resident, and not reproduced in this repository. They are carried as
+priors, not as facts. Where kesh measured the same thing itself, its own file is the verification
+(B-19 replaced the pause rows' explanation with kesh's measurement).
 
 | Fact | Where verified |
 |---|---|
-| The default collector on 2.4.20 is concurrent mark and sweep (CMS); a binary built without options is byte-identical to one built with `-Xbinary=gc=cms`, and the runtime logs `Concurrent Mark & Sweep GC initialized` | the study's toolchain item: md5 comparison of the binaries, `-Xruntime-logs=gc=info` |
-| Pause p99 against live heap `L` at a fixed allocation shape, 100 req/s, three lone starts per point: 14 MB → 2.8–3.0 ms; 128 MB → 4.7–5.2 ms; **512 MB → 9.2–12.3 ms; 1 GB (5.63 M objects marked) → 19.3–34.8 ms** | the study's results, "Open: the pause at large live heaps" |
-| The growth is in CMS's **second** pause (end of marking); the first stays near 1 ms. With the same 5.6 M objects marked but no sustained load, the second pause was 0.1–0.4 ms | the same section |
-| A second resident process on the host inflated the same binary's pause p99 from ~1.2 ms to 2–4.9 ms; CPU per request was unaffected | the same study, protocol finding |
+| The default collector on 2.4.20 is concurrent mark and sweep (CMS); a binary built without options is byte-identical to one built with `-Xbinary=gc=cms`, and the runtime logs `Concurrent Mark & Sweep GC initialized` | prior, not reproduced here: md5 comparison of the binaries, `-Xruntime-logs=gc=info` |
+| Pause p99 against live heap `L` at a fixed allocation shape, 100 req/s, three lone starts per point: 14 MB → 2.8–3.0 ms; 128 MB → 4.7–5.2 ms; **512 MB → 9.2–12.3 ms; 1 GB (5.63 M objects marked) → 19.3–34.8 ms** | prior, not reproduced here |
+| The growth is in CMS's **second** pause (end of marking); the first stays near 1 ms. With the same 5.6 M objects marked but no sustained load, the second pause was 0.1–0.4 ms | prior, not reproduced here; kesh's own explanation of this pause is B-19 (`bench/reports/b-19/README.md`) |
+| A second resident process on the host inflated the same binary's pause p99 from ~1.2 ms to 2–4.9 ms; CPU per request was unaffected | prior, not reproduced here; kesh follows it as consequence 5 (one subject per host) |
 | The runtime does not read its cgroup memory limit; `GC.targetHeapBytes` is a trigger threshold, not a ceiling, and `GC.autotune` rewrites it. `GC.maxHeapBytes` is the ceiling | `youndie/kore!/kore-core/src/commonMain/kotlin/io/github/youndie/kore/runtime/MemoryBudget.kt`, `youndie/kore!/kore-core/src/nativeMain/kotlin/io/github/youndie/kore/runtime/HeapCeiling.native.kt` |
 | **The second CMS pause is the allocator's page bookkeeping**: with the world stopped after marking, every size class's `PageStore::PrepareForGC` walks the `used_` page list to its tail and frees every page the last sweep emptied — both linear in the number of pages | `JetBrains/kotlin@v2.4.20!/kotlin-native/runtime/src/gc/common/cpp/MainGCThread.hpp` lines 56–69; `JetBrains/kotlin@v2.4.20!/kotlin-native/runtime/src/alloc/custom/cpp/PageStore.hpp` line 24; `JetBrains/kotlin@v2.4.20!/kotlin-native/runtime/src/alloc/custom/cpp/AtomicStack.hpp` lines 79–81 |
 | Measured (B-19, a quarter of the reference dataset, same heap, interleaved): 16 KiB allocator pages paused 8–10 ms median and 84–139 ms p99; 256 KiB pages 0.8 ms and 8–18 ms, for 1 % more resident memory | `bench/reports/b-19/README.md` |
@@ -380,9 +381,9 @@ Read precisely, so that B-19 cannot choose its reading after the fact:
 - the verdict takes the better of B-19's two encodings, naive and packed: D-3 holds if either one
   meets the threshold, and then that encoding is the one the store is built with.
 
-What it is set against: the portfolio's own measurement put this platform's end-of-mark pause at
-9–12 ms p99 at 512 MB and 19–35 ms at 1 GB (§1.2) — the same 10 ms line that study used for "a pause
-worth fixing". The reference dataset is several times larger. The threshold is demanding, and meant
+What it is set against: the prior in §1.2 put this platform's end-of-mark pause at 9–12 ms p99 at
+512 MB and 19–35 ms at 1 GB, and 10 ms is where that prior drew the line for "a pause worth
+fixing". The reference dataset is several times larger. The threshold is demanding, and meant
 to be.
 
 **Amended by the owner on 2026-09-24, after B-19's first rows: the threshold is no longer a gate.**

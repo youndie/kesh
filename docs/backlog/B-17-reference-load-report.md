@@ -39,13 +39,12 @@ served at the reference load on the reference host.
 
 ## Decisions (owner, 2026-09-25)
 
-- **Hosts: kesh on bench-a, the generator on bench-b** — the portfolio's two-host stand (4 cores,
+- **Hosts: kesh on the subject host, the generator on the generator host** — a two-host stand (4 cores,
   7.7 GB each, a private network between them). The owner offered it, or the build machine loading
   itself; two hosts keep one subject per host (research §1.2, consequence 5) and keep latency off the
   build machine's slow monotonic clock. The cost: 7.7 GB holds a fraction of §5a (B-11's peak ratio
   2.8), so the report is at a stated scale, not the reference dataset's.
-- **bench-a's other resident process, another project's database container, is stopped for the
-  runs** and started again after.
+- **The subject host's other resident process is stopped for the runs** and started again after.
 - **The load comes from kesh's own generator, not `memtier_benchmark`** — a deviation from this item's
   text. memtier derives keys from a number; 10 M of §5a's 15.8 M keys are `session:<uuid>` and the
   counters are `rate:<id>:<minute>`, so memtier could not produce §5a's mix against this dataset.
