@@ -38,14 +38,13 @@ A stage is a field on the item, not a directory.
 
 <!-- BEGIN INDEX -->
 
-## Open (2)
+## Open (1)
 
 | Task | | Priority | Size | Blocked by |
 |---|---|---|---|---|
 | [B-18](docs/backlog/B-18-soak-24h.md) `[ ]` | 24 h soak with TTL churn | P2 | S | B-17 |
-| [B-30](docs/backlog/B-30-allocator-page-size-property.md) `[~]` | The allocator page size as a build property for the server | P3 | S | - |
 
-## Closed (28)
+## Closed (29)
 
 **Protocol and core**
 
@@ -92,6 +91,7 @@ A stage is a field on the item, not a directory.
 - [B-17](docs/backlog/B-17-reference-load-report.md) `[x]` - Reference load report on the reference host
 - [B-22](docs/backlog/B-22-reference-host.md) `[x]` - Choose the reference host for the load report and the soak
 - [B-28](docs/backlog/B-28-heap-runaway-under-load.md) `[x]` - The heap runs away under the reference load: an epoch that sweeps nothing doubles the target
+- [B-30](docs/backlog/B-30-allocator-page-size-property.md) `[x]` - The allocator page size as a build property for the server
 
 <!-- END INDEX -->
 

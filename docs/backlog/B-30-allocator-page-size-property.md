@@ -1,7 +1,7 @@
 ---
 id: B-30
 title: "The allocator page size as a build property for the server"
-status: wip
+status: done
 priority: P3
 size: S
 stage: stage-6-capacity
@@ -37,3 +37,16 @@ today that means editing the build file — easy to forget to revert, hard to na
 |---|---|
 | server | `server/build.gradle.kts` |
 | research | `docs/research/research-architecture.md` — D-19 |
+
+## Findings — 2026-09-25: done
+
+- **AC 1 — met.** On the build machine: the default release binary md5 `38cf4add…`, the
+  `-Pkesh.allocatorPageSize=16` one `6a5afd3e…`; the second's startup line reads `kesh: built with 16
+  KiB allocator pages` and its `/metrics` `kesh_build_info{allocator_page_size_kb="16"} 1`, the
+  default's 256. That the compiler got the other page size and not only the other constant: the link's
+  `--debug` log of the 16 build carries `fixedBlockPageSize=16`.
+- **AC 2 — met.** The default build and `-Pkesh.allocatorPageSize=256`: `cmp` finds them identical.
+- **AC 3 — met.** Research D-19 names the property, and its stale watch on 64 I/O threads is amended.
+- `MetricsTest::the build info names the allocator page size the binary was built with`; a mutant
+  dropping the line is caught by it. A first mutation made with `sed` matched nothing after the
+  formatter and ran green on unchanged code — the empty `git diff` said so, and it was redone.
