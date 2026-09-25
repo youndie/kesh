@@ -1,7 +1,7 @@
 ---
 id: B-14
 title: "Snapshots: the format, SAVE, load at startup, torn-save safety, and their measured cost"
-status: open
+status: wip
 priority: P1
 size: L
 stage: stage-4-persistence
