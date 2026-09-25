@@ -11,7 +11,9 @@ import io.ktor.utils.io.ByteReadChannel
 import io.ktor.utils.io.ByteWriteChannel
 import io.ktor.utils.io.readAvailable
 import io.ktor.utils.io.writeFully
+import kotlinx.cinterop.ByteVar
 import kotlinx.cinterop.ExperimentalForeignApi
+import kotlinx.cinterop.allocArray
 import kotlinx.cinterop.cstr
 import kotlinx.cinterop.memScoped
 import kotlinx.cinterop.pointed
@@ -23,6 +25,9 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withTimeout
 import platform.posix.closedir
+import platform.posix.fclose
+import platform.posix.fgets
+import platform.posix.fopen
 import platform.posix.mkdtemp
 import platform.posix.opendir
 import platform.posix.readdir
@@ -104,6 +109,19 @@ class BackgroundSaveTest {
         closedir(dir)
         return names.filter { it != "." && it != ".." }
     }
+
+    /** This process's children, reaped or not: every thread's, since the store thread is the one that forks. */
+    private fun children(): List<String> =
+        filesIn("/proc/self/task").flatMap { task ->
+            val file = fopen("/proc/self/task/$task/children", "r") ?: return@flatMap emptyList<String>()
+            val text =
+                memScoped {
+                    val line = allocArray<ByteVar>(4096)
+                    fgets(line, 4096, file)?.toKString() ?: ""
+                }
+            fclose(file)
+            text.split(' ').filter { it.isNotBlank() }
+        }
 
     @Test
     fun `BGSAVE writes the dataset as it was at the fork and LASTSAVE moves when it ends`() =
@@ -191,6 +209,7 @@ class BackgroundSaveTest {
                 server.close()
                 selector.close()
             }
+            assertEquals(emptyList(), children(), "the child outlived the stop, or was never reaped")
             assertEquals(snapshotBefore, filesIn(directory), "the child's temporary file outlived the stop")
         }
 
