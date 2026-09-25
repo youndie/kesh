@@ -1,7 +1,7 @@
 ---
 id: B-10
 title: "SCAN, HSCAN, SSCAN, ZSCAN with the completeness guarantee"
-status: open
+status: wip
 priority: P1
 size: M
 stage: stage-2-types
