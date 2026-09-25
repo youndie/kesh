@@ -49,11 +49,13 @@ is closed. A document for a feature not built yet is written in the item's own b
 
 ## The backlog loop merges its own branches
 
-Decided by the owner on 2026-09-24. There is no remote yet, so an item's "pull request" is its local
-branch `feat/b-<nn>-<slug>`. When the item is `done`, the gate is green on the branch and the
-acceptance was walked, the loop fast-forwards `main` to it (rebasing first if `main` moved), runs
-`make gate` and `docs_check.py --on-main` on `main`. Once a remote exists, this becomes: push, open the pull
-request, merge when green.
+Decided by the owner on 2026-09-24. **The repository is public on GitHub, `youndie/kesh`, since
+2026-09-25.** The loop pushes its branch `feat/b-<nn>-<slug>`, opens a pull request, and merges it
+when the item is `done`, the acceptance was walked, CI is green on the branch's head, and the code
+suites below passed on the build machine — CI runs the documentation gate only, not the code. It
+merges fast-forward (rebasing first if `main` moved), then runs `make gate` and
+`docs_check.py --on-main` on `main`. Until the push, work that exists only in a local branch does
+not exist for the next session.
 
 ## Where things run
 
