@@ -1,0 +1,1 @@
+catalogue: 1250000 sessions, 250000 profiles, 375000 counters, 37500 feeds, 62500 tag sets, 250 boards

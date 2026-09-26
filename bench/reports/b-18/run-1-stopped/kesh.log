@@ -1,0 +1,9 @@
+kesh: listening on <subject address>:6379, maxclients 992
+kesh: probes and metrics on <subject address>:8080
+SIGNAL COMPLETED in 9.248us
+ANNOUNCE COMPLETED in 5.000316666s
+DRAIN COMPLETED in 1.690690ms
+RELEASE_CONSUMERS COMPLETED in 1.047us
+RELEASE_POOLS COMPLETED in 600ns
+RELEASE_TELEMETRY COMPLETED in 380ns
+EXIT COMPLETED in 373ns

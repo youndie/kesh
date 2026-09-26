@@ -59,3 +59,17 @@ the data stays on the generator host (`~/kesh-soak/soak/`: `hours.tsv`, `hour-N.
 `metrics-N.txt`) and the subject host (`~/kesh-soak/rss.txt`, sampled each minute). Next: collect those,
 decide with the owner whether six hours answer research R-2 or a new 24 h run is needed — a new run
 would take the binary with B-31's collector metrics, which the stopped one did not have.
+
+### Iteration 3 — 2026-09-26: run 2 started
+
+The owner asked for the soak again. **Run 1** (six whole hours, stopped) is kept as it was collected, in
+`bench/reports/b-18/run-1-stopped/` — `hours.tsv`, the hourly outputs and `/metrics`, `rss.txt` — and moved
+aside on both hosts; the subject address in its `kesh.log` is replaced by a placeholder. Its six hours
+held resident memory at 1.91 → 1.87 × `used_memory`, with no error.
+
+**Run 2 started 2026-09-26 17:46 UTC, due about 2026-09-27 17:47 UTC.** kesh at `main` `84d77ea` (md5
+`36382908…`): the build with B-31's collector metrics, so each hour's `metrics-N.txt` now carries the
+pauses too. The same generator as run 1, B-17 and B-28 (`kesh-load` md5 `b06b43b7…`), an eighth of §5a
+loaded in 42.7 s with no error, pipeline 1, 24 runs of an hour. The subject side is now a script,
+`bench/soak/subject.sh` (kesh detached, resident memory every minute into `rss.txt`, killed above 7 GB);
+run 1's was typed by hand. The subject host's database container is still running, as decided.
