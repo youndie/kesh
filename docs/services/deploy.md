@@ -45,8 +45,9 @@ from `maxmemory` and `values.measured`:
   `KESH_TERMINATION_GRACE_SECONDS`), and kore refuses at startup a plan that does not fit.
 * **The startup probe's budget** = twice a full load (10.1 s per GiB, B-14) + 10 s.
 * **The memory limit** = `maxmemory` × 3.3 (resident over `used_memory` at its peak under the
-  reference load, B-28) × 1.2 for a day's drift + 64 MiB for the empty process. **The 1.2 is a placeholder** until B-18
-  measures the drift, and `values.yaml` says so. Until B-28 the ratio was B-11's 2.8, taken without
+  reference load, B-28) × 1.05 for a day's drift + 64 MiB for the empty process. The 1.05 is B-18's: over
+  24 h of TTL churn resident memory did not grow at all, and its ratio to `used_memory` rose 4 % as the
+  data shrank under it (`bench/reports/b-18/`); until then it was a placeholder 1.2. Until B-28 the ratio was B-11's 2.8, taken without
   traffic; under traffic the old transport reached 5.3 × and an OOM kill (research R-8). The Kotlin/Native runtime does not see the limit;
   kesh checks `maxmemory` against it through kore at the same 3.3, which the chart passes as
   `KESH_RESIDENT_PEAK_RATIO_TENTHS` (B-26): a `maxmemory` the limit cannot hold does not start.
@@ -55,7 +56,7 @@ from `maxmemory` and `values.measured`:
   and the OOM killer takes the larger process. Nothing in kesh issues one; the save on stop is a
   `SAVE`. A `BGSAVE` in a pod near its limit is the operator's to size for.
 
-For `maxmemory` 1 GiB that is a 30 s grace period, a 32 s startup budget and a 4.0 GiB limit.
+For `maxmemory` 1 GiB that is a 30 s grace period, a 32 s startup budget and a 3.53 GiB limit.
 
 ## 5. Infrastructure and deploy
 
@@ -73,8 +74,8 @@ For `maxmemory` 1 GiB that is a 30 s grace period, a 32 s startup budget and a 4
 
 * **A replica count above one fails rendering**, not deploys two independent stores behind one
   service that clients would treat as one.
-* **The memory limit is expensive by measurement, not by caution**: 4.0 GiB for 1 GiB of data is
-  B-28's 3.3 under load with B-18's placeholder drift. Lowering it without a new measurement turns the
+* **The memory limit is expensive by measurement, not by caution**: 3.53 GiB for 1 GiB of data is
+  B-28's 3.3 under load with B-18's measured drift. Lowering it without a new measurement turns the
   next load peak into an OOM kill.
 * **Buildx warns about `FROM --platform=linux/amd64`** being constant. It is deliberate: the image
   wants the `linuxX64` binary whatever host builds it.

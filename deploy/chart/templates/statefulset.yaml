@@ -96,7 +96,7 @@ spec:
               memory: {{ include "kesh.memoryLimit" . | quote }}
             limits:
               # maxmemory {{ .Values.maxmemory | int64 }} B x {{ .Values.measured.residentPeakRatioTenths }}/10 (peak ratio under load, B-28)
-              # x (100 + {{ .Values.measured.dailyDriftPercent }})/100 (drift: PLACEHOLDER until B-18)
+              # x (100 + {{ .Values.measured.dailyDriftPercent }})/100 (a day's drift, B-18)
               # + {{ .Values.measured.processBaseBytes | int64 }} B for the empty process.
               memory: {{ include "kesh.memoryLimit" . | quote }}
           securityContext:

@@ -1,0 +1,4 @@
+kesh: built with 256 KiB allocator pages
+kesh: memory budget no limit (/sys/fs/cgroup/user.slice/user-0.slice/session-10247.scope/memory.max): maxmemory is not checked against it
+kesh: listening on <subject address>:6379, maxclients 992
+kesh: probes and metrics on <subject address>:8080

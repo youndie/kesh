@@ -37,9 +37,9 @@ stop; in B-17 and B-28: the reference load report (`bench/reports/b-17`, `b-28`)
   whole, saves if configured (`KESH_SAVE_ON_SHUTDOWN`), and exits** within the chart's grace period —
   which is derived from B-14's measured `SAVE` time, not chosen (research R-5, D-29). A command whose
   bytes arrived is either executed and answered, or not executed; never executed and left unanswered.
-* The chart's memory limit is derived from `maxmemory` and B-11's measured peak ratio, with a
-  placeholder for the day's drift until B-18 measures it ([deploy](../services/deploy.md)); the
-  runtime cannot see the limit (research §1.2).
+* The chart's memory limit is derived from `maxmemory`, B-28's measured peak ratio under load and
+  B-18's measured drift over a day ([deploy](../services/deploy.md)); the runtime cannot see the limit,
+  and kesh refuses a `maxmemory` it cannot hold (B-26).
 
 ## 3. Flow
 

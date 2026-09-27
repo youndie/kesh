@@ -1,7 +1,7 @@
 ---
 id: B-18
 title: "24 h soak with TTL churn"
-status: wip
+status: done
 priority: P2
 size: S
 stage: stage-6-capacity
@@ -73,3 +73,17 @@ pauses too. The same generator as run 1, B-17 and B-28 (`kesh-load` md5 `b06b43b
 loaded in 42.7 s with no error, pipeline 1, 24 runs of an hour. The subject side is now a script,
 `bench/soak/subject.sh` (kesh detached, resident memory every minute into `rss.txt`, killed above 7 GB);
 run 1's was typed by hand. The subject host's database container is still running, as decided.
+
+### Iteration 4 — 2026-09-27: done
+
+Run 2 ran its 24 hours, 2026-09-26 17:46 → 2026-09-27 17:50 UTC; kesh was then stopped with `SIGTERM`
+and both hosts left idle. `bench/reports/b-18/`.
+
+- **AC 1 — met.** No crash, 0 error replies in 24 runs; the per-hour table of resident memory,
+  `used_memory`, their ratio and the latency percentiles is `run-2/soak/hours.tsv`, summarised in the
+  report, with resident memory each minute in `run-2/rss.txt`.
+- **AC 2 — met.** Research R-2: bounded — resident memory flat for the last fourteen hours, the ratio
+  up 4 % as the data shrank. The chart's `dailyDriftPercent` is 5, measured, in place of the placeholder
+  20; for 1 GiB of `maxmemory` the limit is 3.53 GiB (`helm template`), was 4.0.
+- Beyond the item: the collector's pauses over the day, from B-31's metrics — no drift; the client's
+  p99.9 is not the pause.

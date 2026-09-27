@@ -1,0 +1,61 @@
+$1270
+# Server
+redis_version:7.2.0
+redis_mode:standalone
+os:Linux 7.0.0-30-generic x86_64
+arch_bits:64
+multiplexing_api:select
+process_id:2002879
+run_id:2b8ae9579499c449ef92d1f51e5c3a9408e863cf
+tcp_port:6379
+server_time_usec:1790531866401000
+uptime_in_seconds:87153
+uptime_in_days:1
+hz:10
+configured_hz:10
+lru_clock:12146970
+executable:<soak dir>/kesh-soak.kexe
+config_file:
+
+# Clients
+connected_clients:1
+maxclients:992
+blocked_clients:0
+
+# Memory
+used_memory:1395906712
+used_memory_human:1.30G
+used_memory_rss:2669621248
+used_memory_rss_human:2.49G
+used_memory_peak:1469236176
+used_memory_peak_human:1.37G
+maxmemory:0
+maxmemory_human:0B
+maxmemory_policy:noeviction
+
+# Persistence
+loading:0
+rdb_bgsave_in_progress:0
+rdb_last_save_time:1790444713
+rdb_last_bgsave_status:ok
+rdb_last_bgsave_time_sec:-1
+rdb_current_bgsave_time_sec:-1
+rdb_saves:0
+rdb_last_load_keys_loaded:0
+aof_enabled:0
+
+# Stats
+total_connections_received:1202
+total_commands_processed:1280983213
+rejected_connections:0
+expired_keys:574828
+expired_stale_perc:0.28
+expired_time_cap_reached_count:35
+expire_cycle_cpu_milliseconds:40230
+evicted_keys:0
+pubsub_channels:0
+pubsub_patterns:0
+
+# Keyspace
+db0:keys=1646115,expires=600399,avg_ttl=42051034
+

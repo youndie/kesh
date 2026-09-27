@@ -1,0 +1,361 @@
+# HELP kesh_resident_memory_bytes Resident memory of the process (VmRSS).
+# TYPE kesh_resident_memory_bytes gauge
+kesh_resident_memory_bytes 2661494784
+# HELP kesh_threads Threads of the process.
+# TYPE kesh_threads gauge
+kesh_threads 5
+# HELP kesh_build_info How this binary was built; the value is always 1.
+# TYPE kesh_build_info gauge
+kesh_build_info{allocator_page_size_kb="256"} 1
+# HELP kesh_used_memory_bytes The dataset as kesh accounts for it: INFO used_memory.
+# TYPE kesh_used_memory_bytes gauge
+kesh_used_memory_bytes 1438449320
+# HELP kesh_maxmemory_bytes maxmemory; 0 for no limit.
+# TYPE kesh_maxmemory_bytes gauge
+kesh_maxmemory_bytes 0
+# HELP kesh_keys Keys in the keyspace.
+# TYPE kesh_keys gauge
+kesh_keys 1750531
+# HELP kesh_keys_with_expiry Keys that have an expiry.
+# TYPE kesh_keys_with_expiry gauge
+kesh_keys_with_expiry 704815
+# HELP kesh_expired_keys_total Keys deleted because their time had passed.
+# TYPE kesh_expired_keys_total counter
+kesh_expired_keys_total 467526
+# HELP kesh_evicted_keys_total Keys evicted by maxmemory-policy.
+# TYPE kesh_evicted_keys_total counter
+kesh_evicted_keys_total 0
+# HELP kesh_connected_clients RESP connections open now.
+# TYPE kesh_connected_clients gauge
+kesh_connected_clients 0
+# HELP kesh_connections_received_total RESP connections accepted.
+# TYPE kesh_connections_received_total counter
+kesh_connections_received_total 601
+# HELP kesh_rejected_connections_total RESP connections refused at maxclients.
+# TYPE kesh_rejected_connections_total counter
+kesh_rejected_connections_total 0
+# HELP kesh_pubsub_channels Channels with at least one subscriber.
+# TYPE kesh_pubsub_channels gauge
+kesh_pubsub_channels 0
+# HELP kesh_pubsub_patterns Patterns with at least one subscriber.
+# TYPE kesh_pubsub_patterns gauge
+kesh_pubsub_patterns 0
+# HELP kesh_command_duration_seconds Time each command took on the store thread, by command.
+# TYPE kesh_command_duration_seconds histogram
+kesh_command_duration_seconds_bucket{command="get",le="0.00005"} 252344942
+kesh_command_duration_seconds_bucket{command="get",le="0.0001"} 252633336
+kesh_command_duration_seconds_bucket{command="get",le="0.00025"} 252675614
+kesh_command_duration_seconds_bucket{command="get",le="0.0005"} 252678058
+kesh_command_duration_seconds_bucket{command="get",le="0.001"} 252679565
+kesh_command_duration_seconds_bucket{command="get",le="0.0025"} 252680302
+kesh_command_duration_seconds_bucket{command="get",le="0.005"} 252680514
+kesh_command_duration_seconds_bucket{command="get",le="0.01"} 252680617
+kesh_command_duration_seconds_bucket{command="get",le="0.025"} 252680620
+kesh_command_duration_seconds_bucket{command="get",le="0.05"} 252680620
+kesh_command_duration_seconds_bucket{command="get",le="0.1"} 252680620
+kesh_command_duration_seconds_bucket{command="get",le="0.25"} 252680620
+kesh_command_duration_seconds_bucket{command="get",le="1"} 252680620
+kesh_command_duration_seconds_bucket{command="get",le="+Inf"} 252680620
+kesh_command_duration_seconds_sum{command="get"} 627.935543
+kesh_command_duration_seconds_count{command="get"} 252680620
+kesh_command_duration_seconds_bucket{command="hget",le="0.00005"} 94610317
+kesh_command_duration_seconds_bucket{command="hget",le="0.0001"} 94742890
+kesh_command_duration_seconds_bucket{command="hget",le="0.00025"} 94762810
+kesh_command_duration_seconds_bucket{command="hget",le="0.0005"} 94764179
+kesh_command_duration_seconds_bucket{command="hget",le="0.001"} 94765029
+kesh_command_duration_seconds_bucket{command="hget",le="0.0025"} 94765417
+kesh_command_duration_seconds_bucket{command="hget",le="0.005"} 94765522
+kesh_command_duration_seconds_bucket{command="hget",le="0.01"} 94765570
+kesh_command_duration_seconds_bucket{command="hget",le="0.025"} 94765572
+kesh_command_duration_seconds_bucket{command="hget",le="0.05"} 94765572
+kesh_command_duration_seconds_bucket{command="hget",le="0.1"} 94765572
+kesh_command_duration_seconds_bucket{command="hget",le="0.25"} 94765572
+kesh_command_duration_seconds_bucket{command="hget",le="1"} 94765572
+kesh_command_duration_seconds_bucket{command="hget",le="+Inf"} 94765572
+kesh_command_duration_seconds_sum{command="hget"} 285.868789
+kesh_command_duration_seconds_count{command="hget"} 94765572
+kesh_command_duration_seconds_bucket{command="hgetall",le="0.00005"} 31164904
+kesh_command_duration_seconds_bucket{command="hgetall",le="0.0001"} 31496638
+kesh_command_duration_seconds_bucket{command="hgetall",le="0.00025"} 31559712
+kesh_command_duration_seconds_bucket{command="hgetall",le="0.0005"} 31571387
+kesh_command_duration_seconds_bucket{command="hgetall",le="0.001"} 31575613
+kesh_command_duration_seconds_bucket{command="hgetall",le="0.0025"} 31577006
+kesh_command_duration_seconds_bucket{command="hgetall",le="0.005"} 31577468
+kesh_command_duration_seconds_bucket{command="hgetall",le="0.01"} 31577600
+kesh_command_duration_seconds_bucket{command="hgetall",le="0.025"} 31577616
+kesh_command_duration_seconds_bucket{command="hgetall",le="0.05"} 31577616
+kesh_command_duration_seconds_bucket{command="hgetall",le="0.1"} 31577616
+kesh_command_duration_seconds_bucket{command="hgetall",le="0.25"} 31577616
+kesh_command_duration_seconds_bucket{command="hgetall",le="1"} 31577616
+kesh_command_duration_seconds_bucket{command="hgetall",le="+Inf"} 31577616
+kesh_command_duration_seconds_sum{command="hgetall"} 397.835088
+kesh_command_duration_seconds_count{command="hgetall"} 31577616
+kesh_command_duration_seconds_bucket{command="hset",le="0.00005"} 25398020
+kesh_command_duration_seconds_bucket{command="hset",le="0.0001"} 25509086
+kesh_command_duration_seconds_bucket{command="hset",le="0.00025"} 25528478
+kesh_command_duration_seconds_bucket{command="hset",le="0.0005"} 25529873
+kesh_command_duration_seconds_bucket{command="hset",le="0.001"} 25530290
+kesh_command_duration_seconds_bucket{command="hset",le="0.0025"} 25530485
+kesh_command_duration_seconds_bucket{command="hset",le="0.005"} 25530525
+kesh_command_duration_seconds_bucket{command="hset",le="0.01"} 25530545
+kesh_command_duration_seconds_bucket{command="hset",le="0.025"} 25530545
+kesh_command_duration_seconds_bucket{command="hset",le="0.05"} 25530545
+kesh_command_duration_seconds_bucket{command="hset",le="0.1"} 25530545
+kesh_command_duration_seconds_bucket{command="hset",le="0.25"} 25530545
+kesh_command_duration_seconds_bucket{command="hset",le="1"} 25530546
+kesh_command_duration_seconds_bucket{command="hset",le="+Inf"} 25530549
+kesh_command_duration_seconds_sum{command="hset"} 177.139811
+kesh_command_duration_seconds_count{command="hset"} 25530549
+kesh_command_duration_seconds_bucket{command="incr",le="0.00005"} 25186665
+kesh_command_duration_seconds_bucket{command="incr",le="0.0001"} 25258100
+kesh_command_duration_seconds_bucket{command="incr",le="0.00025"} 25269573
+kesh_command_duration_seconds_bucket{command="incr",le="0.0005"} 25270347
+kesh_command_duration_seconds_bucket{command="incr",le="0.001"} 25270649
+kesh_command_duration_seconds_bucket{command="incr",le="0.0025"} 25270801
+kesh_command_duration_seconds_bucket{command="incr",le="0.005"} 25270826
+kesh_command_duration_seconds_bucket{command="incr",le="0.01"} 25270837
+kesh_command_duration_seconds_bucket{command="incr",le="0.025"} 25270838
+kesh_command_duration_seconds_bucket{command="incr",le="0.05"} 25270838
+kesh_command_duration_seconds_bucket{command="incr",le="0.1"} 25270838
+kesh_command_duration_seconds_bucket{command="incr",le="0.25"} 25270838
+kesh_command_duration_seconds_bucket{command="incr",le="1"} 25270838
+kesh_command_duration_seconds_bucket{command="incr",le="+Inf"} 25270838
+kesh_command_duration_seconds_sum{command="incr"} 128.787006
+kesh_command_duration_seconds_count{command="incr"} 25270838
+kesh_command_duration_seconds_bucket{command="lpush",le="0.00005"} 12505073
+kesh_command_duration_seconds_bucket{command="lpush",le="0.0001"} 12616462
+kesh_command_duration_seconds_bucket{command="lpush",le="0.00025"} 12632239
+kesh_command_duration_seconds_bucket{command="lpush",le="0.0005"} 12632882
+kesh_command_duration_seconds_bucket{command="lpush",le="0.001"} 12633048
+kesh_command_duration_seconds_bucket{command="lpush",le="0.0025"} 12633137
+kesh_command_duration_seconds_bucket{command="lpush",le="0.005"} 12633168
+kesh_command_duration_seconds_bucket{command="lpush",le="0.01"} 12633174
+kesh_command_duration_seconds_bucket{command="lpush",le="0.025"} 12633174
+kesh_command_duration_seconds_bucket{command="lpush",le="0.05"} 12633174
+kesh_command_duration_seconds_bucket{command="lpush",le="0.1"} 12633174
+kesh_command_duration_seconds_bucket{command="lpush",le="0.25"} 12633174
+kesh_command_duration_seconds_bucket{command="lpush",le="1"} 12633174
+kesh_command_duration_seconds_bucket{command="lpush",le="+Inf"} 12633174
+kesh_command_duration_seconds_sum{command="lpush"} 95.893249
+kesh_command_duration_seconds_count{command="lpush"} 12633174
+kesh_command_duration_seconds_bucket{command="lrange",le="0.00005"} 62510750
+kesh_command_duration_seconds_bucket{command="lrange",le="0.0001"} 63025015
+kesh_command_duration_seconds_bucket{command="lrange",le="0.00025"} 63112253
+kesh_command_duration_seconds_bucket{command="lrange",le="0.0005"} 63122201
+kesh_command_duration_seconds_bucket{command="lrange",le="0.001"} 63124852
+kesh_command_duration_seconds_bucket{command="lrange",le="0.0025"} 63125726
+kesh_command_duration_seconds_bucket{command="lrange",le="0.005"} 63125904
+kesh_command_duration_seconds_bucket{command="lrange",le="0.01"} 63125944
+kesh_command_duration_seconds_bucket{command="lrange",le="0.025"} 63125945
+kesh_command_duration_seconds_bucket{command="lrange",le="0.05"} 63125945
+kesh_command_duration_seconds_bucket{command="lrange",le="0.1"} 63125945
+kesh_command_duration_seconds_bucket{command="lrange",le="0.25"} 63125945
+kesh_command_duration_seconds_bucket{command="lrange",le="1"} 63125945
+kesh_command_duration_seconds_bucket{command="lrange",le="+Inf"} 63125945
+kesh_command_duration_seconds_sum{command="lrange"} 680.710338
+kesh_command_duration_seconds_count{command="lrange"} 63125945
+kesh_command_duration_seconds_bucket{command="ltrim",le="0.00005"} 12576236
+kesh_command_duration_seconds_bucket{command="ltrim",le="0.0001"} 12625486
+kesh_command_duration_seconds_bucket{command="ltrim",le="0.00025"} 12632625
+kesh_command_duration_seconds_bucket{command="ltrim",le="0.0005"} 12633010
+kesh_command_duration_seconds_bucket{command="ltrim",le="0.001"} 12633110
+kesh_command_duration_seconds_bucket{command="ltrim",le="0.0025"} 12633159
+kesh_command_duration_seconds_bucket{command="ltrim",le="0.005"} 12633172
+kesh_command_duration_seconds_bucket{command="ltrim",le="0.01"} 12633174
+kesh_command_duration_seconds_bucket{command="ltrim",le="0.025"} 12633174
+kesh_command_duration_seconds_bucket{command="ltrim",le="0.05"} 12633174
+kesh_command_duration_seconds_bucket{command="ltrim",le="0.1"} 12633174
+kesh_command_duration_seconds_bucket{command="ltrim",le="0.25"} 12633174
+kesh_command_duration_seconds_bucket{command="ltrim",le="1"} 12633174
+kesh_command_duration_seconds_bucket{command="ltrim",le="+Inf"} 12633174
+kesh_command_duration_seconds_sum{command="ltrim"} 64.93318
+kesh_command_duration_seconds_count{command="ltrim"} 12633174
+kesh_command_duration_seconds_bucket{command="ping",le="0.00005"} 1
+kesh_command_duration_seconds_bucket{command="ping",le="0.0001"} 1
+kesh_command_duration_seconds_bucket{command="ping",le="0.00025"} 1
+kesh_command_duration_seconds_bucket{command="ping",le="0.0005"} 1
+kesh_command_duration_seconds_bucket{command="ping",le="0.001"} 1
+kesh_command_duration_seconds_bucket{command="ping",le="0.0025"} 1
+kesh_command_duration_seconds_bucket{command="ping",le="0.005"} 1
+kesh_command_duration_seconds_bucket{command="ping",le="0.01"} 1
+kesh_command_duration_seconds_bucket{command="ping",le="0.025"} 1
+kesh_command_duration_seconds_bucket{command="ping",le="0.05"} 1
+kesh_command_duration_seconds_bucket{command="ping",le="0.1"} 1
+kesh_command_duration_seconds_bucket{command="ping",le="0.25"} 1
+kesh_command_duration_seconds_bucket{command="ping",le="1"} 1
+kesh_command_duration_seconds_bucket{command="ping",le="+Inf"} 1
+kesh_command_duration_seconds_sum{command="ping"} 0.000008
+kesh_command_duration_seconds_count{command="ping"} 1
+kesh_command_duration_seconds_bucket{command="rpush",le="0.00005"} 29568
+kesh_command_duration_seconds_bucket{command="rpush",le="0.0001"} 35760
+kesh_command_duration_seconds_bucket{command="rpush",le="0.00025"} 36869
+kesh_command_duration_seconds_bucket{command="rpush",le="0.0005"} 37462
+kesh_command_duration_seconds_bucket{command="rpush",le="0.001"} 37496
+kesh_command_duration_seconds_bucket{command="rpush",le="0.0025"} 37497
+kesh_command_duration_seconds_bucket{command="rpush",le="0.005"} 37497
+kesh_command_duration_seconds_bucket{command="rpush",le="0.01"} 37497
+kesh_command_duration_seconds_bucket{command="rpush",le="0.025"} 37497
+kesh_command_duration_seconds_bucket{command="rpush",le="0.05"} 37497
+kesh_command_duration_seconds_bucket{command="rpush",le="0.1"} 37497
+kesh_command_duration_seconds_bucket{command="rpush",le="0.25"} 37497
+kesh_command_duration_seconds_bucket{command="rpush",le="1"} 37498
+kesh_command_duration_seconds_bucket{command="rpush",le="+Inf"} 37500
+kesh_command_duration_seconds_sum{command="rpush"} 5.863562
+kesh_command_duration_seconds_count{command="rpush"} 37500
+kesh_command_duration_seconds_bucket{command="sadd",le="0.00005"} 62415
+kesh_command_duration_seconds_bucket{command="sadd",le="0.0001"} 62434
+kesh_command_duration_seconds_bucket{command="sadd",le="0.00025"} 62499
+kesh_command_duration_seconds_bucket{command="sadd",le="0.0005"} 62500
+kesh_command_duration_seconds_bucket{command="sadd",le="0.001"} 62500
+kesh_command_duration_seconds_bucket{command="sadd",le="0.0025"} 62500
+kesh_command_duration_seconds_bucket{command="sadd",le="0.005"} 62500
+kesh_command_duration_seconds_bucket{command="sadd",le="0.01"} 62500
+kesh_command_duration_seconds_bucket{command="sadd",le="0.025"} 62500
+kesh_command_duration_seconds_bucket{command="sadd",le="0.05"} 62500
+kesh_command_duration_seconds_bucket{command="sadd",le="0.1"} 62500
+kesh_command_duration_seconds_bucket{command="sadd",le="0.25"} 62500
+kesh_command_duration_seconds_bucket{command="sadd",le="1"} 62500
+kesh_command_duration_seconds_bucket{command="sadd",le="+Inf"} 62500
+kesh_command_duration_seconds_sum{command="sadd"} 0.282042
+kesh_command_duration_seconds_count{command="sadd"} 62500
+kesh_command_duration_seconds_bucket{command="set",le="0.00005"} 51991266
+kesh_command_duration_seconds_bucket{command="set",le="0.0001"} 52164569
+kesh_command_duration_seconds_bucket{command="set",le="0.00025"} 52192332
+kesh_command_duration_seconds_bucket{command="set",le="0.0005"} 52194040
+kesh_command_duration_seconds_bucket{command="set",le="0.001"} 52194655
+kesh_command_duration_seconds_bucket{command="set",le="0.0025"} 52194959
+kesh_command_duration_seconds_bucket{command="set",le="0.005"} 52195036
+kesh_command_duration_seconds_bucket{command="set",le="0.01"} 52195063
+kesh_command_duration_seconds_bucket{command="set",le="0.025"} 52195066
+kesh_command_duration_seconds_bucket{command="set",le="0.05"} 52195067
+kesh_command_duration_seconds_bucket{command="set",le="0.1"} 52195067
+kesh_command_duration_seconds_bucket{command="set",le="0.25"} 52195067
+kesh_command_duration_seconds_bucket{command="set",le="1"} 52195067
+kesh_command_duration_seconds_bucket{command="set",le="+Inf"} 52195067
+kesh_command_duration_seconds_sum{command="set"} 296.705284
+kesh_command_duration_seconds_count{command="set"} 52195067
+kesh_command_duration_seconds_bucket{command="sismember",le="0.00005"} 31535888
+kesh_command_duration_seconds_bucket{command="sismember",le="0.0001"} 31586170
+kesh_command_duration_seconds_bucket{command="sismember",le="0.00025"} 31593441
+kesh_command_duration_seconds_bucket{command="sismember",le="0.0005"} 31593858
+kesh_command_duration_seconds_bucket{command="sismember",le="0.001"} 31594096
+kesh_command_duration_seconds_bucket{command="sismember",le="0.0025"} 31594204
+kesh_command_duration_seconds_bucket{command="sismember",le="0.005"} 31594245
+kesh_command_duration_seconds_bucket{command="sismember",le="0.01"} 31594261
+kesh_command_duration_seconds_bucket{command="sismember",le="0.025"} 31594262
+kesh_command_duration_seconds_bucket{command="sismember",le="0.05"} 31594262
+kesh_command_duration_seconds_bucket{command="sismember",le="0.1"} 31594262
+kesh_command_duration_seconds_bucket{command="sismember",le="0.25"} 31594262
+kesh_command_duration_seconds_bucket{command="sismember",le="1"} 31594262
+kesh_command_duration_seconds_bucket{command="sismember",le="+Inf"} 31594262
+kesh_command_duration_seconds_sum{command="sismember"} 107.055527
+kesh_command_duration_seconds_count{command="sismember"} 31594262
+kesh_command_duration_seconds_bucket{command="zadd",le="0.00005"} 7
+kesh_command_duration_seconds_bucket{command="zadd",le="0.0001"} 16
+kesh_command_duration_seconds_bucket{command="zadd",le="0.00025"} 38
+kesh_command_duration_seconds_bucket{command="zadd",le="0.0005"} 57
+kesh_command_duration_seconds_bucket{command="zadd",le="0.001"} 111
+kesh_command_duration_seconds_bucket{command="zadd",le="0.0025"} 892
+kesh_command_duration_seconds_bucket{command="zadd",le="0.005"} 2458
+kesh_command_duration_seconds_bucket{command="zadd",le="0.01"} 2567
+kesh_command_duration_seconds_bucket{command="zadd",le="0.025"} 2568
+kesh_command_duration_seconds_bucket{command="zadd",le="0.05"} 2568
+kesh_command_duration_seconds_bucket{command="zadd",le="0.1"} 2568
+kesh_command_duration_seconds_bucket{command="zadd",le="0.25"} 2568
+kesh_command_duration_seconds_bucket{command="zadd",le="1"} 2568
+kesh_command_duration_seconds_bucket{command="zadd",le="+Inf"} 2570
+kesh_command_duration_seconds_sum{command="zadd"} 11.081471
+kesh_command_duration_seconds_count{command="zadd"} 2570
+kesh_command_duration_seconds_bucket{command="zincrby",le="0.00005"} 6204486
+kesh_command_duration_seconds_bucket{command="zincrby",le="0.0001"} 11782039
+kesh_command_duration_seconds_bucket{command="zincrby",le="0.00025"} 12629984
+kesh_command_duration_seconds_bucket{command="zincrby",le="0.0005"} 12651053
+kesh_command_duration_seconds_bucket{command="zincrby",le="0.001"} 12653710
+kesh_command_duration_seconds_bucket{command="zincrby",le="0.0025"} 12655103
+kesh_command_duration_seconds_bucket{command="zincrby",le="0.005"} 12655438
+kesh_command_duration_seconds_bucket{command="zincrby",le="0.01"} 12655524
+kesh_command_duration_seconds_bucket{command="zincrby",le="0.025"} 12655528
+kesh_command_duration_seconds_bucket{command="zincrby",le="0.05"} 12655528
+kesh_command_duration_seconds_bucket{command="zincrby",le="0.1"} 12655528
+kesh_command_duration_seconds_bucket{command="zincrby",le="0.25"} 12655528
+kesh_command_duration_seconds_bucket{command="zincrby",le="1"} 12655528
+kesh_command_duration_seconds_bucket{command="zincrby",le="+Inf"} 12655528
+kesh_command_duration_seconds_sum{command="zincrby"} 734.882796
+kesh_command_duration_seconds_count{command="zincrby"} 12655528
+kesh_command_duration_seconds_bucket{command="zrevrange",le="0.00005"} 29433675
+kesh_command_duration_seconds_bucket{command="zrevrange",le="0.0001"} 31343524
+kesh_command_duration_seconds_bucket{command="zrevrange",le="0.00025"} 31588763
+kesh_command_duration_seconds_bucket{command="zrevrange",le="0.0005"} 31599680
+kesh_command_duration_seconds_bucket{command="zrevrange",le="0.001"} 31602317
+kesh_command_duration_seconds_bucket{command="zrevrange",le="0.0025"} 31603662
+kesh_command_duration_seconds_bucket{command="zrevrange",le="0.005"} 31604034
+kesh_command_duration_seconds_bucket{command="zrevrange",le="0.01"} 31604104
+kesh_command_duration_seconds_bucket{command="zrevrange",le="0.025"} 31604106
+kesh_command_duration_seconds_bucket{command="zrevrange",le="0.05"} 31604106
+kesh_command_duration_seconds_bucket{command="zrevrange",le="0.1"} 31604106
+kesh_command_duration_seconds_bucket{command="zrevrange",le="0.25"} 31604106
+kesh_command_duration_seconds_bucket{command="zrevrange",le="1"} 31604106
+kesh_command_duration_seconds_bucket{command="zrevrange",le="+Inf"} 31604106
+kesh_command_duration_seconds_sum{command="zrevrange"} 904.478102
+kesh_command_duration_seconds_count{command="zrevrange"} 31604106
+# HELP kesh_gc_pause_seconds The collector's stop-the-world pauses, per collection, by pause (first or second).
+# TYPE kesh_gc_pause_seconds histogram
+kesh_gc_pause_seconds_bucket{pause="first",le="0.00005"} 1513
+kesh_gc_pause_seconds_bucket{pause="first",le="0.0001"} 3862
+kesh_gc_pause_seconds_bucket{pause="first",le="0.00025"} 4327
+kesh_gc_pause_seconds_bucket{pause="first",le="0.0005"} 4345
+kesh_gc_pause_seconds_bucket{pause="first",le="0.001"} 4353
+kesh_gc_pause_seconds_bucket{pause="first",le="0.0025"} 4353
+kesh_gc_pause_seconds_bucket{pause="first",le="0.005"} 4354
+kesh_gc_pause_seconds_bucket{pause="first",le="0.01"} 4354
+kesh_gc_pause_seconds_bucket{pause="first",le="0.025"} 4354
+kesh_gc_pause_seconds_bucket{pause="first",le="0.05"} 4354
+kesh_gc_pause_seconds_bucket{pause="first",le="0.1"} 4354
+kesh_gc_pause_seconds_bucket{pause="first",le="0.25"} 4354
+kesh_gc_pause_seconds_bucket{pause="first",le="1"} 4354
+kesh_gc_pause_seconds_bucket{pause="first",le="+Inf"} 4354
+kesh_gc_pause_seconds_sum{pause="first"} 0.29637
+kesh_gc_pause_seconds_count{pause="first"} 4354
+kesh_gc_pause_seconds_bucket{pause="second",le="0.00005"} 13
+kesh_gc_pause_seconds_bucket{pause="second",le="0.0001"} 15
+kesh_gc_pause_seconds_bucket{pause="second",le="0.00025"} 19
+kesh_gc_pause_seconds_bucket{pause="second",le="0.0005"} 26
+kesh_gc_pause_seconds_bucket{pause="second",le="0.001"} 2231
+kesh_gc_pause_seconds_bucket{pause="second",le="0.0025"} 4342
+kesh_gc_pause_seconds_bucket{pause="second",le="0.005"} 4348
+kesh_gc_pause_seconds_bucket{pause="second",le="0.01"} 4350
+kesh_gc_pause_seconds_bucket{pause="second",le="0.025"} 4353
+kesh_gc_pause_seconds_bucket{pause="second",le="0.05"} 4354
+kesh_gc_pause_seconds_bucket{pause="second",le="0.1"} 4354
+kesh_gc_pause_seconds_bucket{pause="second",le="0.25"} 4354
+kesh_gc_pause_seconds_bucket{pause="second",le="1"} 4354
+kesh_gc_pause_seconds_bucket{pause="second",le="+Inf"} 4354
+kesh_gc_pause_seconds_sum{pause="second"} 4.621145
+kesh_gc_pause_seconds_count{pause="second"} 4354
+# HELP kesh_gc_duration_seconds The collector's collections, start to end.
+# TYPE kesh_gc_duration_seconds histogram
+kesh_gc_duration_seconds_bucket{le="0.00005"} 0
+kesh_gc_duration_seconds_bucket{le="0.0001"} 0
+kesh_gc_duration_seconds_bucket{le="0.00025"} 0
+kesh_gc_duration_seconds_bucket{le="0.0005"} 0
+kesh_gc_duration_seconds_bucket{le="0.001"} 1
+kesh_gc_duration_seconds_bucket{le="0.0025"} 1
+kesh_gc_duration_seconds_bucket{le="0.005"} 1
+kesh_gc_duration_seconds_bucket{le="0.01"} 1
+kesh_gc_duration_seconds_bucket{le="0.025"} 3
+kesh_gc_duration_seconds_bucket{le="0.05"} 5
+kesh_gc_duration_seconds_bucket{le="0.1"} 6
+kesh_gc_duration_seconds_bucket{le="0.25"} 9
+kesh_gc_duration_seconds_bucket{le="1"} 12
+kesh_gc_duration_seconds_bucket{le="+Inf"} 4354
+kesh_gc_duration_seconds_sum 17570.591664
+kesh_gc_duration_seconds_count 4354
+# HELP kesh_gc_collections_total Collections exported to these metrics.
+# TYPE kesh_gc_collections_total counter
+kesh_gc_collections_total 4354
+# HELP kesh_gc_epochs_missed_total Collections that finished and were not exported: two between polls, or before the first.
+# TYPE kesh_gc_epochs_missed_total counter
+kesh_gc_epochs_missed_total 2
+# HELP kesh_gc_marked_objects Objects the last exported collection marked.
+# TYPE kesh_gc_marked_objects gauge
+kesh_gc_marked_objects 21612788

@@ -837,7 +837,15 @@ decision, taken with the numbers.
 collector cannot compact; TTL churn (30 % of sessions, all counters) leaves holes in pages that a
 different size class cannot reuse. Mitigation: B-18 reports resident memory per hour against
 `used_memory`; the chart's memory limit is set from B-11's ratio *plus* B-18's drift, not from
-`maxmemory` alone. Open: whether the drift is bounded.
+`maxmemory` alone. Open: whether the drift is bounded. *Answered in B-18 — bounded* (`bench/reports/b-18/`): 24 hours at
+an eighth of §5a, pipeline 1, on the two-host stand. Resident memory settled in the first hours and
+stayed at 2 536–2 550 MiB for the last fourteen, 7 % under its first hour's peak; `used_memory` fell
+5 % as the churn expired more than the load re-created, so the ratio rose from 1.84 to 1.91 over a heap
+that neither grew nor returned what was freed. The chart's drift is 5 % on that measurement (was a
+placeholder 20). Not shown: a dataset held at `maxmemory` by eviction, and pipeline 16. The same day,
+from B-31's metrics: 361 collections an hour, the second pause 0.8–1.25 ms on average and under 2.5 ms
+at p99, no drift — and a client p99.9 of 176–184 ms that no recorded pause explains (*hypothesis:* the
+assists of R-7).
 
 **R-3. A signal kills the server through `pselect`.** Mechanism: §1.4 — no `EINTR` retry in the
 selector. Mitigation: the graceful-stop scenario runs repeatedly (not once) under load in B-16; no

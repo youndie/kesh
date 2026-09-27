@@ -39,8 +39,10 @@ measured:
   # 4.6 x in all at an eighth (bench/reports/b-25). Nothing in kesh issues a BGSAVE; an operator
   # who does, under load, at this limit, can have the child or the server OOM-killed.
   residentPeakRatioTenths: 33
-  # PLACEHOLDER until B-18 measures what a day of TTL churn adds on top of the peak, in per cent.
-  dailyDriftPercent: 20
+  # What a day of TTL churn adds on top of the peak, in per cent (B-18, bench/reports/b-18): nothing to
+  # resident memory itself, which ended the day 7 % below its first hour's peak; resident over used_memory
+  # rose from 1.84 to 1.91 as the data shrank under it. That rise, +4 %, rounded up.
+  dailyDriftPercent: 5
   # The process with an empty store: 30.6 MB resident, 9 threads, in this image at startup (B-16,
   # its own /metrics), rounded up to 64 MiB.
   processBaseBytes: 67108864
