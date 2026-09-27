@@ -1,0 +1,8 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "description": [
+    "The portfolio's preset from sborka, extended by name and not copied — its schedule, its groups (kotlin, kotlinx, sborka, ci actions), its guard against kotlinx-datetime's -compat builds, and a human for every major.",
+    "NOT sborka's `automerge-harness`. Its precondition is that a pull request runs the build, and here it does not: CI runs the documentation gate only, and the code suites run on the build machine by hand (CLAUDE.md). A gradle-wrapper bump would merge itself with nothing built. Revisit when CI builds the code."
+  ],
+  "extends": ["github>youndie/sborka"]
+}
