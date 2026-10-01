@@ -5,7 +5,7 @@
 [versions]
 # The build conventions. The same number as the settings plugin in settings.gradle.kts, so the
 # conventions and the catalog they were released with are one tested combination.
-sborka = "0.4.0.91"
+sborka = "0.4.0.111"
 
 # Ordered shutdown and probes. On the portfolio's repository, not on Maven Central. 0.1.4 is the
 # latest published; it depends on kotlinx-coroutines 1.11.0 and kotlin-stdlib 2.4.10, both of which

@@ -22,7 +22,7 @@ plugins {
     // Repositories, the `.editorconfig` check, and the shared `wip` catalog. The catalog carries the
     // compiler (Kotlin 2.4.20) and ktor (3.6.0): kesh reads both from there and pins neither itself
     // (research D-6, D-7). The catalog's version is this plugin's own.
-    id("io.github.youndie.sborka.settings") version "0.4.0.91"
+    id("io.github.youndie.sborka.settings") version "0.4.0.111"
 }
 
 // The RESP2 codec: common Kotlin, no I/O.
