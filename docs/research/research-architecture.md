@@ -101,7 +101,7 @@ priors, not as facts. Where kesh measured the same thing itself, its own file is
 | Pause p99 against live heap `L` at a fixed allocation shape, 100 req/s, three lone starts per point: 14 MB → 2.8–3.0 ms; 128 MB → 4.7–5.2 ms; **512 MB → 9.2–12.3 ms; 1 GB (5.63 M objects marked) → 19.3–34.8 ms** | prior, not reproduced here |
 | The growth is in CMS's **second** pause (end of marking); the first stays near 1 ms. With the same 5.6 M objects marked but no sustained load, the second pause was 0.1–0.4 ms | prior, not reproduced here; kesh's own explanation of this pause is B-19 (`bench/reports/b-19/README.md`) |
 | A second resident process on the host inflated the same binary's pause p99 from ~1.2 ms to 2–4.9 ms; CPU per request was unaffected | prior, not reproduced here; kesh follows it as consequence 5 (one subject per host) |
-| The runtime does not read its cgroup memory limit; `GC.targetHeapBytes` is a trigger threshold, not a ceiling, and `GC.autotune` rewrites it. `GC.maxHeapBytes` is the ceiling | `youndie/kore!/kore-core/src/commonMain/kotlin/io/github/youndie/kore/runtime/MemoryBudget.kt`, `youndie/kore!/kore-core/src/nativeMain/kotlin/io/github/youndie/kore/runtime/HeapCeiling.native.kt` |
+| The runtime does not read its cgroup memory limit; `GC.targetHeapBytes` is a trigger threshold, not a ceiling, and `GC.autotune` rewrites it. `GC.maxHeapBytes` is the ceiling | `youndie/kore@54cbc54!/kore-core/src/commonMain/kotlin/io/github/youndie/kore/runtime/MemoryBudget.kt`, `youndie/kore@54cbc54!/kore-core/src/nativeMain/kotlin/io/github/youndie/kore/runtime/HeapCeiling.native.kt` |
 | **The second CMS pause is the allocator's page bookkeeping**: with the world stopped after marking, every size class's `PageStore::PrepareForGC` walks the `used_` page list to its tail and frees every page the last sweep emptied — both linear in the number of pages | `JetBrains/kotlin@v2.4.20!/kotlin-native/runtime/src/gc/common/cpp/MainGCThread.hpp` lines 56–69; `JetBrains/kotlin@v2.4.20!/kotlin-native/runtime/src/alloc/custom/cpp/PageStore.hpp` line 24; `JetBrains/kotlin@v2.4.20!/kotlin-native/runtime/src/alloc/custom/cpp/AtomicStack.hpp` lines 79–81 |
 | Measured (B-19, a quarter of the reference dataset, same heap, interleaved): 16 KiB allocator pages paused 8–10 ms median and 84–139 ms p99; 256 KiB pages 0.8 ms and 8–18 ms, for 1 % more resident memory | `bench/reports/b-19/README.md` |
 | **Mutator assists**: when allocated bytes reach `targetHeapBytes` while a collection runs, every Kotlin thread logs "Pausing the mutators until epoch N is done" and waits for that epoch to finish. On by default; off when `GC.autotune` is off or `GC.maxHeapBytes` is finite; no binary option | `JetBrains/kotlin@v2.4.20!/kotlin-native/runtime/src/gcScheduler/common/cpp/GCSchedulerConfig.hpp` — `mutatorAssists()`; `JetBrains/kotlin@v2.4.20!/kotlin-native/runtime/src/gcScheduler/adaptive/cpp/GCSchedulerImpl.hpp` line 79 |
@@ -215,7 +215,7 @@ Whoever reads a sborka version next: `youndie/sborka@cd1a2bf!/catalog/sborka.ver
 | A descriptor `>= FD_SETSIZE` fails a `check(…)` with "File descriptor … is larger or equal to FD_SETSIZE" | `SelectUtilsNix.kt` — `addInterest` |
 | A negative `pselect` result is turned into a `PosixException` with no `EINTR` retry | `ktorio/ktor@3.5.2!/ktor-network/posix/src/io/ktor/network/util/NativeUtils.kt` — `Int.check` |
 | A signal delivered to that thread therefore kills the process with `PosixException.InterruptedException: pselect failed, EINTR` — observed in the portfolio with an in-process sampling profiler, reproducibly | portfolio measurement (Kotlin/Native service, Ktor CIO, 97 Hz and 997 Hz samplers) |
-| kore installs its `SIGTERM`/`SIGINT` handlers with `signal(…)` | `youndie/kore!/kore-core/src/nativeMain/kotlin/io/github/youndie/kore/signal/ShutdownSignalWatch.native.kt` |
+| kore installs its `SIGTERM`/`SIGINT` handlers with `signal(…)` | `youndie/kore@54cbc54!/kore-core/src/nativeMain/kotlin/io/github/youndie/kore/signal/ShutdownSignalWatch.native.kt` |
 | `select`/`pselect` (and `poll`, `epoll_wait`) are never restarted after a signal handler, regardless of `SA_RESTART` | `man7.org/linux/man-pages/man7/signal.7.html`, "Interruption of system calls and library functions by signal handlers" |
 | Redis's `maxclients` defaults to 10 000 | `redis/redis@7.2.5!/redis.conf` |
 
@@ -293,8 +293,8 @@ the source is the authority.
 | Redis 7.2.5 is BSD-3-Clause | `redis/redis@7.2.5!/COPYING` |
 | Redis 7.4.0 is RSALv2 or SSPLv1 ("Starting on March 20th, 2024…") | `redis/redis@7.4.0!/LICENSE.txt` |
 | Redis 8.2.0 is RSALv2, SSPLv1 or AGPLv3; "7.2 and prior releases remain subject to the BSDv3" | `redis/redis@8.2.0!/LICENSE.txt` |
-| Valkey is BSD-3-Clause | `valkey-io/valkey@unstable!/COPYING` |
-| `memtier_benchmark` is GPL-2.0 | `RedisLabs/memtier_benchmark@master!/COPYING` |
+| Valkey is BSD-3-Clause | `valkey-io/valkey@60f3944!/COPYING` |
+| `memtier_benchmark` is GPL-2.0 | `RedisLabs/memtier_benchmark@abdbb35!/COPYING` |
 | Ubuntu 24.04 packages `redis-server` 7.0.15 and `valkey-server` 7.2.12 (7.2.13 in `-updates`) | `packages.ubuntu.com/noble/redis-server`, `/noble/valkey-server`, read 2026-09-24 |
 | Docker Hub `library/redis:7.2` exists, last updated 2026-09-19 | `hub.docker.com/v2/repositories/library/redis/tags/7.2` |
 
@@ -323,7 +323,7 @@ and `history`).
 |---|---|
 | Kotlin 2.4.20 and ktor 3.6.0 through the shared `wip` catalog; kesh pins neither (see §1.4, D-6) | `youndie/sborka@cd1a2bf!/catalog/sborka.versions.toml` |
 | A repository's own `gradle/libs.versions.toml` shadows the shared catalog; one service in the portfolio ran on 2.4.10 for weeks while everything around it assumed 2.4.20 | portfolio incident, 2026-09-23 (the brief's D-7 names the check) |
-| kore is not on Maven Central; it resolves from the portfolio's own repository | `youndie/kore!/README.md`, status block |
+| kore is not on Maven Central; it resolves from the portfolio's own repository | `youndie/kore@54cbc54!/README.md`, status block |
 | The portfolio's measurement hosts reach Maven Central over IPv6 but not GitHub or the portfolio's repository | portfolio host inventory |
 
 **Consequence** — kesh cannot be built on the measurement hosts; it is built on the build machine
