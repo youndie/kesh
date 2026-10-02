@@ -84,6 +84,10 @@ line in `.github/workflows/check.yaml` pins: CI runs them from there, and the Ma
 line and fetches that tag into `.docs-bootstrap/` (it ignores itself), so a local `make check` runs
 what CI runs. Renovate bumps the line; nothing is copied into `scripts/`, and the version is written
 nowhere else. The one check of kesh's own under `gate` refuses a tree without the research document.
+The code-anchors report blocks too (`ANCHORS_ARGS ?= --check` in the Makefile): a path in `docs/` that
+resolves to nothing fails `make check`. A path outside this repository is written as an address —
+`<artefact>!/<path>` inside a versioned artefact, `youndie/<repo>@<commit>!/<path>` in another
+repository (docs-bootstrap SPEC §4.1) — never bare.
 
 CI runs on `ubuntu-latest`, which works only while the repository is public — a private repository in
 this account gets no hosted runners, and both workflows must move to the self-hosted runner (`build`
