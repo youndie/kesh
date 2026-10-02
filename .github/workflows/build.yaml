@@ -1,0 +1,85 @@
+# The code gate: every module compiled, every suite run on the JVM and on linuxX64, and the formatter.
+#
+# Until this file, CI ran the documentation gate only, and a pull request merged on a green that had not
+# compiled a line: the suites ran by hand, on a build machine, and nothing on GitHub said whether they had.
+# `./gradlew check` is exactly the list CLAUDE.md gives for the code — `ktlintCheck`, `jvmTest` and
+# `linuxX64Test` of every module, `:conformance:jvmTest` — so a contributor and CI run one target.
+#
+# Separate from `check.yaml` because that file is docs-bootstrap's template, it runs in seconds, and it needs
+# no JDK; this one takes minutes and a Kotlin/Native toolchain.
+#
+# ubuntu-latest because the repository is public: GitHub's standard runners cost nothing here, and this
+# repository has no runner of its own. A private repository in this account gets no hosted runners — then
+# the job moves to the self-hosted runner, and there the native links need `--max-workers=2`: in parallel
+# they were killed for memory on a shared machine. A hosted runner is the job's own, so the default stands.
+#
+# Not here: the oracle (`conformance/run.sh`, kesh against Redis 7.2) and the release link of the binary.
+# Both run by hand on the build machine for a change to a command's reply (CLAUDE.md, "Where things run").
+#
+# No path filters, for the reason check.yaml gives: they buy red default branches.
+name: build
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: build-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+
+      # Java 21 and 25, Gradle, and ~/.konan cached: without that cache every run downloads the
+      # Kotlin/Native toolchain, about a gigabyte, before it compiles anything.
+      - uses: youndie/sborka/.github/actions/setup-kotlin@main
+        with:
+          konan-cache: "true"
+
+      - run: ./gradlew check --stacktrace
+
+      # THE EXIT CODE IS NOT THE EVIDENCE. A test task with nothing to run, or a linuxX64 task skipped as
+      # not runnable on this host, exits zero. Every suite in CLAUDE.md's list must have left results that
+      # hold tests, none of them failed.
+      - name: Every suite ran its tests
+        run: |
+          fail=0
+          for suite in resp:jvmTest resp:linuxX64Test store:jvmTest store:linuxX64Test \
+                       snapshot:jvmTest snapshot:linuxX64Test server:linuxX64Test \
+                       bench:jvmTest bench:linuxX64Test conformance:jvmTest; do
+            dir="${suite%%:*}/build/test-results/${suite#*:}"
+            if ! ls "$dir"/TEST-*.xml > /dev/null 2>&1; then
+              echo "::error::$suite left no test results in $dir"
+              fail=1
+              continue
+            fi
+            read -r tests bad < <(cat "$dir"/TEST-*.xml | awk '
+              /<testsuite / {
+                if (match($0, /tests="[0-9]+"/)) t += substr($0, RSTART + 7, RLENGTH - 8)
+                if (match($0, /failures="[0-9]+"/)) b += substr($0, RSTART + 10, RLENGTH - 11)
+                if (match($0, /errors="[0-9]+"/)) b += substr($0, RSTART + 8, RLENGTH - 9)
+              }
+              END { print t + 0, b + 0 }')
+            echo "$suite: $tests tests, $bad failed"
+            if [ "$tests" -eq 0 ] || [ "$bad" -ne 0 ]; then
+              echo "::error::$suite: $tests tests, $bad failed"
+              fail=1
+            fi
+          done
+          exit $fail
+
+      - name: Test reports
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-reports
+          path: |
+            **/build/reports/tests/
+            **/build/test-results/
+          retention-days: 14

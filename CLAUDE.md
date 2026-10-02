@@ -53,9 +53,9 @@ is closed. A document for a feature not built yet is written in the item's own b
 
 Decided by the owner on 2026-09-24. **The repository is public on GitHub, `youndie/kesh`, since
 2026-09-25.** The loop pushes its branch `feat/b-<nn>-<slug>`, opens a pull request, and merges it
-when the item is `done`, the acceptance was walked, CI is green on the branch's head, and the code
-suites below passed on the build machine — CI runs the documentation gate only, not the code. It
-merges fast-forward (rebasing first if `main` moved), then runs `make gate` and
+when the item is `done`, the acceptance was walked, CI is green on the branch's head — the
+documentation gate and, since 2026-10-02, the code suites below — and the oracle agreed for any
+change to a command's reply. It merges fast-forward (rebasing first if `main` moved), then runs `make gate` and
 `make docs-on-main` on `main`. Until the push, work that exists only in a local branch does
 not exist for the next session.
 
@@ -63,9 +63,10 @@ not exist for the next session.
 
 Builds, tests and the conformance oracle run on the Linux build machine (see the global agent
 instructions for the wrapper), not on the Mac; the repository has a sync session there named
-`kesh`. What CI will run for the code: `./gradlew ktlintCheck :resp:jvmTest :resp:linuxX64Test
-:store:jvmTest :store:linuxX64Test :snapshot:jvmTest :snapshot:linuxX64Test :server:linuxX64Test :bench:jvmTest :bench:linuxX64Test
-:conformance:jvmTest`. **The oracle** is
+`kesh`. What CI runs for the code, on every pull request and every push to `main`
+(`.github/workflows/build.yaml`): `./gradlew check` — `ktlintCheck`, `jvmTest` and `linuxX64Test` of
+`resp`, `store`, `snapshot` and `bench`, `:server:linuxX64Test`, `:conformance:jvmTest` — and the job
+fails when one of those suites left no results. **The oracle** is not in CI; it is
 `conformance/run.sh` (needs Docker): it builds kesh, compares every script with Redis 7.2 and must
 end with "all agree" — run it for any change to a command's reply. A mutation made with `sed` must be checked with `git diff` before its run is read: after the
 formatter the pattern may not match, and the green run then tested the unchanged code (it happened
@@ -76,7 +77,8 @@ measurement host.
 
 ## Checks
 
-`make check` is the gate and exactly what CI runs. `make fix` regenerates the backlog index after an
+`make check` is the documentation gate and exactly what CI's `check` job runs; the code is the
+`build` job's (above). `make fix` regenerates the backlog index after an
 item changes. The checks are docs-bootstrap's, at the version the `uses: youndie/docs-bootstrap@<tag>`
 line in `.github/workflows/check.yaml` pins: CI runs them from there, and the Makefile reads the same
 line and fetches that tag into `.docs-bootstrap/` (it ignores itself), so a local `make check` runs
@@ -84,7 +86,8 @@ what CI runs. Renovate bumps the line; nothing is copied into `scripts/`, and th
 nowhere else. The one check of kesh's own under `gate` refuses a tree without the research document.
 
 CI runs on `ubuntu-latest`, which works only while the repository is public — a private repository in
-this account gets no hosted runners, and the workflow must move to the self-hosted runner.
+this account gets no hosted runners, and both workflows must move to the self-hosted runner (`build`
+with `--max-workers=2` there, as its comment says).
 
 ## Language
 

@@ -58,10 +58,11 @@ measurements, each a different binary: `-Pkesh.runtimeLogs=true` (the collector'
 
 ## Checking a change
 
-- The test suites run on Linux, on the JVM and `linuxX64`; the exact set is in [CLAUDE.md](CLAUDE.md).
+- `./gradlew check` runs the test suites on Linux, on the JVM and `linuxX64`, and the formatter; CI
+  runs it on every pull request (`.github/workflows/build.yaml`).
 - `conformance/run.sh` (needs Docker) runs every script against kesh and Redis 7.2 and must end with
-  "all agree" — the rule for any change to a reply.
-- `make check` is the documentation gate, the one CI runs.
+  "all agree" — the rule for any change to a reply. CI does not run it.
+- `make check` is the documentation gate; CI runs it too.
 
 ## Documentation
 
