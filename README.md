@@ -4,10 +4,10 @@ An in-memory data store that speaks the Redis protocol (RESP2), built as a singl
 `linuxX64` binary on Kotlin/Native — so that `redis-cli` and ordinary Redis client libraries work
 against it unchanged.
 
-> **Status: v1 built; no release is published.** Every command kesh has is held byte for byte to
-> Redis 7.2 by a differential harness. Measured up to an eighth of the reference dataset, on
-> machines that are not reference hosts — full scale is arithmetic, not a measurement. A 24-hour
-> soak is running. Start at [docs/](docs/README.md).
+> **Status: v1 built, every backlog item closed; no release is published.** Every command kesh has
+> is held byte for byte to Redis 7.2 by a differential harness. Measured up to an eighth of the
+> reference dataset, on machines that are not reference hosts — full scale is arithmetic, not a
+> measurement. Start at [docs/](docs/README.md).
 
 ## What it does
 
@@ -18,8 +18,9 @@ against it unchanged.
   limit cannot hold is refused.
 - **Snapshots** in kesh's own format: `SAVE`, `BGSAVE` through fork, loaded before the listener binds.
 - **Pub/Sub**: `PUBLISH`, `SUBSCRIBE`, `PSUBSCRIBE` in RESP2 subscribe mode.
-- **Operations**: `INFO`, HTTP health probes and Prometheus metrics, a container image, a Helm chart,
-  an ordered stop that answers what it read.
+- **Operations**: `INFO`, HTTP health probes and Prometheus metrics — the collector's pauses
+  included — a container image, a Helm chart sized from measurements, an ordered stop that answers
+  what it read.
 
 One thread reads, executes and writes, on kesh's own `epoll` loop — research D-14 and D-31 say why.
 
@@ -35,6 +36,11 @@ At a sixteenth of the reference dataset on a two-host stand, 50 connections
 against Redis 7.2's 14 640–15 126 on the same host, p99 8–9 ms against 7; at pipeline 16, 77 467–79 637
 against 134 932–135 763, limited by the one thread that runs every command.
 
+For how long: 24 hours of the same mix at pipeline 1 and an eighth of the dataset, with TTL churn,
+ran without an error and held resident memory flat — 2.5 GiB for the last fourteen hours,
+1.84–1.91 × `used_memory`; the collector's stop-the-world pause averaged about 1 ms
+([bench/reports/b-18](bench/reports/b-18/README.md)).
+
 ## Build and run
 
 On Linux (the target is `linuxX64` only):
@@ -46,7 +52,16 @@ KESH_PORT=6379 server/build/bin/linuxX64/releaseExecutable/kesh.kexe
 
 Configuration is environment variables, `KESH_*` — the list is in
 [services/server.md](docs/services/server.md). The image and the chart are in [deploy/](deploy/),
-described in [services/deploy.md](docs/services/deploy.md).
+described in [services/deploy.md](docs/services/deploy.md). Two build properties exist for
+measurements, each a different binary: `-Pkesh.runtimeLogs=true` (the collector's log) and
+`-Pkesh.allocatorPageSize=16` (the comparison arm of research D-19).
+
+## Checking a change
+
+- The test suites run on Linux, on the JVM and `linuxX64`; the exact set is in [CLAUDE.md](CLAUDE.md).
+- `conformance/run.sh` (needs Docker) runs every script against kesh and Redis 7.2 and must end with
+  "all agree" — the rule for any change to a reply.
+- `make check` is the documentation gate, the one CI runs.
 
 ## Documentation
 
