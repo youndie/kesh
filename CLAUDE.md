@@ -56,7 +56,7 @@ Decided by the owner on 2026-09-24. **The repository is public on GitHub, `yound
 when the item is `done`, the acceptance was walked, CI is green on the branch's head, and the code
 suites below passed on the build machine — CI runs the documentation gate only, not the code. It
 merges fast-forward (rebasing first if `main` moved), then runs `make gate` and
-`docs_check.py --on-main` on `main`. Until the push, work that exists only in a local branch does
+`make docs-on-main` on `main`. Until the push, work that exists only in a local branch does
 not exist for the next session.
 
 ## Where things run
@@ -77,9 +77,14 @@ measurement host.
 ## Checks
 
 `make check` is the gate and exactly what CI runs. `make fix` regenerates the backlog index after an
-item changes. CI runs on `ubuntu-latest`, which works only while the repository is public — a private
-repository in this account gets no hosted runners, and the workflow must move to the self-hosted
-runner.
+item changes. The checks are docs-bootstrap's, at the version the `uses: youndie/docs-bootstrap@<tag>`
+line in `.github/workflows/check.yaml` pins: CI runs them from there, and the Makefile reads the same
+line and fetches that tag into `.docs-bootstrap/` (it ignores itself), so a local `make check` runs
+what CI runs. Renovate bumps the line; nothing is copied into `scripts/`, and the version is written
+nowhere else. The one check of kesh's own under `gate` refuses a tree without the research document.
+
+CI runs on `ubuntu-latest`, which works only while the repository is public — a private repository in
+this account gets no hosted runners, and the workflow must move to the self-hosted runner.
 
 ## Language
 

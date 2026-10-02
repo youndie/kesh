@@ -57,6 +57,10 @@ make check      # the gate CI runs: backlog index, docs check, coverage map, the
 make fix        # regenerate the backlog index and append missing coverage-map lines
 ```
 
+The checks run at the docs-bootstrap version pinned by the `uses: youndie/docs-bootstrap@<tag>` line
+in `.github/workflows/check.yaml`; the Makefile reads that line and fetches the same tag, so CI and a
+local run check with the same scripts.
+
 ## Coverage map
 
 The list below is **checked** against the files on disk: a document missing here, or an entry with
