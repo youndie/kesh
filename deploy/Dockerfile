@@ -1,7 +1,7 @@
 # Two stages, and the pair is chosen together: a binary linked against the builder's glibc will
 # not start on a runtime with an older one, and the failure is the container exiting before any
 # of the application's own logging has run.
-FROM --platform=linux/amd64 gradle:9.7.1-jdk25-noble AS build
+FROM --platform=linux/amd64 gradle:9.8.0-jdk25-noble AS build
 WORKDIR /app
 COPY . .
 # The Kotlin/Native toolchain is ~1 GB and is downloaded on a cold build. Cached across image
