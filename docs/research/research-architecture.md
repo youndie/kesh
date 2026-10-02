@@ -208,7 +208,7 @@ Verified against `ktorio/ktor` at tags `3.5.2` and `3.6.0`, and Maven Central. k
 *itself* with, not the one it publishes; the published `wip` catalog took 3.6.0 in the very commit
 cited. So D-6's "pin 3.6.0 in kesh's own catalog as a single override" was a fix for a problem that
 did not exist: kesh reads `ktor` from `wip` like everything else and pins nothing (D-6 below).
-Whoever reads a sborka version next: `catalog/sborka.versions.toml` is the published one.
+Whoever reads a sborka version next: `youndie/sborka@cd1a2bf!/catalog/sborka.versions.toml` is the published one.
 | In 3.6.0, `SelectUtilsNix.kt`, `network.def` and `NativeUtils.kt` are byte-identical to 3.5.2; the only native changes are dropped `.toInt()` conversions in `CIOReader.kt`, `TCPSocketNative.kt` and a `@Suppress` in `SignalPoint.kt` | `diff -r` of `ktor-network/nix` and `ktor-network/posix` between tags `3.5.2` (`01c469a`) and `3.6.0` (`111c580`) |
 | `ktor-network-linuxx64` 3.6.0 depends on `kotlin-stdlib` 2.3.21, `kotlinx-coroutines-core` 1.11.0, `atomicfu` 0.33.0 (3.5.2: 2.3.21, 1.11.0, 0.32.1) | `repo1.maven.org/maven2/io/ktor/ktor-network-linuxx64/3.6.0/ktor-network-linuxx64-3.6.0.module` |
 | The Native selector is one loop around `pselect(maxDescriptor + 1, …)` over `fd_set`s | `ktorio/ktor@3.5.2!/ktor-network/nix/src/io/ktor/network/selector/SelectUtilsNix.kt` — `selectionLoop`; `ktorio/ktor@3.5.2!/ktor-network/nix/interop/network.def` — `selector_pselect` |
