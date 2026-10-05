@@ -4,7 +4,7 @@ title: conformance — the differential harness against real Redis
 type: service
 status: active
 module: conformance
-tech_stack: [Kotlin/JVM, raw TCP sockets, Lettuce 7.6.0 (smoke only), kompot-realtime-redis 0.38.0, redis:7.2]
+tech_stack: [Kotlin/JVM, raw TCP sockets, Lettuce 7.6.0 (smoke only), kompot-realtime-redis 0.40.0.208, redis:7.2]
 owner: unassigned
 depends_on: [resp, server, redis-server 7.2]
 publishes: []
@@ -82,12 +82,12 @@ by `@name` (normalisers, named on the line they apply
   was removed.
 * **The kompot check can fail, and says why** (kesh#19). A kesh whose `SUBSCRIBE` and `PSUBSCRIBE`
   answer `-ERR` (a mutation of `CommandDispatcher`, in a copy of the tree on the build machine) fails
-  the run: 18 script lines disagree, and the bus reports `nothing arrived in 10s; kesh refused
-  PSUBSCRIBE: ERR control: PSUBSCRIBE refused`. The bus itself only times out — kompot 0.38's
-  `RedisKompotUpdateBus` does not await its `PSUBSCRIBE` (youndie/kompot#206) — so on a timeout the
-  check repeats that `PSUBSCRIBE` through Lettuce to name the refusal. `KompotBusTest` holds the same
-  control in CI against a fake server, and turns red when kompot fails the flow itself, which is when
-  the workaround goes.
+  the run: 18 script lines disagree, and the bus reports
+  `failed: io.lettuce.core.RedisCommandExecutionException: ERR control: PSUBSCRIBE refused` — named by
+  the bus itself: since kompot 0.40 `RedisKompotUpdateBus.messages()` awaits its `PSUBSCRIBE` and fails on a
+  refusal (youndie/kompot#206). Until then the bus only timed out, and the check repeated the
+  `PSUBSCRIBE` through Lettuce to name the cause; that workaround went with the move to 0.40.
+  `KompotBusTest` holds the same control in CI against a fake server.
 * **A reply that cannot be read is a disagreement, not a crash.** The first run died on the oracle's
   RESP3 map (`%`) — see the quirk below — and now such a step is reported and the run goes on.
 * **The oracle's configuration is passed as arguments, not mounted.** The image's entrypoint runs
@@ -102,7 +102,7 @@ by `@name` (normalisers, named on the line they apply
 | Module | [server](server.md) | the subject, over TCP |
 | External | `redis:7.2` image | the oracle |
 | Library | Lettuce 7.6.0 | the smoke that an unchanged client connects |
-| Library | `io.github.youndie.kompot:kompot-realtime-redis` 0.38.0 (Maven Central) | kesh's first consumer, two bus instances through kesh (B-27) |
+| Library | `io.github.youndie.kompot:kompot-realtime-redis` 0.40.0.208 (the portfolio's snapshot repository; the stabilization line 0.40 until 0.40.0 is on Central) | kesh's first consumer, two bus instances through kesh (B-27) |
 
 ## 6. Local setup
 
