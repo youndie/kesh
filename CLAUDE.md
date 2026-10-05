@@ -55,8 +55,9 @@ Decided by the owner on 2026-09-24. **The repository is public on GitHub, `yound
 2026-09-25.** The loop pushes its branch `feat/b-<nn>-<slug>`, opens a pull request, and merges it
 when the item is `done`, the acceptance was walked, CI is green on the branch's head — the
 documentation gate and, since 2026-10-02, the code suites below — and the oracle agreed for any
-change to a command's reply. It merges fast-forward (rebasing first if `main` moved), then runs `make gate` and
-`make docs-on-main` on `main`. Until the push, work that exists only in a local branch does
+change to a command's reply. It merges fast-forward (rebasing first if `main` moved), then runs `make gate` on
+`main` (on the Mac with `LOCAL=1`: the replica has no git history). `make docs-on-main` went with
+the `docs/layer-drafts` branch in #12. Until the push, work that exists only in a local branch does
 not exist for the next session.
 
 ## Where things run
