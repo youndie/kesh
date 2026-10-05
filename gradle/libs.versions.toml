@@ -16,9 +16,12 @@ kore = "0.1.5"
 # module's smoke test that an unchanged client connects. Test tooling only; nothing ships with it.
 lettuce = "7.6.0.RELEASE"
 # kesh's first consumer (research D-26): kompot's multi-instance bus, run against kesh by the
-# conformance tool (B-27). Test tooling only. From Maven Central under the group kompot moved to in
-# 0.38.0; 0.39 leaves the bus as it was, so the snapshot channel buys nothing here (kesh#19).
-kompot = "0.38.0"
+# conformance tool (B-27). Test tooling only. The stabilization line 0.40 snapshot until 0.40.0 is on
+# Central: consumers live on 0.40.0.<run>, and what they find becomes a kompot issue. Resolved from
+# the portfolio's snapshot repository, which sborka's settings plugin declares with a group filter
+# (`io.github.youndie.*`) ahead of Central; nothing is added here. This line's bus awaits its
+# PSUBSCRIBE and fails on a refused one (youndie/kompot#206).
+kompot = "0.40.0.208"
 
 [libraries]
 kore-core = { module = "io.github.youndie:kore-core", version.ref = "kore" }

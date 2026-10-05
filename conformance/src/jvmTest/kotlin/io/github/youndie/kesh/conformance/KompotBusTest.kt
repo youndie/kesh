@@ -9,8 +9,10 @@ import kotlin.time.Duration.Companion.seconds
 
 /**
  * The kompot check's own negative control (kesh#19): a server that refuses `PSUBSCRIBE` must fail it,
- * and the failure must name the refusal rather than only a timeout. Against kesh itself the same
- * control is a mutation, recorded in services/conformance.md; this one runs in CI.
+ * and the failure must name the refusal rather than only a timeout. Since kompot 0.40 the bus names it
+ * itself — `messages()` fails with the server's error (youndie/kompot#206) — so the check asks nothing
+ * of Lettuce directly. Against kesh itself the same control is a mutation, recorded in
+ * services/conformance.md; this one runs in CI.
  */
 class KompotBusTest {
     private val servers = mutableListOf<ServerSocket>()
@@ -59,7 +61,7 @@ class KompotBusTest {
     @Test
     fun `a refused PSUBSCRIBE fails the check and is named`() {
         assertEquals(
-            "nothing arrived in 2s; kesh refused PSUBSCRIBE: ERR control: PSUBSCRIBE refused",
+            "failed: io.lettuce.core.RedisCommandExecutionException: ERR control: PSUBSCRIBE refused",
             kompotBus(refusingPsubscribe(), timeout = 2.seconds),
         )
     }
