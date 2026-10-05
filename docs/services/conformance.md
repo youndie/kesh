@@ -4,7 +4,7 @@ title: conformance — the differential harness against real Redis
 type: service
 status: active
 module: conformance
-tech_stack: [Kotlin/JVM, raw TCP sockets, Lettuce 7.6.0 (smoke only), redis:7.2]
+tech_stack: [Kotlin/JVM, raw TCP sockets, Lettuce 7.6.0 (smoke only), kompot-realtime-redis 0.38.0, redis:7.2]
 owner: unassigned
 depends_on: [resp, server, redis-server 7.2]
 publishes: []
@@ -46,11 +46,12 @@ by `@name` (normalisers, named on the line they apply
 | `conformance/src/jvmMain/kotlin/io/github/youndie/kesh/conformance/RespFrame.kt` | one reply's exact bytes, with enough structure to normalise |
 | `conformance/src/jvmMain/kotlin/io/github/youndie/kesh/conformance/Normaliser.kt` | `EXACT`, `UNORDERED`, `PAIRS`, `SHAPE`, `RANDOM`, `CURSOR` |
 | `conformance/src/jvmMain/kotlin/io/github/youndie/kesh/conformance/Script.kt` | the script format |
-| `conformance/src/jvmMain/kotlin/io/github/youndie/kesh/conformance/Main.kt` | the run, the oracle's version, the Lettuce smoke |
+| `conformance/src/jvmMain/kotlin/io/github/youndie/kesh/conformance/Main.kt` | the run, the oracle's version, the Lettuce smoke, kompot's bus (`kompotBus`) |
 | `conformance/run.sh` | the four servers and the run |
 | `conformance/oracle/redis.conf` | the oracle's configuration |
 | `conformance/scripts/connection/` | the connection group: 6 scripts, 78 comparisons at B-04 |
 | `conformance/src/jvmTest/kotlin/io/github/youndie/kesh/conformance/HarnessTest.kt` | the harness's own tests, including its positive control |
+| `conformance/src/jvmTest/kotlin/io/github/youndie/kesh/conformance/KompotBusTest.kt` | the kompot check's negative control: a server that refuses `PSUBSCRIBE` |
 
 ## 3. How it is built
 
@@ -79,6 +80,14 @@ by `@name` (normalisers, named on the line they apply
   the harness to disagree at that byte; and at B-04 a wrong string was planted in kesh (`SELECT 1` →
   `DB index out of range`): the run failed on both `SELECT` lines at byte 14, and passed again once it
   was removed.
+* **The kompot check can fail, and says why** (kesh#19). A kesh whose `SUBSCRIBE` and `PSUBSCRIBE`
+  answer `-ERR` (a mutation of `CommandDispatcher`, in a copy of the tree on the build machine) fails
+  the run: 18 script lines disagree, and the bus reports `nothing arrived in 10s; kesh refused
+  PSUBSCRIBE: ERR control: PSUBSCRIBE refused`. The bus itself only times out — kompot 0.38's
+  `RedisKompotUpdateBus` does not await its `PSUBSCRIBE` (youndie/kompot#206) — so on a timeout the
+  check repeats that `PSUBSCRIBE` through Lettuce to name the refusal. `KompotBusTest` holds the same
+  control in CI against a fake server, and turns red when kompot fails the flow itself, which is when
+  the workaround goes.
 * **A reply that cannot be read is a disagreement, not a crash.** The first run died on the oracle's
   RESP3 map (`%`) — see the quirk below — and now such a step is reported and the run goes on.
 * **The oracle's configuration is passed as arguments, not mounted.** The image's entrypoint runs
@@ -93,6 +102,7 @@ by `@name` (normalisers, named on the line they apply
 | Module | [server](server.md) | the subject, over TCP |
 | External | `redis:7.2` image | the oracle |
 | Library | Lettuce 7.6.0 | the smoke that an unchanged client connects |
+| Library | `io.github.youndie.kompot:kompot-realtime-redis` 0.38.0 (Maven Central) | kesh's first consumer, two bus instances through kesh (B-27) |
 
 ## 6. Local setup
 
