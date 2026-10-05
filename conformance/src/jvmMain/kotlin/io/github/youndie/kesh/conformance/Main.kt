@@ -3,15 +3,18 @@ package io.github.youndie.kesh.conformance
 import io.github.youndie.kompot.realtime.redis.RedisKompotUpdateBus
 import io.github.youndie.kompot.realtime.server.KompotBusMessage
 import io.lettuce.core.RedisClient
+import io.lettuce.core.RedisCommandExecutionException
 import io.lettuce.core.RedisURI
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.TimeoutCancellationException
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withTimeout
 import java.io.File
 import kotlin.system.exitProcess
+import kotlin.time.Duration
 import kotlin.time.Duration.Companion.seconds
 
 /**
@@ -84,7 +87,10 @@ private const val DELIVERED = "delivered from one instance to the other"
  * `RedisKompotUpdateBus`, each on its own Lettuce client — two processes, as far as kesh can tell —
  * with one channel prefix. What one publishes, the other's `PSUBSCRIBE` must receive.
  */
-private fun kompotBus(kesh: Endpoint): String {
+internal fun kompotBus(
+    kesh: Endpoint,
+    timeout: Duration = 10.seconds,
+): String {
     val url = "redis://${kesh.host}:${kesh.port}"
     val prefix = "conformance:${System.nanoTime()}"
     val a = RedisKompotUpdateBus(RedisClient.create(url), channelPrefix = prefix)
@@ -96,7 +102,7 @@ private fun kompotBus(kesh: Endpoint): String {
             // Subscribing is asynchronous: a message published before the server took the
             // PSUBSCRIBE goes past, as it would in Redis. Published until one arrives.
             val message =
-                withTimeout(10.seconds) {
+                withTimeout(timeout) {
                     while (!received.isCompleted) {
                         a.publish("home:user1", "payload")
                         delay(200)
@@ -106,11 +112,33 @@ private fun kompotBus(kesh: Endpoint): String {
             listening.cancel()
             if (message.topic == "home:user1" && message.payload == "payload") DELIVERED else "received $message"
         }
+    } catch (e: TimeoutCancellationException) {
+        // Workaround for youndie/kompot#206: the bus sends its PSUBSCRIBE without awaiting the
+        // reply, so a refused one leaves `messages()` open, silent and never failing — a timeout is all
+        // the bus can say. The same PSUBSCRIBE through Lettuce directly names the cause. Remove when
+        // `messages()` fails on a refused subscription.
+        "nothing arrived in $timeout; ${psubscribeRefusal(url, "$prefix:*") ?: "kesh accepted PSUBSCRIBE"}"
     } catch (e: Exception) {
         "failed: $e"
     } finally {
         a.close()
         b.close()
+    }
+}
+
+/** The bus's own `PSUBSCRIBE`, awaited: what the server answered if it refused, `null` if it took it. */
+private fun psubscribeRefusal(
+    url: String,
+    pattern: String,
+): String? {
+    val client = RedisClient.create(url)
+    return try {
+        client.connectPubSub().use { it.sync().psubscribe(pattern) }
+        null
+    } catch (e: RedisCommandExecutionException) {
+        "kesh refused PSUBSCRIBE: ${e.message}"
+    } finally {
+        client.shutdown()
     }
 }
 
