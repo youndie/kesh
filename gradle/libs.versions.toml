@@ -21,7 +21,7 @@ lettuce = "7.6.0.RELEASE"
 # the portfolio's snapshot repository, which sborka's settings plugin declares with a group filter
 # (`io.github.youndie.*`) ahead of Central; nothing is added here. This line's bus awaits its
 # PSUBSCRIBE and fails on a refused one (youndie/kompot#206).
-kompot = "0.40.0.208"
+kompot = "0.40.0.210"
 
 [libraries]
 kore-core = { module = "io.github.youndie:kore-core", version.ref = "kore" }

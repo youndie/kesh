@@ -4,7 +4,7 @@ title: conformance — the differential harness against real Redis
 type: service
 status: active
 module: conformance
-tech_stack: [Kotlin/JVM, raw TCP sockets, Lettuce 7.6.0 (smoke only), kompot-realtime-redis 0.40.0.208, redis:7.2]
+tech_stack: [Kotlin/JVM, raw TCP sockets, Lettuce 7.6.0 (smoke only), kompot-realtime-redis 0.40.0.210, redis:7.2]
 owner: unassigned
 depends_on: [resp, server, redis-server 7.2]
 publishes: []
@@ -102,7 +102,7 @@ by `@name` (normalisers, named on the line they apply
 | Module | [server](server.md) | the subject, over TCP |
 | External | `redis:7.2` image | the oracle |
 | Library | Lettuce 7.6.0 | the smoke that an unchanged client connects |
-| Library | `io.github.youndie.kompot:kompot-realtime-redis` 0.40.0.208 (the portfolio's snapshot repository; the stabilization line 0.40 until 0.40.0 is on Central) | kesh's first consumer, two bus instances through kesh (B-27) |
+| Library | `io.github.youndie.kompot:kompot-realtime-redis` 0.40.0.210 (the portfolio's snapshot repository; the stabilization line 0.40 until 0.40.0 is on Central) | kesh's first consumer, two bus instances through kesh (B-27) |
 
 ## 6. Local setup
 
