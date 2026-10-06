@@ -83,7 +83,7 @@ The replies' exact bytes are the oracle's (`conformance`), not this table's.
 * **Given:** two instances of kompot's `RedisKompotUpdateBus` pointed at one kesh, through Lettuce
 * **When:** one instance publishes on a topic
 * **Then:** the other receives the message on that topic
-* **Automated:** `conformance/src/jvmMain/kotlin/io/github/youndie/kesh/conformance/Main.kt` — `kompotBus`, every run of `conformance/run.sh` (kompot 0.40.0.208, Lettuce 7.6.0); a kesh that refuses `PSUBSCRIBE` fails it with the bus's own named error, `conformance/src/jvmTest/kotlin/io/github/youndie/kesh/conformance/KompotBusTest.kt`
+* **Automated:** `conformance/src/jvmMain/kotlin/io/github/youndie/kesh/conformance/Main.kt` — `kompotBus`, every run of `conformance/run.sh` (kompot 0.40.0.210, Lettuce 7.6.0); a kesh that refuses `PSUBSCRIBE` fails it with the bus's own named error, `conformance/src/jvmTest/kotlin/io/github/youndie/kesh/conformance/KompotBusTest.kt`
 
 ### Scenario: A subscriber that stops reading is dropped
 * **Given:** a subscriber that never reads, and a publisher sending 1 KB messages to its channel
