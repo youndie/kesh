@@ -12,7 +12,7 @@ name: publish
 
 on:
   push:
-    branches: [main]
+    branches: [main, feat/b-32-publish-image]
     tags: ["v*"]
   workflow_dispatch:
 
