@@ -42,7 +42,7 @@ A stage is a field on the item, not a directory.
 
 No open tasks.
 
-## Closed (31)
+## Closed (32)
 
 **Protocol and core**
 
@@ -84,6 +84,7 @@ No open tasks.
 - [B-16](docs/backlog/B-16-image-chart-graceful-stop.md) `[x]` - Image, chart, and a graceful stop that survives being repeated
 - [B-24](docs/backlog/B-24-taken-port-aborts.md) `[x]` - A taken port aborts the server with a core dump instead of exiting cleanly
 - [B-31](docs/backlog/B-31-gc-pause-metrics.md) `[x]` - Export the collector's pauses on /metrics
+- [B-32](docs/backlog/B-32-publish-the-image.md) `[x]` - Publish the image, so a consumer outside this repository can deploy kesh
 
 **Capacity and soak**
 

@@ -24,7 +24,7 @@ docker image inspect python:3.12-slim > /dev/null 2>&1 || docker pull -q python:
 kind load docker-image python:3.12-slim --name $CLUSTER > /dev/null 2>&1 || true
 kubectl create namespace $NS --dry-run=client -o yaml | kubectl apply -f - > /dev/null
 kubectl -n $NS create configmap checker --from-file=bench/drain/checker.py --dry-run=client -o yaml | kubectl apply -f - > /dev/null
-helm upgrade --install kesh deploy/chart -n $NS --set image.tag=$TAG --set maxmemory=268435456 --wait --timeout 180s > /dev/null
+helm upgrade --install kesh deploy/chart -n $NS --set image.repository=kesh --set image.tag=$TAG --set maxmemory=268435456 --wait --timeout 180s > /dev/null
 kubectl -n $NS get statefulset kesh -o jsonpath='{.spec.template.spec.terminationGracePeriodSeconds}' | sed 's/^/grace period: /'; echo
 
 resp() { # one command through a throwaway pod: $1 = the inline command. `run -i` can attach after
