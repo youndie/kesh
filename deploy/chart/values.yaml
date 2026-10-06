@@ -2,9 +2,11 @@
 # would be a second, independent store behind one service — rendering refuses it.
 replicas: 1
 
+# Published by `.github/workflows/publish.yaml` on every push to main (B-32). `main` moves; a deployment
+# pins `sha-<commit>`, the one tag that names something immutable.
 image:
-  repository: kesh
-  tag: dev
+  repository: ghcr.io/youndie/kesh
+  tag: main
   pullPolicy: IfNotPresent
 
 # The dataset's limit as kesh accounts for it (INFO used_memory), in bytes. Everything the chart

@@ -18,14 +18,15 @@ The image the binary ships in and the chart that runs it: one StatefulSet replic
 volume for snapshots, probes wired to the HTTP port, a memory limit and a grace period (B-16).
 
 **Deliberately does not:** run more than one replica (no replication or cluster in v1 — brief §2), or
-choose any sizing value by hand. Not published to a registry yet: the image is built where it runs,
-and environments are not decided (brief §7).
+choose any sizing value by hand. Environments are not decided (brief §7); the image is published
+(B-32), the chart is not — a consumer copies or vendors it.
 
 ## 2a. Code anchors
 
 | File | What is there |
 |---|---|
 | `deploy/Dockerfile` | the image: sborka's reference two-stage file (`:server:writeNativeDockerfile`), plus kesh's `KESH_DIR`, ports and non-root user |
+| `.github/workflows/publish.yaml` | the image to `ghcr.io/youndie/kesh` on every push to `main` (`main`, `sha-<commit>`) and on a `v*` tag, then the published digest run under `--memory 1g` and asked to deliver a `PSUBSCRIBE`d message |
 | `.dockerignore` | the build context, trimmed of build output |
 | `deploy/chart/values.yaml` | the one sizing input, `maxmemory`, and the measurements the arithmetic starts from, each with its source |
 | `deploy/chart/templates/_helpers.tpl` | the arithmetic: SAVE and load seconds, drain, grace period, startup budget, memory limit |
@@ -63,6 +64,8 @@ For `maxmemory` 1 GiB that is a 30 s grace period, a 32 s startup budget and a 3
 * **Image:** `docker build -f deploy/Dockerfile .` from the repository's root: Gradle builds the
   release binary in the first stage, and it runs on `distroless/cc` as user 65532 — 47 MB. The first
   build downloads the Kotlin/Native toolchain into a cache mount.
+* **Registry:** `ghcr.io/youndie/kesh`, public, from `publish.yaml` (B-32). `sha-<commit>` is what a
+  deployment pins; `main` is the newest and moves. The chart's default is `main`.
 * **Chart:** `deploy/chart/`, one replica, the volume at `/data` (`KESH_DIR`), `fsGroup` 65532,
   a read-only root file system.
 * **Health:** `/health/started`, `/health/ready`, `/health/live` on 8080 — see
