@@ -30,3 +30,10 @@ The first consumer outside the repository — a reference service whose realtime
 - AC: a push to `main` leaves `ghcr.io/youndie/kesh:sha-<commit>` and `:main`, publicly pullable.
 - AC: the workflow fails when the published image does not start or does not deliver the message.
 - Anchors: `.github/workflows/publish.yaml`, `deploy/chart/values.yaml`, `docs/services/deploy.md`.
+
+## Findings — 2026-10-06
+
+- **Tried before merge** by pointing the trigger at this branch once (run 37435337068, then removed):
+  `ghcr.io/youndie/kesh@sha256:78331561…` pushed, **public** without a settings change (the package
+  inherited the repository's visibility), pullable anonymously; the published digest started under
+  `--memory 1g` and delivered the `PSUBSCRIBE`d message.
