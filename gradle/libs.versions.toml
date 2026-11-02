@@ -14,7 +14,7 @@ kore = "0.1.5"
 
 # The client the portfolio already uses (kompot's realtime bus, research §1.1), as the conformance
 # module's smoke test that an unchanged client connects. Test tooling only; nothing ships with it.
-lettuce = "7.6.0.RELEASE"
+lettuce = "7.9.0.RELEASE"
 # kesh's first consumer (research D-26): kompot's multi-instance bus, run against kesh by the
 # conformance tool (B-27). Test tooling only. The stabilization line 0.40 snapshot until 0.40.0 is on
 # Central: consumers live on 0.40.0.<run>, and what they find becomes a kompot issue. Resolved from
