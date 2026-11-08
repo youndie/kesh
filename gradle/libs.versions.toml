@@ -5,7 +5,7 @@
 [versions]
 # The build conventions. The same number as the settings plugin in settings.gradle.kts, so the
 # conventions and the catalog they were released with are one tested combination.
-sborka = "0.4.0.111"
+sborka = "0.5.0.135"
 
 # Ordered shutdown and probes. On the portfolio's repository, not on Maven Central. 0.1.4 is the
 # latest published; it depends on kotlinx-coroutines 1.11.0 and kotlin-stdlib 2.4.10, both of which
@@ -14,7 +14,7 @@ kore = "0.1.5"
 
 # The client the portfolio already uses (kompot's realtime bus, research §1.1), as the conformance
 # module's smoke test that an unchanged client connects. Test tooling only; nothing ships with it.
-lettuce = "7.6.0.RELEASE"
+lettuce = "7.9.0.RELEASE"
 # kesh's first consumer (research D-26): kompot's multi-instance bus, run against kesh by the
 # conformance tool (B-27). Test tooling only. The stabilization line 0.40 snapshot until 0.40.0 is on
 # Central: consumers live on 0.40.0.<run>, and what they find becomes a kompot issue. Resolved from
