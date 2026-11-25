@@ -2,7 +2,7 @@
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
   "description": [
     "The portfolio's preset from sborka, extended by name and not copied — its schedule, its groups (kotlin, kotlinx, sborka, ci actions), its guard against kotlinx-datetime's -compat builds, and a human for every major.",
-    "NOT sborka's `automerge-harness`. Its precondition is that a pull request runs the build, and here it does not: CI runs the documentation gate only, and the code suites run on the build machine by hand (CLAUDE.md). A gradle-wrapper bump would merge itself with nothing built. Revisit when CI builds the code."
+    "sborka's `automerge-harness` is extended second, so `github-actions` and `gradle-wrapper` updates merge themselves on green. Its precondition is that a pull request runs the build, and this file used to say it did not — CI ran the documentation gate only. That has expired: `build.yaml` now runs `./gradlew check` on every `pull_request` (re-checked 2026-11-25). The one workflow no pull request runs, `publish.yaml`, runs on every push to `main`, so a harness bump that broke it shows up red on the merge itself rather than at the next release."
   ],
-  "extends": ["github>youndie/sborka"]
+  "extends": ["github>youndie/sborka", "github>youndie/sborka:automerge-harness"]
 }
